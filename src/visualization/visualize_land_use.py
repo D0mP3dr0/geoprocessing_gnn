@@ -199,8 +199,14 @@ def create_interactive_landuse_map(data, output_path):
         ).add_to(m)
     
     try:
+        # Verificar qual coluna usar para categorização
+        category_column = 'land_category'
+        if category_column not in data['landuse'].columns:
+            print(f"Aviso: Coluna '{category_column}' não encontrada. Usando 'landuse' como alternativa.")
+            category_column = 'landuse'
+            
         # Obter categorias únicas de uso do solo
-        categories = data['landuse']['landuse_class'].unique()
+        categories = data['landuse'][category_column].unique()
         
         # Definir cores para cada categoria
         colors = {
@@ -212,14 +218,26 @@ def create_interactive_landuse_map(data, output_path):
             'Corpo d\'água': '#1E90FF',
             'Solo Exposto': '#A52A2A',
             'Vegetação Natural': '#228B22',
+            # Adicionar cores para categorias específicas do OSM
+            'farmland': '#E5AB17',
+            'residential': '#FF0000',
+            'forest': '#008000',
+            'grass': '#90EE90',
+            'meadow': '#90EE90',
+            'water': '#1E90FF',
         }
+        
+        print(f"Adicionando {len(categories)} categorias de uso do solo ao mapa...")
         
         # Adicionar cada categoria como uma camada separada
         for category in categories:
             if pd.notna(category):
                 # Filtrar dados para a categoria atual
-                category_data = data['landuse'][data['landuse']['landuse_class'] == category]
+                category_data = data['landuse'][data['landuse'][category_column] == category]
                 
+                if len(category_data) == 0:
+                    continue
+                    
                 # Escolher cor para a categoria
                 if category in colors:
                     color = colors[category]
@@ -240,7 +258,7 @@ def create_interactive_landuse_map(data, output_path):
                         'fillOpacity': 0.7
                     },
                     tooltip=folium.GeoJsonTooltip(
-                        fields=['landuse_class', 'area_km2', 'perimeter_km'],
+                        fields=[category_column, 'area_km2', 'perimeter_km'],
                         aliases=['Tipo de Uso', 'Área (km²)', 'Perímetro (km)'],
                         localize=True,
                         sticky=False,
