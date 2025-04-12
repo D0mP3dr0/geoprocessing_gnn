@@ -684,15 +684,19 @@ def save_report_as_json(report, output_path):
 
 # Main function to iterate over files and perform analysis
 def main():
-    data_dir = 'data'
-    output_dir = 'analysis_reports'
+    # Base directory for the project
+    base_dir = os.path.abspath(os.getcwd())
+    data_dir = os.path.join(base_dir, 'data')
+    raw_data_dir = os.path.join(data_dir, 'raw')
+    output_dir = os.path.join(base_dir, 'analysis_reports')
     os.makedirs(output_dir, exist_ok=True)
     
-    # Define an area of interest for clipping (example)
+    # Define an area of interest for clipping
     area_of_interest = None
     try:
-        if os.path.exists('data/sorocaba.gpkg'):
-            area_of_interest = gpd.read_file('data/sorocaba.gpkg')
+        sorocaba_file = os.path.join(data_dir, 'raw', 'sorocaba.gpkg')
+        if os.path.exists(sorocaba_file):
+            area_of_interest = gpd.read_file(sorocaba_file)
             print(f"Using area of interest from sorocaba.gpkg with {len(area_of_interest)} features")
     except Exception as aoi_error:
         print(f"Warning: Could not load area of interest: {str(aoi_error)}")
@@ -701,16 +705,16 @@ def main():
     processed_files = []
     skipped_files = []
     error_files = []
-
-    for file_name in os.listdir(data_dir):
-        file_path = os.path.join(data_dir, file_name)
-        
-        # Skip very large files or directories
-        if os.path.isdir(file_path):
-            print(f"Skipping directory: {file_name}")
-            skipped_files.append(file_name)
-            continue
-            
+    
+    # List of specific files to ensure they're included in the analysis
+    specific_files = [
+        os.path.join(raw_data_dir, 'sorocaba_setores_censitarios.gpkg'),
+        # Add other specific files here if needed
+    ]
+    
+    # Function to process a single file
+    def process_file(file_path):
+        file_name = os.path.basename(file_path)
         try:
             file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
             print(f"\nAnalyzing {file_name} ({file_size_mb:.2f} MB)...")
@@ -719,7 +723,7 @@ def main():
             if file_name.startswith('.'):
                 print(f"Skipping hidden file: {file_name}")
                 skipped_files.append(file_name)
-                continue
+                return
             
             if file_name.lower().endswith(('.gpkg', '.shp')):
                 print(f"Processing as geospatial file...")
@@ -771,6 +775,44 @@ def main():
             print(f"Critical error processing {file_name}: {str(e)}")
             print(traceback.format_exc())
             error_files.append(file_name)
+    
+    # Process specific files first
+    for file_path in specific_files:
+        if os.path.exists(file_path):
+            print(f"Processing specific file: {file_path}")
+            process_file(file_path)
+        else:
+            alt_path = file_path.replace('\\', '/')  # Try alternative path format
+            if os.path.exists(alt_path):
+                print(f"Processing specific file (alt path): {alt_path}")
+                process_file(alt_path)
+            else:
+                print(f"Warning: Specific file not found: {file_path}")
+    
+    # Process files in the data directory
+    for dir_to_scan in [data_dir, raw_data_dir]:
+        if os.path.exists(dir_to_scan):
+            print(f"\nScanning directory: {dir_to_scan}")
+            for file_name in os.listdir(dir_to_scan):
+                file_path = os.path.join(dir_to_scan, file_name)
+                
+                # Skip directories
+                if os.path.isdir(file_path):
+                    print(f"Skipping directory: {file_name}")
+                    continue
+                
+                # Skip files that were already processed
+                if os.path.basename(file_path) in processed_files:
+                    print(f"Skipping already processed file: {file_name}")
+                    continue
+                
+                process_file(file_path)
+    
+    # Check for absolute path (for Windows compatibility)
+    setores_path = r"F:\TESE_MESTRADO\geoprocessing\data\raw\sorocaba_setores_censitarios.gpkg"
+    if os.path.exists(setores_path) and os.path.basename(setores_path) not in processed_files:
+        print(f"\nProcessing sorocaba_setores_censitarios.gpkg from absolute path...")
+        process_file(setores_path)
     
     # Print summary
     print("\n=== Analysis Complete ===")
