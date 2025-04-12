@@ -1,0 +1,21 @@
+Sumário do Processamento de Edifícios
+Data/Hora: 2025-04-12 16:30:18
+
+Total de edifícios: 35812
+
+Distribuição por classe de edifícios:
+  - residential: 26228 edifícios (73.2%)
+  - unclassified: 7575 edifícios (21.2%)
+  - commercial: 1321 edifícios (3.7%)
+  - industrial: 239 edifícios (0.7%)
+  - office: 131 edifícios (0.4%)
+  - utility: 112 edifícios (0.3%)
+  - educational: 78 edifícios (0.2%)
+  - construction: 61 edifícios (0.2%)
+  - religious: 39 edifícios (0.1%)
+  - healthcare: 22 edifícios (0.1%)
+  - leisure: 4 edifícios (0.0%)
+  - accommodation: 1 edifícios (0.0%)
+  - abandoned: 1 edifícios (0.0%)
+
+Área total construída: 8278728.38 m²

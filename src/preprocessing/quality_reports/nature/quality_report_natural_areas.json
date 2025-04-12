@@ -1,0 +1,66 @@
+{
+    "timestamp": "2025-04-12T17:17:31.541000",
+    "total_features": 354,
+    "validation_results": {
+        "missing_columns": [
+            "protected"
+        ],
+        "invalid_values": {
+            "type": 354
+        },
+        "null_counts": {
+            "osm_id": 347,
+            "osm_way_id": 7,
+            "name": 250,
+            "type": 347,
+            "aeroway": 354,
+            "amenity": 354,
+            "admin_level": 354,
+            "barrier": 354,
+            "boundary": 354,
+            "building": 354,
+            "craft": 354,
+            "geological": 354,
+            "historic": 354,
+            "land_area": 354,
+            "landuse": 351,
+            "leisure": 343,
+            "man_made": 354,
+            "military": 354,
+            "office": 354,
+            "place": 354,
+            "shop": 354,
+            "sport": 354,
+            "tourism": 353,
+            "other_tags": 148
+        },
+        "total_records": 354,
+        "valid_records": 354,
+        "invalid_geometries": 0
+    },
+    "geometry_report": {
+        "total_geometries": 354,
+        "initially_invalid": 0,
+        "fixed_geometries": 0,
+        "unfixable_geometries": 0
+    },
+    "crs": "EPSG:4674",
+    "area_statistics": {
+        "min_area_ha": 0.00017762273807650435,
+        "max_area_ha": 67.3191897665759,
+        "mean_area_ha": 4.2443307511764194,
+        "median_area_ha": 1.4352133140100882,
+        "total_area_ha": 1502.4930859164524,
+        "std_dev_area_ha": 8.06275072841055
+    },
+    "type_distribution": {
+        "other": 354
+    },
+    "protection_status": {},
+    "ecological_importance": {
+        "high": 196,
+        "low": 108,
+        "very_low": 39,
+        "medium": 11
+    }
+}

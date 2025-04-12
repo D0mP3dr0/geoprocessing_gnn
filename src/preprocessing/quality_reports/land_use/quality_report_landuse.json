@@ -1,0 +1,175 @@
+{
+    "timestamp": "2025-04-12T17:40:11.548664",
+    "data_summary": {
+        "total_features": 2550,
+        "crs": "EPSG:4674",
+        "geometry_types": [
+            "Polygon"
+        ],
+        "total_columns": 30,
+        "memory_usage_mb": 2.142836570739746
+    },
+    "completeness": {
+        "missing_values": {
+            "osm_id": 2545,
+            "osm_way_id": 5,
+            "name": 1627,
+            "type": 2545,
+            "aeroway": 2550,
+            "amenity": 2535,
+            "admin_level": 2548,
+            "barrier": 2550,
+            "boundary": 2548,
+            "building": 2529,
+            "craft": 2550,
+            "geological": 2550,
+            "historic": 2550,
+            "land_area": 2550,
+            "landuse": 0,
+            "leisure": 2515,
+            "man_made": 2549,
+            "military": 2550,
+            "natural": 2546,
+            "office": 2546,
+            "place": 2547,
+            "shop": 2547,
+            "sport": 2545,
+            "tourism": 2549,
+            "other_tags": 1342,
+            "geometry": 0,
+            "area_km2": 0,
+            "perimeter_km": 0,
+            "compactness": 0,
+            "land_category": 0
+        },
+        "total_missing": 56418
+    },
+    "landuse_statistics": {
+        "total_area_km2": 56.74995869234043,
+        "landuse_types": {
+            "residential": 1521,
+            "grass": 244,
+            "retail": 145,
+            "industrial": 124,
+            "commercial": 110,
+            "construction": 92,
+            "education": 49,
+            "recreation_ground": 39,
+            "farmland": 37,
+            "meadow": 34,
+            "religious": 29,
+            "proposed": 21,
+            "village_green": 13,
+            "government": 13,
+            "farmyard": 11,
+            "forest": 10,
+            "cemetery": 6,
+            "governmental": 5,
+            "garages": 4,
+            "military": 3,
+            "reservoir": 3,
+            "parking": 3,
+            "mecanica": 2,
+            "farm": 2,
+            "quarry": 2,
+            "yes": 2,
+            "brownfield": 2,
+            "allotments": 1,
+            "depot": 1,
+            "plant_nursery": 1,
+            "orchard": 1,
+            "artefatos de cimento": 1,
+            "institucional": 1,
+            "hospital": 1,
+            "landfill": 1,
+            "extintores": 1,
+            "funilaria": 1,
+            "garagem caminh\u00e3o": 1,
+            "loja de mangueira": 1,
+            "tabacaria": 1,
+            "gaop\u00e3o": 1,
+            "vazia": 1,
+            "studio de tatuagem": 1,
+            "diversos servi\u00e7os": 1,
+            "arrecada\u00e7\u00e3o de ol\u00e9o": 1,
+            "propose": 1,
+            "aquaculture": 1,
+            "basin": 1,
+            "sal\u00e3o": 1,
+            "greenfield": 1,
+            "greenhouse_horticulture": 1
+        },
+        "land_categories": {
+            "urban": 2001,
+            "green": 330,
+            "institutional": 103,
+            "other": 50,
+            "agriculture": 50,
+            "forest": 10,
+            "water": 4,
+            "extraction": 2
+        },
+        "area_by_category_km2": {
+            "agriculture": 12.981500678958591,
+            "extraction": 0.5241991944145836,
+            "forest": 0.8831166869452096,
+            "green": 5.001334353133471,
+            "institutional": 0.9239365890155662,
+            "other": 2.928468346194872,
+            "urban": 33.43650557361211,
+            "water": 0.07089727006603154
+        },
+        "area_percentage": {
+            "agriculture": 22.87490771462132,
+            "extraction": 0.9236996933450368,
+            "forest": 1.5561538850325267,
+            "green": 8.812930385107935,
+            "institutional": 1.628083280244344,
+            "other": 5.160300401399462,
+            "urban": 58.91899543906638,
+            "water": 0.1249292011830144
+        }
+    },
+    "numeric_statistics": {
+        "area_km2": {
+            "min": 2.411216371486597e-06,
+            "max": 2.5599009402374793,
+            "mean": 0.022254885761702117,
+            "std": 0.09959951524857102,
+            "median": 0.0007528157064625423
+        },
+        "perimeter_km": {
+            "min": 0.0055305761637395355,
+            "max": 8.792757244119898,
+            "mean": 0.4143256624286869,
+            "std": 0.7381926819846755,
+            "median": 0.1230882236896797
+        },
+        "compactness": {
+            "min": 0.013186152556587068,
+            "max": 0.9908528267105785,
+            "mean": 0.585173431145464,
+            "std": 0.17201854483180687,
+            "median": 0.6128795041476601
+        }
+    },
+    "topology": {
+        "total_features": 2550,
+        "invalid_geometries": 0,
+        "multipolygon_count": 0,
+        "polygon_count": 2550,
+        "self_intersections": 0,
+        "potential_overlaps": 15
+    },
+    "bounds": {
+        "minx": -47.5603807,
+        "miny": -23.5866097,
+        "maxx": -47.3168766941482,
+        "maxy": -23.3621205
+    },
+    "area_of_interest": {
+        "file": "f:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba.gpkg",
+        "crs": "EPSG:4674",
+        "area_km2": 450.2072842689677
+    }
+}

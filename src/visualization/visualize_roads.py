@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+Módulo simplificado para visualização de dados geoespaciais
+com foco em resultados de alta qualidade para teses acadêmicas.
+"""
+
 import os
 import sys
 import pandas as pd
 import geopandas as gpd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import seaborn as sns
 import folium
-from folium import plugins
 from folium.plugins import MarkerCluster, HeatMap
 import networkx as nx
 from shapely.geometry import LineString, Point, Polygon, MultiLineString
@@ -23,7 +26,6 @@ from matplotlib.colors import Normalize
 import warnings
 import traceback
 from shapely.ops import linemerge
-warnings.filterwarnings('ignore')
 
 # Configurar diretórios
 WORKSPACE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -36,69 +38,39 @@ ROADS_FILE = os.path.join(INPUT_DIR, 'roads_processed.gpkg')
 SOROCABA_FILE = os.path.join(WORKSPACE_DIR, 'data', 'raw', 'sorocaba.gpkg')
 
 def load_data():
-    """Carrega os dados processados da rede viária."""
-    print("Carregando dados da rede viária...")
+    """Carrega os dados processados de rede viária."""
+    print("\n--- Criando visualizações para rede viária ---\n")
     
     data = {}
     
+    # Carregar rede viária
     try:
-        # Carregar dados da rede viária
-        print(f"Tentando carregar arquivo: {ROADS_FILE}")
-        if not os.path.exists(ROADS_FILE):
-            print(f"ERRO: Arquivo não encontrado: {ROADS_FILE}")
-            data['roads'] = None
-        else:
-            data['roads'] = gpd.read_file(ROADS_FILE)
-            print(f"Rede viária carregada:")
-            print(f"- Número de registros: {len(data['roads'])}")
-            print(f"- Colunas disponíveis: {', '.join(data['roads'].columns)}")
-            print(f"- Tipos de geometria: {data['roads'].geometry.type.unique()}")
-            print(f"- CRS: {data['roads'].crs}")
-            
-            # Verificar se há geometrias válidas
-            if 'geometry' in data['roads'].columns:
-                null_geoms = data['roads'].geometry.isna().sum()
-                invalid_geoms = (~data['roads'].geometry.is_valid).sum() if not data['roads'].geometry.isna().all() else 0
-                print(f"- Geometrias nulas: {null_geoms}")
-                print(f"- Geometrias inválidas: {invalid_geoms}")
-            
-            # Verificar colunas essenciais
-            essential_cols = ['road_class', 'length_km', 'highway']
-            missing_cols = [col for col in essential_cols if col not in data['roads'].columns]
-            if missing_cols:
-                print(f"AVISO: Colunas essenciais faltando: {', '.join(missing_cols)}")
+        roads_file = ROADS_FILE
+        print(f"Tentando carregar arquivo: {roads_file}")
+        data['roads'] = gpd.read_file(roads_file)
+        print("Rede viária carregada:")
+        print(f"- Número de registros: {len(data['roads'])}")
+        print(f"- Colunas disponíveis: {', '.join(data['roads'].columns[:15])}")
+        print(f"- Tipos de geometria: {data['roads'].geometry.type.unique()}")
+        print(f"- CRS: {data['roads'].crs}")
+        print(f"- Geometrias nulas: {data['roads'].geometry.isna().sum()}")
+        print(f"- Geometrias inválidas: {(~data['roads'].geometry.is_valid).sum()}")
     except Exception as e:
-        print(f"Erro ao carregar rede viária: {str(e)}")
-        print(traceback.format_exc())
+        print(f"Erro ao carregar dados da rede viária: {str(e)}")
         data['roads'] = None
     
+    # Carregar área de estudo (Sorocaba)
     try:
-        # Carregar área de estudo
-        print(f"\nTentando carregar arquivo: {SOROCABA_FILE}")
-        if not os.path.exists(SOROCABA_FILE):
-            print(f"ERRO: Arquivo não encontrado: {SOROCABA_FILE}")
-            data['sorocaba'] = None
-        else:
-            data['sorocaba'] = gpd.read_file(SOROCABA_FILE)
-            print(f"Área de estudo carregada:")
-            print(f"- Número de registros: {len(data['sorocaba'])}")
-            print(f"- Colunas disponíveis: {', '.join(data['sorocaba'].columns)}")
-            print(f"- Tipo de geometria: {data['sorocaba'].geometry.type.unique()}")
-            print(f"- CRS: {data['sorocaba'].crs}")
-            
-            # Verificar se há um único polígono válido
-            if 'geometry' in data['sorocaba'].columns:
-                null_geoms = data['sorocaba'].geometry.isna().sum()
-                invalid_geoms = (~data['sorocaba'].geometry.is_valid).sum() if not data['sorocaba'].geometry.isna().all() else 0
-                print(f"- Geometrias nulas: {null_geoms}")
-                print(f"- Geometrias inválidas: {invalid_geoms}")
+        sorocaba_file = SOROCABA_FILE
+        print(f"Tentando carregar arquivo: {sorocaba_file}")
+        data['sorocaba'] = gpd.read_file(sorocaba_file)
+        print(f"- Geometrias inválidas: {(~data['sorocaba'].geometry.is_valid).sum()}")
     except Exception as e:
-        print(f"Erro ao carregar área de estudo: {str(e)}")
-        print(traceback.format_exc())
+        print(f"Erro ao carregar dados da área de estudo: {str(e)}")
         data['sorocaba'] = None
     
-    # Verificar CRS e garantir que todos estejam no mesmo sistema
-    print("\nVerificando sistemas de coordenadas...")
+    # Verificar sistemas de coordenadas
+    print("Verificando sistemas de coordenadas...")
     for key, gdf in data.items():
         if gdf is not None:
             print(f"CRS de {key}: {gdf.crs}")
@@ -107,11 +79,8 @@ def load_data():
     target_crs = "EPSG:4674"
     for key, gdf in data.items():
         if gdf is not None and gdf.crs != target_crs:
-            print(f"Reprojetando {key} de {gdf.crs} para {target_crs}")
-            try:
-                data[key] = gdf.to_crs(target_crs)
-            except Exception as e:
-                print(f"ERRO ao reprojetar {key}: {str(e)}")
+            data[key] = gdf.to_crs(target_crs)
+            print(f"Reprojetado {key} para {target_crs}")
     
     return data
 
@@ -126,7 +95,7 @@ def create_interactive_road_map(data, output_path):
         center_lat = sorocaba.geometry.centroid.y.mean()
         center_lon = sorocaba.geometry.centroid.x.mean()
     elif data['roads'] is not None:
-        # Usar o centro da rede viária
+        # Usar o centro das vias
         roads = data['roads'].to_crs(epsg=4326)
         center_lat = roads.geometry.centroid.y.mean()
         center_lon = roads.geometry.centroid.x.mean()
@@ -143,11 +112,12 @@ def create_interactive_road_map(data, output_path):
     minimap = folium.plugins.MiniMap()
     m.add_child(minimap)
     
-    # Adicionar escala
+    # Adicionar escala e ferramentas de medição
     folium.plugins.MeasureControl(position='bottomleft', primary_length_unit='kilometers').add_to(m)
     
     # Adicionar área de estudo (Sorocaba)
     if data['sorocaba'] is not None:
+        # Converter para GeoJSON para o Folium
         sorocaba_json = sorocaba.to_json()
         folium.GeoJson(
             data=sorocaba_json,
@@ -164,33 +134,113 @@ def create_interactive_road_map(data, output_path):
     if data['roads'] is not None:
         roads = data['roads'].to_crs(epsg=4326)
         
-        # Criar grupos para diferentes classes de vias
-        road_groups = {}
-        for road_class in roads['road_class'].unique():
-            road_groups[road_class] = folium.FeatureGroup(name=f'Vias {road_class.title()}')
+        # Criar grupos de camadas por classe de via
+        arterial_group = folium.FeatureGroup(name='Vias Arteriais')
+        collector_group = folium.FeatureGroup(name='Vias Coletoras')
+        local_group = folium.FeatureGroup(name='Vias Locais')
         
-        # Adicionar vias por classe
-        for road_class, group in road_groups.items():
-            class_roads = roads[roads['road_class'] == road_class]
+        if 'road_class' in roads.columns:
+            # Filtrar por classe de via
+            arterial_roads = roads[roads['road_class'] == 'arterial']
+            collector_roads = roads[roads['road_class'] == 'collector']
+            local_roads = roads[roads['road_class'] == 'local']
             
-            # Definir estilo por classe
-            style = get_road_style(road_class)
+            # Adicionar vias arteriais
+            if not arterial_roads.empty:
+                arterial_json = arterial_roads.to_json()
+                folium.GeoJson(
+                    data=arterial_json,
+                    name='Vias Arteriais',
+                    style_function=lambda x: {
+                        'color': '#e41a1c',
+                        'weight': 4,
+                        'opacity': 0.8
+                    },
+                    tooltip=folium.GeoJsonTooltip(
+                        fields=['name', 'length_km', 'road_class'],
+                        aliases=['Nome:', 'Comprimento (km):', 'Classe:'],
+                        localize=True,
+                        sticky=False
+                    )
+                ).add_to(arterial_group)
             
+            # Adicionar vias coletoras
+            if not collector_roads.empty:
+                collector_json = collector_roads.to_json()
+                folium.GeoJson(
+                    data=collector_json,
+                    name='Vias Coletoras',
+                    style_function=lambda x: {
+                        'color': '#377eb8',
+                        'weight': 3,
+                        'opacity': 0.7
+                    },
+                    tooltip=folium.GeoJsonTooltip(
+                        fields=['name', 'length_km', 'road_class'],
+                        aliases=['Nome:', 'Comprimento (km):', 'Classe:'],
+                        localize=True,
+                        sticky=False
+                    )
+                ).add_to(collector_group)
+            
+            # Adicionar vias locais
+            if not local_roads.empty:
+                local_json = local_roads.to_json()
+                folium.GeoJson(
+                    data=local_json,
+                    name='Vias Locais',
+                    style_function=lambda x: {
+                        'color': '#4daf4a',
+                        'weight': 2,
+                        'opacity': 0.6
+                    },
+                    tooltip=folium.GeoJsonTooltip(
+                        fields=['name', 'length_km', 'road_class'],
+                        aliases=['Nome:', 'Comprimento (km):', 'Classe:'],
+                        localize=True,
+                        sticky=False
+                    )
+                ).add_to(local_group)
+        else:
+            # Se não tiver classificação, usar toda a rede
+            roads_json = roads.to_json()
             folium.GeoJson(
-                data=class_roads.to_json(),
-                style_function=lambda x, style=style: style,
+                data=roads_json,
+                name='Rede Viária',
+                style_function=lambda x: {
+                    'color': '#377eb8',
+                    'weight': 2,
+                    'opacity': 0.7
+                },
                 tooltip=folium.GeoJsonTooltip(
-                    fields=['name', 'highway', 'length_km'],
-                    aliases=['Nome:', 'Tipo:', 'Comprimento (km):'],
+                    fields=['name', 'highway'],
+                    aliases=['Nome:', 'Tipo:'],
                     localize=True,
                     sticky=False
                 )
-            ).add_to(group)
-            
-            group.add_to(m)
+            ).add_to(m)
+        
+        # Adicionar grupos ao mapa
+        arterial_group.add_to(m)
+        collector_group.add_to(m)
+        local_group.add_to(m)
     
     # Adicionar legenda
-    legend_html = create_road_legend_html()
+    legend_html = """
+    <div style="position: fixed; 
+                bottom: 50px; right: 50px; width: 180px; height: 130px; 
+                border:2px solid grey; z-index:9999; font-size:14px;
+                background-color:white;
+                padding: 10px;
+                opacity: 0.8;
+                ">
+    <b>Legenda</b><br>
+    <i style="background: #ffff00; opacity: 0.3; border: 1px solid black; display: inline-block; width: 18px; height: 18px;"></i> Área de Estudo<br>
+    <i style="background: none; border: 4px solid #e41a1c; display: inline-block; width: 18px; height: 4px;"></i> Vias Arteriais<br>
+    <i style="background: none; border: 3px solid #377eb8; display: inline-block; width: 18px; height: 3px;"></i> Vias Coletoras<br>
+    <i style="background: none; border: 2px solid #4daf4a; display: inline-block; width: 18px; height: 2px;"></i> Vias Locais<br>
+    </div>
+    """
     m.get_root().html.add_child(folium.Element(legend_html))
     
     # Adicionar controle de camadas
@@ -201,61 +251,75 @@ def create_interactive_road_map(data, output_path):
     print(f"Mapa interativo salvo em: {output_path}")
     return output_path
 
-def get_road_style(road_class):
-    """Retorna estilo para cada classe de via."""
-    styles = {
-        'arterial': {
-            'color': '#e41a1c',  # Vermelho
-            'weight': 4,
-            'opacity': 0.8
-        },
-        'collector': {
-            'color': '#377eb8',  # Azul
-            'weight': 3,
-            'opacity': 0.7
-        },
-        'local': {
-            'color': '#4daf4a',  # Verde
-            'weight': 2,
-            'opacity': 0.6
-        },
-        'pedestrian': {
-            'color': '#984ea3',  # Roxo
-            'weight': 1,
-            'opacity': 0.5,
-            'dashArray': '5, 5'
-        },
-        'cycleway': {
-            'color': '#ff7f00',  # Laranja
-            'weight': 1,
-            'opacity': 0.5,
-            'dashArray': '5, 5'
-        }
-    }
-    return styles.get(road_class, {
-        'color': '#999999',  # Cinza para classes não mapeadas
-        'weight': 1,
-        'opacity': 0.5
-    })
-
-def create_road_legend_html():
-    """Cria HTML para a legenda do mapa."""
-    return """
-    <div style="position: fixed; 
-                bottom: 50px; right: 50px; width: 200px;
-                border:2px solid grey; z-index:9999; font-size:14px;
-                background-color:white;
-                padding: 10px;
-                opacity: 0.8;">
-    <b>Legenda</b><br>
-    <i style="background: #ffff00; opacity: 0.3; border: 1px solid black; display: inline-block; width: 18px; height: 18px;"></i> Área de Estudo<br>
-    <i style="background: #e41a1c; height: 4px; width: 18px; display: inline-block;"></i> Vias Arteriais<br>
-    <i style="background: #377eb8; height: 3px; width: 18px; display: inline-block;"></i> Vias Coletoras<br>
-    <i style="background: #4daf4a; height: 2px; width: 18px; display: inline-block;"></i> Vias Locais<br>
-    <i style="background: #984ea3; height: 1px; width: 18px; display: inline-block;"></i> Vias de Pedestres<br>
-    <i style="background: #ff7f00; height: 1px; width: 18px; display: inline-block;"></i> Ciclovias<br>
-    </div>
-    """
+def create_static_road_map(data, output_path):
+    """Cria um mapa estático da rede viária com camada base usando Contextily."""
+    print("Criando mapa estático da rede viária com camada base...")
+    
+    if data['roads'] is None:
+        print("Dados da rede viária não disponíveis")
+        return
+    
+    # Criar figura
+    fig, ax = plt.subplots(figsize=(15, 15))
+    
+    # Reprojetar para WebMercator (EPSG:3857) para compatibilidade com camadas base
+    if data['sorocaba'] is not None:
+        area_bounds = data['sorocaba'].to_crs(epsg=3857).total_bounds
+        area = data['sorocaba'].to_crs(epsg=3857)
+        area.plot(ax=ax, color='none', edgecolor='black', linewidth=1.5, alpha=0.8, zorder=1)
+    else:
+        area_bounds = data['roads'].to_crs(epsg=3857).total_bounds
+    
+    # Adicionar rede viária por classe
+    roads = data['roads'].to_crs(epsg=3857)
+    
+    if 'road_class' in roads.columns:
+        # Filtrar por classe de via e plotar em ordem (locais primeiro, arteriais por último)
+        local_roads = roads[roads['road_class'] == 'local']
+        collector_roads = roads[roads['road_class'] == 'collector']
+        arterial_roads = roads[roads['road_class'] == 'arterial']
+        
+        # Plotar vias locais
+        if not local_roads.empty:
+            local_roads.plot(ax=ax, color='#4daf4a', linewidth=1.5, alpha=0.6, zorder=2)
+        
+        # Plotar vias coletoras
+        if not collector_roads.empty:
+            collector_roads.plot(ax=ax, color='#377eb8', linewidth=2.5, alpha=0.7, zorder=3)
+        
+        # Plotar vias arteriais
+        if not arterial_roads.empty:
+            arterial_roads.plot(ax=ax, color='#e41a1c', linewidth=3.5, alpha=0.8, zorder=4)
+    else:
+        # Se não tiver classificação, usar toda a rede com uma cor única
+        roads.plot(ax=ax, color='#377eb8', linewidth=1.5, alpha=0.7, zorder=2)
+    
+    # Adicionar camada base do OpenStreetMap
+    ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
+    
+    # Configurar limites do mapa baseados na área de estudo
+    ax.set_xlim([area_bounds[0], area_bounds[2]])
+    ax.set_ylim([area_bounds[1], area_bounds[3]])
+    
+    # Remover eixos
+    ax.set_axis_off()
+    
+    # Adicionar título
+    plt.title('Rede Viária - Sorocaba', fontsize=16, pad=20)
+    
+    # Adicionar legenda
+    if 'road_class' in roads.columns:
+        legend_elements = [
+            Line2D([0], [0], color='#e41a1c', linewidth=3.5, label='Vias Arteriais'),
+            Line2D([0], [0], color='#377eb8', linewidth=2.5, label='Vias Coletoras'),
+            Line2D([0], [0], color='#4daf4a', linewidth=1.5, label='Vias Locais')
+        ]
+        ax.legend(handles=legend_elements, loc='lower right', title='Rede Viária')
+    
+    # Salvar
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Mapa estático salvo em: {output_path}")
 
 def plot_road_class_distribution(data, output_path):
     """Plota a distribuição das classes de vias na rede viária."""
@@ -265,43 +329,46 @@ def plot_road_class_distribution(data, output_path):
         print("Dados da rede viária não disponíveis")
         return
     
-    plt.figure(figsize=(12, 6))
+    if 'road_class' not in data['roads'].columns:
+        print("Coluna 'road_class' não encontrada nos dados")
+        return
     
-    # Criar dois subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    plt.figure(figsize=(12, 8))
     
-    # 1. Distribuição por número de vias
-    road_counts = data['roads']['road_class'].value_counts()
+    # Contar frequência de cada classe de via
+    road_class_counts = data['roads']['road_class'].value_counts().sort_values(ascending=False)
+    
+    # Definir cores
     colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
     
-    bars1 = ax1.bar(road_counts.index, road_counts.values, color=colors[:len(road_counts)])
-    ax1.set_title('Distribuição por Número de Vias', fontsize=12)
-    ax1.set_xlabel('Classe de Via')
-    ax1.set_ylabel('Número de Vias')
+    # Criar barras
+    bars = road_class_counts.plot(
+        kind='bar', 
+        color=colors[:len(road_class_counts)],
+        edgecolor='black',
+        linewidth=1.2
+    )
     
-    # Adicionar valores sobre as barras
-    for bar in bars1:
-        height = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2., height,
-                f'{int(height):,}',
-                ha='center', va='bottom')
+    # Adicionar valores acima das barras
+    for i, v in enumerate(road_class_counts):
+        plt.text(i, v + 0.1, f"{v:,}", ha='center', fontweight='bold')
     
-    # 2. Distribuição por comprimento
-    length_by_class = data['roads'].groupby('road_class')['length_km'].sum()
+    # Adicionar rótulos
+    plt.title('Distribuição das Classes de Vias na Rede Viária', fontsize=14)
+    plt.xlabel('Classe da Via', fontsize=12)
+    plt.ylabel('Número de Segmentos', fontsize=12)
     
-    bars2 = ax2.bar(length_by_class.index, length_by_class.values, color=colors[:len(length_by_class)])
-    ax2.set_title('Distribuição por Comprimento Total', fontsize=12)
-    ax2.set_xlabel('Classe de Via')
-    ax2.set_ylabel('Comprimento Total (km)')
+    # Adicionar grid
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
     
-    # Adicionar valores sobre as barras
-    for bar in bars2:
-        height = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width()/2., height,
-                f'{height:,.1f}',
-                ha='center', va='bottom')
+    # Adicionar estatísticas
+    total_roads = len(data['roads'])
+    total_length = data['roads']['length_km'].sum()
     
-    # Ajustar layout
+    stats_text = f"Total de segmentos: {total_roads:,}\nComprimento total: {total_length:.2f} km"
+    plt.figtext(0.75, 0.82, stats_text, fontsize=10, 
+               bbox=dict(facecolor='white', alpha=0.5, edgecolor='gray'))
+    
     plt.tight_layout()
     
     # Salvar
@@ -444,59 +511,6 @@ def create_network_analysis(data, output_path):
         print(f"Erro na análise de rede: {str(e)}")
         print(traceback.format_exc())
 
-def create_static_road_map(data, output_path):
-    """Cria um mapa estático da rede viária com camada base."""
-    print("Criando mapa estático da rede viária...")
-    
-    if data['roads'] is None:
-        print("Dados da rede viária não disponíveis")
-        return
-    
-    # Criar figura
-    fig, ax = plt.subplots(figsize=(15, 15))
-    
-    # Reprojetar para WebMercator (EPSG:3857) para compatibilidade com camadas base
-    if data['sorocaba'] is not None:
-        area_bounds = data['sorocaba'].to_crs(epsg=3857).total_bounds
-        area = data['sorocaba'].to_crs(epsg=3857)
-        area.plot(ax=ax, color='none', edgecolor='black', linewidth=1.5, alpha=0.8)
-    else:
-        area_bounds = data['roads'].to_crs(epsg=3857).total_bounds
-    
-    # Plotar vias por classe
-    roads = data['roads'].to_crs(epsg=3857)
-    
-    # Definir ordem de plotagem (das menos importantes para as mais importantes)
-    road_classes = ['local', 'collector', 'arterial']
-    colors = ['#4daf4a', '#377eb8', '#e41a1c']
-    
-    for road_class, color in zip(road_classes, colors):
-        subset = roads[roads['road_class'] == road_class]
-        if not subset.empty:
-            subset.plot(ax=ax, color=color, 
-                       linewidth=1 if road_class == 'local' else 2 if road_class == 'collector' else 3,
-                       alpha=0.8, zorder=10 if road_class == 'local' else 20 if road_class == 'collector' else 30,
-                       label=f'Vias {road_class.title()}')
-    
-    # Adicionar camada base do OpenStreetMap
-    ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, zoom=12)
-    
-    # Configurar limites do mapa
-    ax.set_xlim([area_bounds[0], area_bounds[2]])
-    ax.set_ylim([area_bounds[1], area_bounds[3]])
-    
-    # Remover eixos
-    ax.set_axis_off()
-    
-    # Adicionar título e legenda
-    plt.title('Rede Viária - Sorocaba', fontsize=16, pad=20)
-    plt.legend(loc='lower right')
-    
-    # Salvar
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"Mapa estático salvo em: {output_path}")
-
 def analyze_road_connectivity(data, output_path):
     """Analisa e visualiza a conectividade da rede viária."""
     print("Analisando conectividade da rede viária...")
@@ -632,14 +646,12 @@ def analyze_road_connectivity(data, output_path):
 
 def main():
     """Função principal para criar visualizações."""
-    print("\n--- Criando visualizações para rede viária ---\n")
-    
     # Carregar dados
     data = load_data()
     
     # Verificar se dados foram carregados corretamente
     if all(gdf is None for gdf in data.values()):
-        print("Nenhum dado viário pôde ser carregado. Verifique os arquivos de entrada.")
+        print("Nenhum dado da rede viária pôde ser carregado. Verifique os arquivos de entrada.")
         return
     
     # Criar visualizações
@@ -648,24 +660,26 @@ def main():
     interactive_map_path = os.path.join(OUTPUT_DIR, 'mapa_interativo_vias.html')
     create_interactive_road_map(data, interactive_map_path)
     
-    # 2. Distribuição das classes de vias
-    road_dist_path = os.path.join(OUTPUT_DIR, 'distribuicao_classes_vias.png')
-    plot_road_class_distribution(data, road_dist_path)
-    
-    # 3. Análise de rede
-    network_analysis_path = os.path.join(OUTPUT_DIR, 'analise_rede_viaria.png')
-    create_network_analysis(data, network_analysis_path)
-    
-    # 4. Mapa estático com camada base
+    # 2. Mapa estático da rede viária
     static_map_path = os.path.join(OUTPUT_DIR, 'mapa_estatico_vias.png')
     create_static_road_map(data, static_map_path)
     
+    # 3. Distribuição das classes de vias
+    road_class_dist_path = os.path.join(OUTPUT_DIR, 'distribuicao_classes_vias.png')
+    plot_road_class_distribution(data, road_class_dist_path)
+    
+    # As análises de rede foram desabilitadas conforme solicitado
+    # 4. Análise de rede
+    # network_analysis_path = os.path.join(OUTPUT_DIR, 'analise_rede_vias.png')
+    # create_network_analysis(data, network_analysis_path)
+    
     # 5. Análise de conectividade
-    connectivity_path = os.path.join(OUTPUT_DIR, 'analise_conectividade.png')
-    analyze_road_connectivity(data, connectivity_path)
+    # connectivity_path = os.path.join(OUTPUT_DIR, 'analise_conectividade_vias.png')
+    # analyze_road_connectivity(data, connectivity_path)
     
     print(f"\nVisualizações salvas em: {OUTPUT_DIR}")
-    print("Todas as visualizações foram criadas com sucesso!")
+    print("Visualizações básicas foram criadas com sucesso!")
+    print("Observação: As análises de rede (grafos) foram desabilitadas conforme solicitado.")
 
 if __name__ == "__main__":
-    main() 
+    main()

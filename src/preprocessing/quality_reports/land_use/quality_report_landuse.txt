@@ -1,0 +1,115 @@
+===== RELATÓRIO DE QUALIDADE DE USO DO SOLO =====
+
+Data/Hora: 2025-04-12T17:40:11.930023
+
+== RESUMO DOS DADOS ==
+Total de feições: 2550
+CRS: EPSG:4674
+Tipos de geometria: Polygon
+Uso de memória: 2.14 MB
+
+== ESTATÍSTICAS DE USO DO SOLO ==
+Área total mapeada: 56.75 km²
+
+Área por categoria (km²):
+- agriculture: 12.98 km² (22.9%)
+- extraction: 0.52 km² (0.9%)
+- forest: 0.88 km² (1.6%)
+- green: 5.00 km² (8.8%)
+- institutional: 0.92 km² (1.6%)
+- other: 2.93 km² (5.2%)
+- urban: 33.44 km² (58.9%)
+- water: 0.07 km² (0.1%)
+
+Tipos de uso do solo:
+- residential: 1521 polígonos
+- grass: 244 polígonos
+- retail: 145 polígonos
+- industrial: 124 polígonos
+- commercial: 110 polígonos
+- construction: 92 polígonos
+- education: 49 polígonos
+- recreation_ground: 39 polígonos
+- farmland: 37 polígonos
+- meadow: 34 polígonos
+- religious: 29 polígonos
+- proposed: 21 polígonos
+- village_green: 13 polígonos
+- government: 13 polígonos
+- farmyard: 11 polígonos
+- forest: 10 polígonos
+- cemetery: 6 polígonos
+- governmental: 5 polígonos
+- garages: 4 polígonos
+- military: 3 polígonos
+- reservoir: 3 polígonos
+- parking: 3 polígonos
+- mecanica: 2 polígonos
+- farm: 2 polígonos
+- quarry: 2 polígonos
+- yes: 2 polígonos
+- brownfield: 2 polígonos
+- allotments: 1 polígonos
+- depot: 1 polígonos
+- plant_nursery: 1 polígonos
+- orchard: 1 polígonos
+- artefatos de cimento: 1 polígonos
+- institucional: 1 polígonos
+- hospital: 1 polígonos
+- landfill: 1 polígonos
+- extintores: 1 polígonos
+- funilaria: 1 polígonos
+- garagem caminhão: 1 polígonos
+- loja de mangueira: 1 polígonos
+- tabacaria: 1 polígonos
+- gaopão: 1 polígonos
+- vazia: 1 polígonos
+- studio de tatuagem: 1 polígonos
+- diversos serviços: 1 polígonos
+- arrecadação de oléo: 1 polígonos
+- propose: 1 polígonos
+- aquaculture: 1 polígonos
+- basin: 1 polígonos
+- salão: 1 polígonos
+- greenfield: 1 polígonos
+- greenhouse_horticulture: 1 polígonos
+
+Categorias simplificadas:
+- urban: 2001 polígonos
+- green: 330 polígonos
+- institutional: 103 polígonos
+- other: 50 polígonos
+- agriculture: 50 polígonos
+- forest: 10 polígonos
+- water: 4 polígonos
+- extraction: 2 polígonos
+
+== ANÁLISE TOPOLÓGICA ==
+Geometrias inválidas: 0
+Polígonos: 2550
+MultiPolígonos: 0
+Auto-interseções: 0
+Sobreposições potenciais: 15
+
+== ESTATÍSTICAS NUMÉRICAS ==
+
+area_km2:
+- Mínimo: 0.0000
+- Máximo: 2.5599
+- Média: 0.0223
+- Mediana: 0.0008
+- Desvio padrão: 0.0996
+
+perimeter_km:
+- Mínimo: 0.0055
+- Máximo: 8.7928
+- Média: 0.4143
+- Mediana: 0.1231
+- Desvio padrão: 0.7382
+
+compactness:
+- Mínimo: 0.0132
+- Máximo: 0.9909
+- Média: 0.5852
+- Mediana: 0.6129
+- Desvio padrão: 0.1720

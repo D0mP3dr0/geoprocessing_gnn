@@ -1,0 +1,42 @@
+RESUMO ESTATÍSTICO - ÁREAS NATURAIS
+==================================================
+
+Total de áreas naturais: 354
+Área total: 0.00 hectares
+
+ESTATÍSTICAS DE ÁREA (hectares):
+  Mínima: 0.00
+  Máxima: 0.00
+  Média: 0.00
+  Mediana: 0.00
+  Desvio padrão: 0.00
+
+DISTRIBUIÇÃO POR TYPE:
+  other: 354 áreas
+
+DISTRIBUIÇÃO POR IMPORTÂNCIA ECOLÓGICA:
+  high: 196 áreas
+  low: 108 áreas
+  very_low: 39 áreas
+  medium: 11 áreas
+
+ESTATÍSTICAS DE AREA HA:
+  Mínima: 0.00
+  Máxima: 67.32
+  Média: 4.24
+  Mediana: 1.44
+  Desvio padrão: 8.06
+
+ESTATÍSTICAS DE PERIMETER M:
+  Mínima: 14.06
+  Máxima: 35678.03
+  Média: 1144.59
+  Mediana: 611.09
+  Desvio padrão: 2304.62
+
+ESTATÍSTICAS DE SHAPE INDEX:
+  Mínima: 1.03
+  Máxima: 15.58
+  Média: 1.67
+  Mediana: 1.45
+  Desvio padrão: 0.96
