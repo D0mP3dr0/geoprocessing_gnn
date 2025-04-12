@@ -1,0 +1,115 @@
+{
+    "data_summary": {
+        "total_features": 13328,
+        "crs": "EPSG:4674",
+        "geometry_types": [
+            "LineString",
+            "MultiLineString"
+        ],
+        "total_columns": 15,
+        "memory_usage_mb": 7.774334907531738
+    },
+    "completeness": {
+        "missing_values": {
+            "osm_id": 0,
+            "name": 796,
+            "highway": 0,
+            "waterway": 13328,
+            "aerialway": 13328,
+            "barrier": 13328,
+            "man_made": 13328,
+            "railway": 13319,
+            "z_order": 0,
+            "other_tags": 197,
+            "geometry": 0,
+            "length_km": 0,
+            "sinuosity": 122,
+            "road_class": 0,
+            "connectivity": 0
+        },
+        "total_missing": 67746
+    },
+    "road_statistics": {
+        "total_length_km": 2608.9827388214208,
+        "road_classes": {
+            "local": 10210,
+            "collector": 2351,
+            "arterial": 767
+        },
+        "highway_types": {
+            "residential": 10210,
+            "secondary": 1575,
+            "tertiary": 776,
+            "primary": 485,
+            "trunk": 154,
+            "motorway": 128
+        }
+    },
+    "numeric_statistics": {
+        "length_km": {
+            "min": 0.0002119492849554693,
+            "max": 8.542297703015292,
+            "mean": 0.19575200621409225,
+            "std": 0.3064211400825363,
+            "median": 0.121955586641681
+        },
+        "sinuosity": {
+            "min": 1.0,
+            "max": 54.621993080324316,
+            "mean": 1.050601034433053,
+            "std": 0.7799093922620978,
+            "median": 1.0000093048046261
+        },
+        "connectivity": {
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "std": 0.0,
+            "median": 0.0
+        }
+    },
+    "topology": {
+        "total_features": 13328,
+        "invalid_geometries": 0,
+        "total_length_km": 2608.9827388214208,
+        "disconnected_segments": 4649,
+        "intersections": 2838,
+        "edges_added_to_graph": 13307,
+        "connected_components": 4650
+    },
+    "network_analysis": {
+        "network_size": {
+            "nodes": 17009,
+            "edges": 13277,
+            "total_length_km": 2586.238553933473
+        },
+        "connectivity": {
+            "connected_components": 4650,
+            "largest_component_nodes": 4954,
+            "largest_component_pct": 29.125756952201776,
+            "intersections": 2838
+        },
+        "density": {
+            "area_km2": 563.034501422322,
+            "road_density_km_per_km2": 4.593392673806294,
+            "intersection_density_per_km2": 5.040543683967366
+        },
+        "topology_indices": {
+            "alpha_index": 0.02698968041631141,
+            "beta_index": 0.7805867481921336,
+            "gamma_index": 0.26022618137629605
+        }
+    },
+    "bounds": {
+        "minx": -47.5654775226983,
+        "miny": -23.58507,
+        "maxx": -47.3046351,
+        "maxy": -23.3539839
+    },
+    "timestamp": "2025-04-12 15:06:01",
+    "area_of_interest": {
+        "file": "F:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba.gpkg",
+        "crs": "EPSG:4674",
+        "area_km2": 450.2072842689677
+    }
+}

@@ -1,0 +1,48 @@
+{
+    "linhas_originais": 24245,
+    "linhas_processadas": 24245,
+    "colunas_originais": 41,
+    "colunas_importantes": 16,
+    "colunas_finais": 42,
+    "colunas_adicionadas": [
+        "Latitude_original",
+        "Longitude_original",
+        "AlturaAntena_original",
+        "FreqTxMHz_original",
+        "FreqRxMHz_original",
+        "GanhoAntena_original",
+        "PotenciaTransmissorWatts_original",
+        "Tecnologia_imputado",
+        "FreqTxMHz_imputado",
+        "FreqRxMHz_imputado",
+        "GanhoAntena_imputado",
+        "ClassInfraFisica_imputado",
+        "FreqTxMHz_original_imputado",
+        "FreqRxMHz_original_imputado",
+        "GanhoAntena_original_imputado",
+        "AlturaAntena_outlier",
+        "AlturaAntena_limitado",
+        "FreqTxMHz_outlier",
+        "FreqTxMHz_limitado",
+        "FreqRxMHz_outlier",
+        "FreqRxMHz_limitado",
+        "DataLicenciamento_datetime",
+        "DataValidade_datetime"
+    ],
+    "registros_coords_validas": "N\u00e3o verificado",
+    "valores_ausentes_tratados": {
+        "Tecnologia": 16939,
+        "FreqTxMHz": 3,
+        "FreqRxMHz": 12,
+        "GanhoAntena": 408,
+        "ClassInfraFisica": 21583,
+        "FreqTxMHz_original": 3,
+        "FreqRxMHz_original": 12,
+        "GanhoAntena_original": 408
+    },
+    "outliers_identificados": {
+        "FreqTxMHz": 1177,
+        "FreqRxMHz": 1177,
+        "AlturaAntena": 1
+    }
+}

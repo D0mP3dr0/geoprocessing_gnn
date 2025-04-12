@@ -1,0 +1,34 @@
+{
+    "Tecnologia": {
+        "contagem_nulos": 16939,
+        "percentual": 69.86595174262735
+    },
+    "FreqTxMHz": {
+        "contagem_nulos": 3,
+        "percentual": 0.012373685295937308
+    },
+    "FreqRxMHz": {
+        "contagem_nulos": 12,
+        "percentual": 0.04949474118374923
+    },
+    "GanhoAntena": {
+        "contagem_nulos": 408,
+        "percentual": 1.6828212002474738
+    },
+    "ClassInfraFisica": {
+        "contagem_nulos": 21583,
+        "percentual": 89.0204165807383
+    },
+    "FreqTxMHz_original": {
+        "contagem_nulos": 3,
+        "percentual": 0.012373685295937308
+    },
+    "FreqRxMHz_original": {
+        "contagem_nulos": 12,
+        "percentual": 0.04949474118374923
+    },
+    "GanhoAntena_original": {
+        "contagem_nulos": 408,
+        "percentual": 1.6828212002474738
+    }
+}

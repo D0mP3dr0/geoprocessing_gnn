@@ -1,0 +1,376 @@
+{
+    "file_path": "data\\sorocaba_landuse.gpkg",
+    "layer": "default",
+    "crs": "EPSG:4674",
+    "columns": [
+        "osm_id",
+        "osm_way_id",
+        "name",
+        "type",
+        "aeroway",
+        "amenity",
+        "admin_level",
+        "barrier",
+        "boundary",
+        "building",
+        "craft",
+        "geological",
+        "historic",
+        "land_area",
+        "landuse",
+        "leisure",
+        "man_made",
+        "military",
+        "natural",
+        "office",
+        "place",
+        "shop",
+        "sport",
+        "tourism",
+        "other_tags",
+        "geometry",
+        "geometry_wkt"
+    ],
+    "data_types": {
+        "osm_id": "object",
+        "osm_way_id": "object",
+        "name": "object",
+        "type": "object",
+        "aeroway": "object",
+        "amenity": "object",
+        "admin_level": "object",
+        "barrier": "object",
+        "boundary": "object",
+        "building": "object",
+        "craft": "object",
+        "geological": "object",
+        "historic": "object",
+        "land_area": "object",
+        "landuse": "object",
+        "leisure": "object",
+        "man_made": "object",
+        "military": "object",
+        "natural": "object",
+        "office": "object",
+        "place": "object",
+        "shop": "object",
+        "sport": "object",
+        "tourism": "object",
+        "other_tags": "object",
+        "geometry": "geometry",
+        "geometry_wkt": "object"
+    },
+    "num_features": 2550,
+    "geometry_types": [
+        "Polygon",
+        "MultiPolygon"
+    ],
+    "basic_stats": {},
+    "categorical_stats": {
+        "osm_id": {
+            "11493689": 1,
+            "14370046": 1,
+            "9337656": 1,
+            "12539183": 1,
+            "14390768": 1
+        },
+        "osm_way_id": {
+            "894082303": 1,
+            "906251011": 1,
+            "1289229801": 1,
+            "1193633200": 1,
+            "1289229317": 1,
+            "1183531240": 1,
+            "1183531292": 1,
+            "1183531293": 1,
+            "1183558727": 1,
+            "1183558728": 1,
+            "906251010": 1,
+            "155850137": 1,
+            "1199977361": 1,
+            "1199982954": 1,
+            "1199982978": 1,
+            "411768822": 1,
+            "906251008": 1,
+            "835590183": 1,
+            "835581029": 1,
+            "895405420": 1
+        },
+        "name": {
+            "Área Institucional Invadida": 4,
+            "Área Institucional": 3,
+            "Bem Dominial": 3,
+            "Jardim Colinas do Sol": 3,
+            "Dibloco": 3,
+            "A Igreja de Jesus Cristo dos Santos dos Últimos Dias": 2,
+            "Residencial São Paulo": 2,
+            "Residencial Villa Bella": 2,
+            "CDHU": 2,
+            "La Residence": 2,
+            "Guarapari": 2,
+            "Praça do Rosário": 2,
+            "Condomínio Morada do Sol": 2,
+            "Praça da Advocacia": 2,
+            "Sistema de Lazer": 2,
+            "Flextronics": 2,
+            "Chácara Santa Bárbara": 2,
+            "Sítio São José": 2,
+            "Parque Reserva Fazenda Imperial": 1,
+            "Valid": 1
+        },
+        "type": {
+            "multipolygon": 5
+        },
+        "aeroway": {},
+        "amenity": {
+            "school": 6,
+            "arts_centre": 2,
+            "parking": 1,
+            "social_facility": 1,
+            "university": 1,
+            "courthouse": 1,
+            "pub": 1,
+            "ice_cream": 1,
+            "place_of_worship": 1
+        },
+        "admin_level": {
+            "10": 2
+        },
+        "barrier": {},
+        "boundary": {
+            "administrative": 2
+        },
+        "building": {
+            "yes": 8,
+            "house": 4,
+            "public": 3,
+            "commercial": 2,
+            "apartments": 1,
+            "greenhouse": 1,
+            "garage": 1,
+            "residential": 1
+        },
+        "craft": {},
+        "geological": {},
+        "historic": {},
+        "land_area": {},
+        "landuse": {
+            "residential": 1521,
+            "grass": 244,
+            "retail": 145,
+            "industrial": 124,
+            "commercial": 110,
+            "construction": 92,
+            "education": 49,
+            "recreation_ground": 39,
+            "farmland": 37,
+            "meadow": 34,
+            "religious": 29,
+            "proposed": 21,
+            "village_green": 13,
+            "government": 13,
+            "farmyard": 11,
+            "forest": 10,
+            "cemetery": 6,
+            "governmental": 5,
+            "garages": 4,
+            "military": 3
+        },
+        "leisure": {
+            "park": 26,
+            "pitch": 4,
+            "outdoor_seating": 2,
+            "common": 2,
+            "swimming_pool": 1
+        },
+        "man_made": {
+            "works": 1
+        },
+        "military": {},
+        "natural": {
+            "water": 2,
+            "wood": 1,
+            "grassland": 1
+        },
+        "office": {
+            "company": 2,
+            "construction": 1,
+            "yes": 1
+        },
+        "place": {
+            "city_block": 3
+        },
+        "shop": {
+            "wholesale": 1,
+            "convenience": 1,
+            "car_parts": 1
+        },
+        "sport": {
+            "multi": 2,
+            "football;volleyball;basketball": 1,
+            "basketball": 1,
+            "football": 1
+        },
+        "tourism": {
+            "attraction": 1
+        },
+        "other_tags": {
+            "\"residential\"=>\"térreo\"": 142,
+            "\"residential\"=>\"2_andares\"": 106,
+            "\"residential\"=>\"condominium\"": 39,
+            "\"residential\"=>\"apartments\"": 31,
+            "\"building:levels\"=>\"1\",\"height\"=>\"3\"": 29,
+            "\"farmland\"=>\"agricultural\"": 25,
+            "\"building:levels\"=>\"1\"": 18,
+            "\"building:levels\"=>\"1\",\"height\"=>\"4\"": 18,
+            "\"building:levels\"=>\"2\",\"height\"=>\"6\"": 13,
+            "\"building:levels\"=>\"2\"": 11,
+            "\"construction\"=>\"residential\",\"residential\"=>\"apartments\"": 7,
+            "\"source:name\"=>\"Mapa Plano Diretor 2014.\"": 6,
+            "\"residential\"=>\"urban\"": 6,
+            "\"construction\"=>\"residential\",\"residential\"=>\"condominium\"": 5,
+            "\"construction\"=>\"commercial\"": 5,
+            "\"religion\"=>\"christian\"": 4,
+            "\"height\"=>\"6\"": 3,
+            "\"industrial\"=>\"scrap_yard\"": 3,
+            "\"residential\"=>\"teérreo\"": 3,
+            "\"building:levels\"=>\"3\",\"height\"=>\"9\"": 3
+        }
+    },
+    "data_quality": {
+        "completeness": {
+            "percent_missing": {
+                "osm_id": 0.9980392156862745,
+                "osm_way_id": 0.00196078431372549,
+                "name": 0.6380392156862745,
+                "type": 0.9980392156862745,
+                "aeroway": 1.0,
+                "amenity": 0.9941176470588236,
+                "admin_level": 0.9992156862745099,
+                "barrier": 1.0,
+                "boundary": 0.9992156862745099,
+                "building": 0.991764705882353,
+                "craft": 1.0,
+                "geological": 1.0,
+                "historic": 1.0,
+                "land_area": 1.0,
+                "landuse": 0.0,
+                "leisure": 0.9862745098039216,
+                "man_made": 0.9996078431372549,
+                "military": 1.0,
+                "natural": 0.9984313725490196,
+                "office": 0.9984313725490196,
+                "place": 0.9988235294117647,
+                "shop": 0.9988235294117647,
+                "sport": 0.9980392156862745,
+                "tourism": 0.9996078431372549,
+                "other_tags": 0.5262745098039215,
+                "geometry": 0.0
+            },
+            "total_missing_values": 56418,
+            "columns_with_nulls": [
+                "osm_id",
+                "osm_way_id",
+                "name",
+                "type",
+                "aeroway",
+                "amenity",
+                "admin_level",
+                "barrier",
+                "boundary",
+                "building",
+                "craft",
+                "geological",
+                "historic",
+                "land_area",
+                "leisure",
+                "man_made",
+                "military",
+                "natural",
+                "office",
+                "place",
+                "shop",
+                "sport",
+                "tourism",
+                "other_tags"
+            ]
+        },
+        "uniqueness": {
+            "duplicate_rows": 0,
+            "unique_values_by_column": {
+                "osm_id": 5,
+                "osm_way_id": 2545,
+                "name": 899,
+                "type": 1,
+                "aeroway": 0,
+                "amenity": 9,
+                "admin_level": 1,
+                "barrier": 0,
+                "boundary": 1,
+                "building": 8,
+                "craft": 0,
+                "geological": 0,
+                "historic": 0,
+                "land_area": 0,
+                "landuse": 51,
+                "leisure": 5,
+                "man_made": 1,
+                "military": 0,
+                "natural": 3,
+                "office": 3,
+                "place": 1,
+                "shop": 3,
+                "sport": 4,
+                "tourism": 1,
+                "other_tags": 730
+            }
+        }
+    },
+    "spatial_statistics": {
+        "bounds": {
+            "minx": -47.5603807,
+            "miny": -23.5866097,
+            "maxx": -47.3168766941482,
+            "maxy": -23.3621205
+        },
+        "area": {
+            "count": 2550.0,
+            "mean": 1.965281255194483e-06,
+            "std": 8.797565327247208e-06,
+            "min": 2.1296500003119383e-10,
+            "25%": 1.153603375017814e-08,
+            "50%": 6.650317499995448e-08,
+            "75%": 7.705317937484271e-07,
+            "max": 0.00022621126700502376
+        },
+        "length": null,
+        "centroid": {
+            "x": -47.44660186849007,
+            "y": -23.46457087903009
+        },
+        "distribution": {
+            "mean_x": -47.44660186849007,
+            "mean_y": -23.46457087903009,
+            "std_x": 0.03810593225895563,
+            "std_y": 0.04081696295129726,
+            "spatial_distribution": "clustered"
+        }
+    },
+    "sample_geometries": [
+        "POLYGON ((-47.5195834 -23.5866097, -47.5198276 -23.5862642, -47.5194507 -23.5860712, -47.5192171 -23.5864004, -47.5195834 -23.5866097))",
+        "POLYGON ((-47.531767 -23.5811899, -47.5317585 -23.5812567, -47.5319044 -23.5817386, -47.5325266 -23.5816107, -47.5324172 -23.5811781, -47.531767 -23.5811899))",
+        "POLYGON ((-47.5220675 -23.5806812, -47.522552 -23.5806353, -47.5225397 -23.5805257, -47.5220551 -23.5805716, -47.5220675 -23.5806812))",
+        "POLYGON ((-47.5304798 -23.579318, -47.5304066 -23.5792115, -47.529836 -23.5793727, -47.5290978 -23.579532, -47.5292952 -23.5798329, -47.5294519 -23.5797543, -47.5299755 -23.5805822, -47.5299819 -23.5806609, -47.5299454 -23.5807179, -47.5312799 -23.5806314, -47.5304798 -23.579318))",
+        "POLYGON ((-47.5241086 -23.5761778, -47.5244659 -23.5758316, -47.5249558 -23.5756071, -47.5254458 -23.5754574, -47.5261296 -23.5751861, -47.52648 -23.5748068, -47.5263065 -23.5741893, -47.5260513 -23.5736374, -47.5258012 -23.5730499, -47.5256737 -23.5725241, -47.5257757 -23.5719908, -47.525722 -23.5717413, -47.5256328 -23.5713266, -47.5254657 -23.5703096, -47.5253802 -23.5699409, -47.5249285 -23.568044, -47.5245815 -23.5673049, -47.5245011 -23.5671137, -47.5241842 -23.5671643, -47.5236607 -23.5674475, -47.5232144 -23.5679038, -47.5230298 -23.568305, -47.5229182 -23.5687888, -47.5227165 -23.5691428, -47.5224075 -23.5695244, -47.5221553 -23.5701156, -47.5219 -23.5708597, -47.5217443 -23.5715591, -47.5214733 -23.5721763, -47.5214478 -23.5726591, -47.5214803 -23.573459, -47.5222914 -23.5744576, -47.5230639 -23.5752624, -47.5209546 -23.5772664, -47.5229246 -23.5781236, -47.5241086 -23.5761778))"
+    ],
+    "preprocessing_recommendations": [
+        "Handle missing values in columns: osm_id, osm_way_id, name, type, aeroway, amenity, admin_level, barrier, boundary, building, craft, geological, historic, land_area, leisure, man_made, military, natural, office, place, shop, sport, tourism, other_tags.",
+        "Data appears spatially clustered, consider analyzing this pattern."
+    ],
+    "topology": {
+        "error": "No module named 'networkx'"
+    },
+    "graph_integration_recommendations": [
+        "Consider attribute-based graph links using categorical attributes like 'landuse'."
+    ]
+}

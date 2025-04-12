@@ -1,0 +1,74 @@
+{
+    "latitude": {
+        "contagem_outliers": 0,
+        "percentual": 0.0,
+        "valor_min": -22.11999999,
+        "valor_max": -22.11999999,
+        "limite_inferior": -22.11999999,
+        "limite_superior": -22.11999999
+    },
+    "longitude": {
+        "contagem_outliers": 0,
+        "percentual": 0.0,
+        "valor_min": -51.40861111,
+        "valor_max": -51.40861111,
+        "limite_inferior": -51.40861111,
+        "limite_superior": -51.40861111
+    },
+    "altitude_m": {
+        "contagem_outliers": 0,
+        "percentual": 0.0,
+        "valor_min": 431.92,
+        "valor_max": 431.92,
+        "limite_inferior": 431.92,
+        "limite_superior": 431.92
+    },
+    "temperature_c": {
+        "contagem_outliers": 0,
+        "percentual": 0.0,
+        "valor_min": 5.5,
+        "valor_max": 39.6,
+        "limite_inferior": 1.70000000000001,
+        "limite_superior": 49.29999999999999
+    },
+    "humidity_pct": {
+        "contagem_outliers": 0,
+        "percentual": 0.0,
+        "valor_min": 10.0,
+        "valor_max": 99.0,
+        "limite_inferior": -54.0,
+        "limite_superior": 177.0
+    },
+    "pressure_mb": {
+        "contagem_outliers": 0,
+        "percentual": 0.0,
+        "valor_min": 953.7,
+        "valor_max": 975.0,
+        "limite_inferior": 946.9999999999998,
+        "limite_superior": 980.6000000000003
+    },
+    "wind_speed_ms": {
+        "contagem_outliers": 1,
+        "percentual": 0.011384335154826957,
+        "valor_min": 0.1,
+        "valor_max": 6.1,
+        "limite_inferior": -2.3999999999999995,
+        "limite_superior": 6.0
+    },
+    "wind_direction_deg": {
+        "contagem_outliers": 0,
+        "percentual": 0.0,
+        "valor_min": 1.0,
+        "valor_max": 360.0,
+        "limite_inferior": -262.0,
+        "limite_superior": 501.0
+    },
+    "precipitation_mm": {
+        "contagem_outliers": 186,
+        "percentual": 2.1174863387978142,
+        "valor_min": 0.0,
+        "valor_max": 31.2,
+        "limite_inferior": 0.0,
+        "limite_superior": 0.0
+    }
+}

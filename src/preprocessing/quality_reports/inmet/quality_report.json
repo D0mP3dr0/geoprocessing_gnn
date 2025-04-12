@@ -1,0 +1,151 @@
+{
+    "arquivos_processados": 1,
+    "registros_totais": 8784,
+    "colunas_totais": 13,
+    "valores_ausentes": {
+        "latitude": {
+            "contagem_nulos": 0,
+            "percentual": 0.0
+        },
+        "longitude": {
+            "contagem_nulos": 0,
+            "percentual": 0.0
+        },
+        "altitude_m": {
+            "contagem_nulos": 0,
+            "percentual": 0.0
+        },
+        "temperature_c": {
+            "contagem_nulos": 215,
+            "percentual": 2.447632058287796
+        },
+        "humidity_pct": {
+            "contagem_nulos": 215,
+            "percentual": 2.447632058287796
+        },
+        "pressure_mb": {
+            "contagem_nulos": 215,
+            "percentual": 2.447632058287796
+        },
+        "wind_speed_ms": {
+            "contagem_nulos": 224,
+            "percentual": 2.5500910746812386
+        },
+        "wind_direction_deg": {
+            "contagem_nulos": 224,
+            "percentual": 2.5500910746812386
+        },
+        "precipitation_mm": {
+            "contagem_nulos": 5738,
+            "percentual": 65.32331511839709
+        },
+        "region": {
+            "contagem_nulos": 0,
+            "percentual": 0.0
+        },
+        "state": {
+            "contagem_nulos": 0,
+            "percentual": 0.0
+        },
+        "station": {
+            "contagem_nulos": 0,
+            "percentual": 0.0
+        },
+        "wmo_code": {
+            "contagem_nulos": 0,
+            "percentual": 0.0
+        }
+    },
+    "outliers": {
+        "latitude": {
+            "contagem_outliers": 0,
+            "percentual": 0.0,
+            "valor_min": -22.11999999,
+            "valor_max": -22.11999999,
+            "limite_inferior": -22.11999999,
+            "limite_superior": -22.11999999
+        },
+        "longitude": {
+            "contagem_outliers": 0,
+            "percentual": 0.0,
+            "valor_min": -51.40861111,
+            "valor_max": -51.40861111,
+            "limite_inferior": -51.40861111,
+            "limite_superior": -51.40861111
+        },
+        "altitude_m": {
+            "contagem_outliers": 0,
+            "percentual": 0.0,
+            "valor_min": 431.92,
+            "valor_max": 431.92,
+            "limite_inferior": 431.92,
+            "limite_superior": 431.92
+        },
+        "temperature_c": {
+            "contagem_outliers": 0,
+            "percentual": 0.0,
+            "valor_min": 5.5,
+            "valor_max": 39.6,
+            "limite_inferior": 1.70000000000001,
+            "limite_superior": 49.29999999999999
+        },
+        "humidity_pct": {
+            "contagem_outliers": 0,
+            "percentual": 0.0,
+            "valor_min": 10.0,
+            "valor_max": 99.0,
+            "limite_inferior": -54.0,
+            "limite_superior": 177.0
+        },
+        "pressure_mb": {
+            "contagem_outliers": 0,
+            "percentual": 0.0,
+            "valor_min": 953.7,
+            "valor_max": 975.0,
+            "limite_inferior": 946.9999999999998,
+            "limite_superior": 980.6000000000003
+        },
+        "wind_speed_ms": {
+            "contagem_outliers": 1,
+            "percentual": 0.011384335154826957,
+            "valor_min": 0.1,
+            "valor_max": 6.1,
+            "limite_inferior": -2.3999999999999995,
+            "limite_superior": 6.0
+        },
+        "wind_direction_deg": {
+            "contagem_outliers": 0,
+            "percentual": 0.0,
+            "valor_min": 1.0,
+            "valor_max": 360.0,
+            "limite_inferior": -262.0,
+            "limite_superior": 501.0
+        },
+        "precipitation_mm": {
+            "contagem_outliers": 186,
+            "percentual": 2.1174863387978142,
+            "valor_min": 0.0,
+            "valor_max": 31.2,
+            "limite_inferior": 0.0,
+            "limite_superior": 0.0
+        }
+    },
+    "colunas_numericas": [
+        "latitude",
+        "longitude",
+        "altitude_m",
+        "temperature_c",
+        "humidity_pct",
+        "pressure_mb",
+        "wind_speed_ms",
+        "wind_direction_deg",
+        "precipitation_mm"
+    ],
+    "colunas_categoricas": [
+        "region",
+        "state",
+        "station",
+        "wmo_code"
+    ],
+    "colunas_temporais": []
+}

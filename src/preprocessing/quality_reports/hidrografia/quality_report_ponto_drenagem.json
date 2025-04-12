@@ -1,0 +1,88 @@
+{
+    "layer_type": "ponto_drenagem",
+    "data_summary": {
+        "total_features": 49,
+        "crs": "EPSG:4674",
+        "geometry_types": [
+            "Point"
+        ],
+        "total_columns": 6,
+        "memory_usage_mb": 0.012073516845703125
+    },
+    "completeness": {
+        "missing_values": {
+            "drp_pk": 0,
+            "idponto": 0,
+            "cocursodag": 0,
+            "deponto": 0,
+            "dsversao": 0,
+            "geometry": 0
+        },
+        "total_missing": 0
+    },
+    "numeric_statistics": {
+        "drp_pk": {
+            "min": 254480.0,
+            "max": 258998.0,
+            "mean": 256292.3673469388,
+            "std": 1280.4451504939889,
+            "median": 256173.0
+        },
+        "idponto": {
+            "min": 254480.0,
+            "max": 258998.0,
+            "mean": 256292.3673469388,
+            "std": 1280.4451504939889,
+            "median": 256173.0
+        }
+    },
+    "categorical_statistics": {
+        "cocursodag": {
+            "unique_values": 28,
+            "top_values": {
+                "86687472": 2,
+                "8668892": 2,
+                "8668842": 2,
+                "866884": 2,
+                "8668916": 2,
+                "866878": 2,
+                "8668812": 2,
+                "8668914": 2,
+                "86687432": 2,
+                "8668912": 2
+            },
+            "null_count": 0
+        },
+        "deponto": {
+            "unique_values": 2,
+            "top_values": {
+                "Fim do Curso Dagua": 28,
+                "Inicio do Curso Dagua": 21
+            },
+            "null_count": 0
+        },
+        "dsversao": {
+            "unique_values": 1,
+            "top_values": {
+                "BHO bho_2017_v_01_05_5k de 2018-06-20": 49
+            },
+            "null_count": 0
+        }
+    },
+    "topology": {
+        "total_features": 49,
+        "invalid_geometries": 0
+    },
+    "bounds": {
+        "minx": -47.5525938,
+        "miny": -23.582755,
+        "maxx": -47.309323899999995,
+        "maxy": -23.3606096
+    },
+    "timestamp": "2025-04-12 13:40:01",
+    "area_of_interest": {
+        "file": "f:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba.gpkg",
+        "crs": "EPSG:4674",
+        "area_km2": 3.975824449557509e-08
+    }
+}

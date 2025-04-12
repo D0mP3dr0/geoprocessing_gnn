@@ -1,0 +1,12 @@
+{
+    "media": 963.943062200957,
+    "mediana": 963.5,
+    "desvio_padrao": 3.5778677953169877,
+    "minimo": 953.7,
+    "maximo": 975.0,
+    "q1": 961.4,
+    "q3": 966.2,
+    "contagem": 8569,
+    "valores_nulos": 215,
+    "percentual_nulos": 2.447632058287796
+}

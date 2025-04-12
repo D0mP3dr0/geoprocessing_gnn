@@ -1,0 +1,207 @@
+{
+    "file_path": "data\\sorocaba_waterways.gpkg",
+    "layer": "default",
+    "crs": "EPSG:4674",
+    "columns": [
+        "osm_id",
+        "name",
+        "highway",
+        "waterway",
+        "aerialway",
+        "barrier",
+        "man_made",
+        "railway",
+        "z_order",
+        "other_tags",
+        "geometry",
+        "geometry_wkt"
+    ],
+    "data_types": {
+        "osm_id": "object",
+        "name": "object",
+        "highway": "object",
+        "waterway": "object",
+        "aerialway": "object",
+        "barrier": "object",
+        "man_made": "object",
+        "railway": "object",
+        "z_order": "int32",
+        "other_tags": "object",
+        "geometry": "geometry",
+        "geometry_wkt": "object"
+    },
+    "num_features": 1603,
+    "geometry_types": [
+        "LineString",
+        "MultiLineString"
+    ],
+    "basic_stats": {
+        "z_order": {
+            "count": 1603.0,
+            "mean": -2.5202744853399874,
+            "std": 4.414402364898051,
+            "min": -20.0,
+            "25%": -5.0,
+            "50%": 0.0,
+            "75%": 0.0,
+            "max": 10.0
+        }
+    },
+    "categorical_stats": {
+        "osm_id": {
+            "673007213": 1,
+            "1330310112": 1,
+            "1330310104": 1,
+            "939421341": 1,
+            "939421489": 1,
+            "1106984061": 1,
+            "1175748928": 1,
+            "1106984055": 1,
+            "1106984060": 1,
+            "1100733053": 1,
+            "1106984058": 1,
+            "1106984054": 1,
+            "1106984059": 1,
+            "1100733054": 1,
+            "1034672791": 1,
+            "1108376542": 1,
+            "1108376543": 1,
+            "635725351": 1,
+            "1175750307": 1,
+            "1082792629": 1
+        },
+        "name": {
+            "Córrego Itanguá": 35,
+            "Córrego Lavapés": 25,
+            "Córrego Àgua Vermelha": 21,
+            "Córrego Supiriri": 17,
+            "Ribeirão Taquaravay": 17,
+            "Córrego Areia Branca": 15,
+            "Rio Pirajibu": 15,
+            "Córrego CETESB": 13,
+            "Córrego do Matadouro": 13,
+            "Córrego Lavapes": 11,
+            "Rio Ipanema": 10,
+            "Córrego do Meladeiro": 9,
+            "Córrego Águas do Ferraz": 9,
+            "Córrego Água Vermelha": 9,
+            "Ribeirão Indaiatuba": 8,
+            "Ribeirão Itaguaravai": 8,
+            "Córrego do Eufrásio": 8,
+            "Rio Ipaneminha das Pedras": 6,
+            "Córrego do Rosário": 6,
+            "Córrego Pirajibu-Mirim": 6
+        },
+        "highway": {},
+        "waterway": {
+            "stream": 1529,
+            "river": 42,
+            "canal": 32
+        },
+        "aerialway": {},
+        "barrier": {},
+        "man_made": {},
+        "railway": {},
+        "other_tags": {
+            "\"layer\"=>\"-1\",\"tunnel\"=>\"culvert\"": 302,
+            "\"tunnel\"=>\"culvert\"": 65,
+            "\"layer\"=>\"-1\"": 41,
+            "\"source:name\"=>\"IBGE\"": 31,
+            "\"boat\"=>\"no\"": 16,
+            "\"layer\"=>\"-1\",\"source:name\"=>\"IBGE\",\"tunnel\"=>\"culvert\"": 11,
+            "\"boat\"=>\"no\",\"layer\"=>\"-1\",\"tunnel\"=>\"culvert\"": 11,
+            "\"source:name\"=>\"IBGE\",\"tunnel\"=>\"culvert\"": 7,
+            "\"boat\"=>\"prohibited\"": 7,
+            "\"alt_name\"=>\"Córrego do Curtume\"": 7,
+            "\"alt_name\"=>\"Ribeirão Taquaravay\"": 7,
+            "\"boat\"=>\"no\",\"source:name\"=>\"IBGE\",\"width\"=>\"3\"": 6,
+            "\"boat\"=>\"no\",\"tunnel\"=>\"culvert\"": 6,
+            "\"boat\"=>\"prohibited\",\"layer\"=>\"-1\"": 5,
+            "\"alt_name\"=>\"Córrego do Curtume\",\"layer\"=>\"-1\",\"tunnel\"=>\"culvert\"": 5,
+            "\"boat\"=>\"prohibited\",\"layer\"=>\"-1\",\"tunnel\"=>\"culvert\"": 5,
+            "\"alt_name\"=>\"Córrego Eufrasio\",\"source:name\"=>\"IBGE\"": 5,
+            "\"intermittent\"=>\"no\"": 4,
+            "\"layer\"=>\"-1\",\"tunnel\"=>\"yes\"": 4,
+            "\"alt_name\"=>\"Ribeirão Taquaravay\",\"layer\"=>\"-1\",\"tunnel\"=>\"culvert\"": 4
+        }
+    },
+    "data_quality": {
+        "completeness": {
+            "percent_missing": {
+                "osm_id": 0.0,
+                "name": 0.8009981285090455,
+                "highway": 1.0,
+                "waterway": 0.0,
+                "aerialway": 1.0,
+                "barrier": 1.0,
+                "man_made": 1.0,
+                "railway": 1.0,
+                "z_order": 0.0,
+                "other_tags": 0.6313162819713038,
+                "geometry": 0.0
+            },
+            "total_missing_values": 10311,
+            "columns_with_nulls": [
+                "name",
+                "highway",
+                "aerialway",
+                "barrier",
+                "man_made",
+                "railway",
+                "other_tags"
+            ]
+        },
+        "uniqueness": {
+            "duplicate_rows": 0,
+            "unique_values_by_column": {
+                "osm_id": 1603,
+                "name": 41,
+                "highway": 0,
+                "waterway": 3,
+                "aerialway": 0,
+                "barrier": 0,
+                "man_made": 0,
+                "railway": 0,
+                "z_order": 4,
+                "other_tags": 50
+            }
+        }
+    },
+    "spatial_statistics": {
+        "bounds": {
+            "minx": -47.570493178738054,
+            "miny": -23.589313099456554,
+            "maxx": -47.30292684493468,
+            "maxy": -23.351636581144785
+        },
+        "area": null,
+        "length": null,
+        "centroid": {
+            "x": -47.456394001871075,
+            "y": -23.474825529839336
+        },
+        "distribution": {
+            "mean_x": -47.456394001871075,
+            "mean_y": -23.474825529839336,
+            "std_x": 0.05099202675503583,
+            "std_y": 0.054524334824178726,
+            "spatial_distribution": "dispersed"
+        }
+    },
+    "sample_geometries": [
+        "LINESTRING (-47.51972405294787 -23.589313099456554, -47.5193501 -23.5889602)",
+        "MULTILINESTRING ((-47.529050372384326 -23.587605949600047, -47.5290188 -23.587577, -47.5285556 -23.5873989, -47.5276141 -23.5870839, -47.5269565 -23.5869744, -47.5266577 -23.5871798, -47.52664791754637 -23.58718328749927), (-47.525128073683895 -23.5877276, -47.524883746059025 -23.5877276), (-47.52335123137836 -23.587784386048362, -47.5232056 -23.5878098, -47.5227274 -23.5881111, -47.52244737220558 -23.588199347989583), (-47.52154609803377 -23.588258260630827, -47.521233 -23.5882344, -47.5208295 -23.5883987, -47.5204858 -23.5887822, -47.5200375 -23.5890287, -47.5193501 -23.5889602, -47.5186776 -23.5884398, -47.5184086 -23.5875222, -47.5176464 -23.5867279, -47.5165256 -23.58618, -47.5156516 -23.5854918, -47.515515346579484 -23.585384501998192))",
+        "LINESTRING (-47.5244902 -23.5864567, -47.5246695 -23.5869087, -47.5247293 -23.5872374, -47.52457130463577 -23.58765536129975)",
+        "LINESTRING (-47.5230555 -23.585183, -47.5227865 -23.5858404, -47.5228463 -23.58658, -47.5226969 -23.5870593, -47.5227417 -23.5876482, -47.5227274 -23.5881111)",
+        "LINESTRING (-47.5194474 -23.5784862, -47.5195385 -23.5795473, -47.5196035 -23.5803581, -47.5195125 -23.5813358, -47.5194084 -23.581932, -47.5193564 -23.5829216, -47.5191612 -23.5836012, -47.5181465 -23.5846385, -47.5173399 -23.5848769, -47.5164683 -23.5852465, -47.5156516 -23.5854918)"
+    ],
+    "preprocessing_recommendations": [
+        "Handle missing values in columns: name, highway, aerialway, barrier, man_made, railway, other_tags."
+    ],
+    "topology": {
+        "error": "No module named 'networkx'"
+    },
+    "graph_integration_recommendations": [
+        "Consider attribute-based graph links using categorical attributes like 'osm_id'."
+    ]
+}

@@ -1,0 +1,190 @@
+{
+    "file_path": "data\\sorocaba_railway.gpkg",
+    "layer": "default",
+    "crs": "EPSG:4674",
+    "columns": [
+        "osm_id",
+        "name",
+        "highway",
+        "waterway",
+        "aerialway",
+        "barrier",
+        "man_made",
+        "railway",
+        "z_order",
+        "other_tags",
+        "geometry",
+        "geometry_wkt"
+    ],
+    "data_types": {
+        "osm_id": "object",
+        "name": "object",
+        "highway": "object",
+        "waterway": "object",
+        "aerialway": "object",
+        "barrier": "object",
+        "man_made": "object",
+        "railway": "object",
+        "z_order": "int32",
+        "other_tags": "object",
+        "geometry": "geometry",
+        "geometry_wkt": "object"
+    },
+    "num_features": 84,
+    "geometry_types": [
+        "LineString"
+    ],
+    "basic_stats": {
+        "z_order": {
+            "count": 84.0,
+            "mean": 10.238095238095237,
+            "std": 9.37520319152533,
+            "min": -15.0,
+            "25%": 5.0,
+            "50%": 5.0,
+            "75%": 15.0,
+            "max": 25.0
+        }
+    },
+    "categorical_stats": {
+        "osm_id": {
+            "315156441": 1,
+            "286522066": 1,
+            "315156438": 1,
+            "175820291": 1,
+            "316453933": 1,
+            "316453934": 1,
+            "484583267": 1,
+            "204710292": 1,
+            "167701795": 1,
+            "167701800": 1,
+            "167484521": 1,
+            "167491092": 1,
+            "167641142": 1,
+            "151171212": 1,
+            "167641139": 1,
+            "151171211": 1,
+            "167641134": 1,
+            "151171213": 1,
+            "167641144": 1,
+            "151171215": 1
+        },
+        "name": {
+            "Estrada de Ferro Sorocabana": 46,
+            "Viaduto Augusto Martins": 2,
+            "Viaduto Gentil Francisco Gebaile": 2,
+            "Viaduto Raul José Gebaile": 2,
+            "Pontilhão Alessandro Fernandes dos Santos": 1,
+            "Pontilhão José Leonidas Bellini": 1
+        },
+        "highway": {},
+        "waterway": {},
+        "aerialway": {},
+        "barrier": {},
+        "man_made": {},
+        "railway": {
+            "rail": 84
+        },
+        "other_tags": {
+            "\"branch\"=>\"Malha Oeste\",\"electrified\"=>\"no\",\"gauge\"=>\"1000\",\"official_name\"=>\"Linha Mairinque-Bauru\",\"operator\"=>\"Rumo S/A\",\"owner\"=>\"União Federal\",\"passenger_lines\"=>\"2\",\"railway:ref\"=>\"EF-265;EF-116\",\"railway:traffic_mode\"=>\"freight\",\"ref\"=>\"EF-265;EF-116\",\"usage\"=>\"main\"": 24,
+            "\"branch\"=>\"Malha Oeste\",\"bridge\"=>\"yes\",\"electrified\"=>\"no\",\"gauge\"=>\"1000\",\"layer\"=>\"1\",\"official_name\"=>\"Linha Mairinque-Bauru\",\"operator\"=>\"Rumo S/A\",\"owner\"=>\"União Federal\",\"passenger_lines\"=>\"2\",\"railway:ref\"=>\"EF-265;EF-116\",\"railway:traffic_mode\"=>\"freight\",\"ref\"=>\"EF-265;EF-116\",\"usage\"=>\"main\"": 12,
+            "\"service\"=>\"yard\"": 10,
+            "\"branch\"=>\"Malha Oeste\",\"bridge\"=>\"viaduct\",\"electrified\"=>\"no\",\"gauge\"=>\"1000\",\"layer\"=>\"1\",\"official_name\"=>\"Linha Mairinque-Bauru\",\"operator\"=>\"Rumo S/A\",\"owner\"=>\"União Federal\",\"passenger_lines\"=>\"2\",\"railway:ref\"=>\"EF-265;EF-116\",\"railway:traffic_mode\"=>\"freight\",\"ref\"=>\"EF-265;EF-116\",\"usage\"=>\"main\"": 6,
+            "\"gauge\"=>\"1000\"": 5,
+            "\"branch\"=>\"Malha Oeste\",\"electrified\"=>\"no\",\"gauge\"=>\"1000\",\"official_name\"=>\"Linha Mairinque-Bauru\",\"operator\"=>\"Rumo S/A\",\"owner\"=>\"União Federal\",\"railway:ref\"=>\"EF-265\",\"railway:traffic_mode\"=>\"freight\",\"ref\"=>\"EF-265;EF-116\",\"usage\"=>\"main\"": 4,
+            "\"service\"=>\"siding\"": 3,
+            "\"gauge\"=>\"1000\",\"passenger_lines\"=>\"1\"": 2,
+            "\"branch\"=>\"Malha Oeste\",\"electrified\"=>\"no\",\"gauge\"=>\"1000\",\"layer\"=>\"-1\",\"official_name\"=>\"Linha Mairinque-Bauru\",\"operator\"=>\"Rumo S/A\",\"owner\"=>\"União Federal\",\"passenger_lines\"=>\"2\",\"railway:ref\"=>\"EF-265;EF-116\",\"railway:traffic_mode\"=>\"freight\",\"ref\"=>\"EF-265;EF-116\",\"tunnel\"=>\"yes\",\"usage\"=>\"main\"": 2,
+            "\"branch\"=>\"Malha Oeste\",\"bridge\"=>\"yes\",\"electrified\"=>\"no\",\"gauge\"=>\"1000\",\"official_name\"=>\"Linha Mairinque-Bauru\",\"operator\"=>\"Rumo S/A\",\"owner\"=>\"União Federal\",\"passenger_lines\"=>\"2\",\"railway:ref\"=>\"EF-265;EF-116\",\"railway:traffic_mode\"=>\"freight\",\"ref\"=>\"EF-265;EF-116\",\"usage\"=>\"main\"": 2,
+            "\"electrified\"=>\"no\",\"gauge\"=>\"1000\"": 2,
+            "\"bridge\"=>\"yes\",\"gauge\"=>\"1000\",\"layer\"=>\"1\"": 2,
+            "\"bridge\"=>\"viaduct\",\"electrified\"=>\"no\",\"gauge\"=>\"1000\",\"layer\"=>\"1\"": 2,
+            "\"branch\"=>\"Malha Oeste\",\"bridge\"=>\"yes\",\"electrified\"=>\"no\",\"gauge\"=>\"1000\",\"layer\"=>\"1\",\"official_name\"=>\"Linha Mairinque-Bauru\",\"operator\"=>\"Rumo S/A\",\"owner\"=>\"União Federal\",\"railway:ref\"=>\"EF-265\",\"railway:traffic_mode\"=>\"freight\",\"ref\"=>\"EF-265;EF-116\",\"usage\"=>\"main\"": 2,
+            "\"bridge\"=>\"viaduct\",\"gauge\"=>\"1000\",\"layer\"=>\"1\"": 1,
+            "\"gauge\"=>\"1000\",\"service\"=>\"siding\"": 1,
+            "\"bridge\"=>\"yes\",\"gauge\"=>\"1000\",\"layer\"=>\"1\",\"passenger_lines\"=>\"1\"": 1,
+            "\"branch\"=>\"Malha Oeste\",\"bridge\"=>\"yes\",\"electrified\"=>\"no\",\"gauge\"=>\"1000\",\"layer\"=>\"1\",\"official_name\"=>\"Pontilão Giovanni Pelizer\",\"operator\"=>\"Rumo S/A\",\"owner\"=>\"União Federal\",\"railway:ref\"=>\"EF-265\",\"railway:traffic_mode\"=>\"freight\",\"ref\"=>\"EF-265;EF-116\",\"usage\"=>\"main\"": 1,
+            "\"layer\"=>\"-1\",\"service\"=>\"yard\"": 1,
+            "\"branch\"=>\"Malha Oeste\",\"bridge\"=>\"yes\",\"electrified\"=>\"no\",\"gauge\"=>\"1000\",\"layer\"=>\"1\",\"official_name\"=>\"Pontilhão Giovanni Pelizer\",\"operator\"=>\"Rumo S/A\",\"owner\"=>\"União Federal\",\"railway:ref\"=>\"EF-265\",\"railway:traffic_mode\"=>\"freight\",\"ref\"=>\"EF-265;EF-116\",\"usage\"=>\"main\"": 1
+        }
+    },
+    "data_quality": {
+        "completeness": {
+            "percent_missing": {
+                "osm_id": 0.0,
+                "name": 0.35714285714285715,
+                "highway": 1.0,
+                "waterway": 1.0,
+                "aerialway": 1.0,
+                "barrier": 1.0,
+                "man_made": 1.0,
+                "railway": 0.0,
+                "z_order": 0.0,
+                "other_tags": 0.0,
+                "geometry": 0.0
+            },
+            "total_missing_values": 450,
+            "columns_with_nulls": [
+                "name",
+                "highway",
+                "waterway",
+                "aerialway",
+                "barrier",
+                "man_made"
+            ]
+        },
+        "uniqueness": {
+            "duplicate_rows": 0,
+            "unique_values_by_column": {
+                "osm_id": 84,
+                "name": 6,
+                "highway": 0,
+                "waterway": 0,
+                "aerialway": 0,
+                "barrier": 0,
+                "man_made": 0,
+                "railway": 1,
+                "z_order": 5,
+                "other_tags": 20
+            }
+        }
+    },
+    "spatial_statistics": {
+        "bounds": {
+            "minx": -47.54459403828501,
+            "miny": -23.526963,
+            "maxx": -47.30282489963486,
+            "maxy": -23.449767003595948
+        },
+        "area": null,
+        "length": null,
+        "centroid": {
+            "x": -47.43939045602475,
+            "y": -23.496030679704983
+        },
+        "distribution": {
+            "mean_x": -47.43939045602475,
+            "mean_y": -23.496030679704983,
+            "std_x": 0.035597443292706,
+            "std_y": 0.009224603098623026,
+            "spatial_distribution": "clustered"
+        }
+    },
+    "sample_geometries": [
+        "LINESTRING (-47.4445747 -23.5192698, -47.4455108 -23.5197067, -47.4466694 -23.520296, -47.4467672 -23.5203556, -47.446795 -23.5203743, -47.4468438 -23.5204047, -47.4469587 -23.5205099, -47.447048 -23.5206298, -47.4471373 -23.5207985, -47.447196 -23.5209367, -47.4472253 -23.5211177, -47.4472327 -23.5212792, -47.4472253 -23.5214908, -47.4471764 -23.5219787, -47.4471703 -23.522068, -47.4471752 -23.5221866, -47.4471972 -23.5223383, -47.447251 -23.5225034, -47.4473232 -23.5226722, -47.4474528 -23.5229033, -47.4475959 -23.523088, -47.4477659 -23.5232531, -47.4481291 -23.5235894, -47.448514 -23.5239494, -47.4486657 -23.5241524, -47.4487452 -23.5242992, -47.4488149 -23.52449, -47.4488259 -23.5246551, -47.4488173 -23.5248251, -47.4487537 -23.525055, -47.448481 -23.5256347, -47.4483636 -23.5258047, -47.44822108748407 -23.525934317616695)",
+        "LINESTRING (-47.4444633 -23.5192287, -47.4445747 -23.5192698)",
+        "LINESTRING (-47.4442193 -23.5115572, -47.4440945 -23.5115631, -47.4431709 -23.5115873, -47.4423373 -23.5116089, -47.44184 -23.5116366, -47.4416653 -23.5116608, -47.4415365 -23.5116937, -47.4413964 -23.5117706, -47.4411655 -23.5119566, -47.4410548 -23.5120698, -47.4409654 -23.5121844, -47.4408893 -23.5123115, -47.4408475 -23.5124087, -47.440771 -23.5125752, -47.4407176 -23.5127134, -47.4406613 -23.5128993, -47.4406295 -23.5131072, -47.4406234 -23.5133261, -47.4406278 -23.5135232, -47.4410132 -23.5159475, -47.4412347 -23.5172025, -47.4413789 -23.5180437, -47.4414131 -23.5182284, -47.4414804 -23.5183837, -47.4415635 -23.5185402, -47.4416687 -23.5186723, -47.4418224 -23.5187995, -47.44196 -23.518879, -47.4420942 -23.5189432, -47.4422311 -23.5189941, -47.4424201 -23.5190236, -47.4425781 -23.5190127, -47.4431858 -23.5189759, -47.4435628 -23.5189674, -47.4437557 -23.5189648, -47.443938 -23.5190127, -47.4441033 -23.519059, -47.4444633 -23.5192287)",
+        "LINESTRING (-47.452115 -23.5024825, -47.451944 -23.5029321, -47.4516946 -23.503638, -47.4513837 -23.5041334, -47.4504956 -23.5054877, -47.4500531 -23.5062379, -47.4498814 -23.5068036, -47.4497312 -23.5070815, -47.4495206 -23.5073373, -47.4492704 -23.5074547, -47.4492183 -23.5074792, -47.4491535 -23.5075149, -47.4483441 -23.5079603, -47.4482962 -23.5079867, -47.448028 -23.5082966, -47.4466168 -23.5100188, -47.4461692 -23.5105348, -47.4457736 -23.5110403, -47.4455878 -23.5111714, -47.4454061 -23.5112591, -47.4451265 -23.5113908, -47.4446532 -23.5115125, -47.444334 -23.5115518, -47.4442193 -23.5115572)",
+        "LINESTRING (-47.4474689 -23.497631, -47.4473761 -23.4976499)"
+    ],
+    "preprocessing_recommendations": [
+        "Handle missing values in columns: name, highway, waterway, aerialway, barrier, man_made.",
+        "Data appears spatially clustered, consider analyzing this pattern."
+    ],
+    "topology": {
+        "error": "No module named 'networkx'"
+    },
+    "graph_integration_recommendations": [
+        "Consider attribute-based graph links using categorical attributes like 'osm_id'."
+    ]
+}

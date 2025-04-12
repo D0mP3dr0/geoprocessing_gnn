@@ -1,0 +1,54 @@
+{
+    "latitude": {
+        "contagem_nulos": 0,
+        "percentual": 0.0
+    },
+    "longitude": {
+        "contagem_nulos": 0,
+        "percentual": 0.0
+    },
+    "altitude_m": {
+        "contagem_nulos": 0,
+        "percentual": 0.0
+    },
+    "temperature_c": {
+        "contagem_nulos": 215,
+        "percentual": 2.447632058287796
+    },
+    "humidity_pct": {
+        "contagem_nulos": 215,
+        "percentual": 2.447632058287796
+    },
+    "pressure_mb": {
+        "contagem_nulos": 215,
+        "percentual": 2.447632058287796
+    },
+    "wind_speed_ms": {
+        "contagem_nulos": 224,
+        "percentual": 2.5500910746812386
+    },
+    "wind_direction_deg": {
+        "contagem_nulos": 224,
+        "percentual": 2.5500910746812386
+    },
+    "precipitation_mm": {
+        "contagem_nulos": 5738,
+        "percentual": 65.32331511839709
+    },
+    "region": {
+        "contagem_nulos": 0,
+        "percentual": 0.0
+    },
+    "state": {
+        "contagem_nulos": 0,
+        "percentual": 0.0
+    },
+    "station": {
+        "contagem_nulos": 0,
+        "percentual": 0.0
+    },
+    "wmo_code": {
+        "contagem_nulos": 0,
+        "percentual": 0.0
+    }
+}

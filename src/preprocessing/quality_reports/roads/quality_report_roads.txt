@@ -1,0 +1,39 @@
+===== RELATÓRIO DE QUALIDADE DA REDE VIÁRIA =====
+
+Data/Hora: 2025-04-12 15:06:07
+
+== RESUMO DOS DADOS ==
+Total de feições: 13328
+CRS: EPSG:4674
+Tipos de geometria: LineString, MultiLineString
+Uso de memória: 7.77 MB
+
+== ESTATÍSTICAS DA REDE VIÁRIA ==
+Comprimento total: 2608.98 km
+
+Classes de via:
+- local: 10210 vias
+- collector: 2351 vias
+- arterial: 767 vias
+
+Tipos de highways (OpenStreetMap):
+- residential: 10210 vias
+- secondary: 1575 vias
+- tertiary: 776 vias
+- primary: 485 vias
+- trunk: 154 vias
+- motorway: 128 vias
+
+== ANÁLISE TOPOLÓGICA ==
+Geometrias inválidas: 0
+Componentes conectados: 4650
+Interseções: 2838
+
+== ANÁLISE DE REDE ==
+Nós (junções): 17009
+Arestas (vias): 13277
+Comprimento total: 2586.24 km
+Densidade viária: 4.59 km/km²
+Densidade de interseções: 5.04 interseções/km²
+Índice Beta (conectividade): 0.78
+Índice Gamma (circuitos): 0.26

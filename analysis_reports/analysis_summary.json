@@ -1,0 +1,38 @@
+{
+    "processed_files": [
+        "csv_licenciamento_c55c1dea01bd184e27df233da8ac28a2.csv",
+        "dem.tif",
+        "hidrografia-001.gpkg",
+        "INMET.csv",
+        "Natureza.shp",
+        "Null_SemDomicilios.shp",
+        "sorocaba.gpkg",
+        "sorocaba_buildings.gpkg",
+        "sorocaba_landuse.gpkg",
+        "sorocaba_natural.gpkg",
+        "sorocaba_railway.gpkg",
+        "sorocaba_roads.gpkg",
+        "sorocaba_waterways.gpkg"
+    ],
+    "skipped_files": [
+        "Natureza.cpg",
+        "Natureza.dbf",
+        "Natureza.prj",
+        "Natureza.qml",
+        "Natureza.qpj",
+        "Natureza.shx",
+        "Null_SemDomicilios.cpg",
+        "Null_SemDomicilios.dbf",
+        "Null_SemDomicilios.prj",
+        "Null_SemDomicilios.qml",
+        "Null_SemDomicilios.qpj",
+        "Null_SemDomicilios.shx",
+        "OcupUrbana.cpg",
+        "sorocaba_area.osm.pbf"
+    ],
+    "error_files": [
+        "points_of_interest.gpkg (layer: unknown)",
+        "poi_temp.gpkg (layer: unknown)"
+    ],
+    "timestamp": "2025-04-12T10:34:52.929124"
+}

@@ -1,0 +1,11 @@
+Sumário do Processamento de Rede Viária
+Data/Hora: 2025-04-12 15:06:08
+
+Total de vias: 13328
+
+Distribuição por classe de via:
+  - local: 10210 vias
+  - collector: 2351 vias
+  - arterial: 767 vias
+
+Comprimento total da rede: 2608.98 km

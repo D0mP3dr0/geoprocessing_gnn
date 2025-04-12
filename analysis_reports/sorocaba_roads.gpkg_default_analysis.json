@@ -1,0 +1,214 @@
+{
+    "file_path": "data\\sorocaba_roads.gpkg",
+    "layer": "default",
+    "crs": "EPSG:4674",
+    "columns": [
+        "osm_id",
+        "name",
+        "highway",
+        "waterway",
+        "aerialway",
+        "barrier",
+        "man_made",
+        "railway",
+        "z_order",
+        "other_tags",
+        "geometry",
+        "geometry_wkt"
+    ],
+    "data_types": {
+        "osm_id": "object",
+        "name": "object",
+        "highway": "object",
+        "waterway": "object",
+        "aerialway": "object",
+        "barrier": "object",
+        "man_made": "object",
+        "railway": "object",
+        "z_order": "int32",
+        "other_tags": "object",
+        "geometry": "geometry",
+        "geometry_wkt": "object"
+    },
+    "num_features": 13328,
+    "geometry_types": [
+        "LineString",
+        "MultiLineString"
+    ],
+    "basic_stats": {
+        "z_order": {
+            "count": 13328.0,
+            "mean": 3.9096638655462184,
+            "std": 2.6194755069911215,
+            "min": 3.0,
+            "25%": 3.0,
+            "50%": 3.0,
+            "75%": 3.0,
+            "max": 29.0
+        }
+    },
+    "categorical_stats": {
+        "osm_id": {
+            "246965715": 1,
+            "246965373": 1,
+            "246965734": 1,
+            "1079654002": 1,
+            "246965723": 1,
+            "246965727": 1,
+            "411768839": 1,
+            "411768840": 1,
+            "757489795": 1,
+            "902912271": 1,
+            "902912273": 1,
+            "902912272": 1,
+            "1077654194": 1,
+            "751278908": 1,
+            "246965733": 1,
+            "246965721": 1,
+            "906059908": 1,
+            "906059914": 1,
+            "665078133": 1,
+            "1091749575": 1
+        },
+        "name": {
+            "Avenida Itavuvu": 142,
+            "Rodovia Raposo Tavares": 78,
+            "Avenida Dom Aguirre": 76,
+            "Avenida Ipanema": 71,
+            "Avenida São Paulo": 71,
+            "Avenida Doutor Américo Figueiredo": 66,
+            "Avenida Doutor Armando Pannunzio": 56,
+            "Rodovia Raposo Tavares (Marginal)": 54,
+            "Avenida Doutor Afonso Vergueiro": 48,
+            "Avenida Coronel Nogueira Padilha": 46,
+            "Rodovia João Leme dos Santos": 43,
+            "Avenida Comendador Pereira Inácio": 42,
+            "Avenida General Carneiro": 41,
+            "Avenida Washington Luiz": 39,
+            "Avenida Santa Cruz": 37,
+            "Avenida Doutor Luiz Mendes de Almeida": 33,
+            "Avenida Antonio Silva Saladino": 33,
+            "Avenida Fernando Stecca": 31,
+            "Avenida Jorge Jamil Zamur": 30,
+            "Avenida José Joaquim de Lacerda": 30
+        },
+        "highway": {
+            "residential": 10210,
+            "secondary": 1575,
+            "tertiary": 776,
+            "primary": 485,
+            "trunk": 154,
+            "motorway": 128
+        },
+        "waterway": {},
+        "aerialway": {},
+        "barrier": {},
+        "man_made": {},
+        "railway": {
+            "abandoned": 9
+        },
+        "other_tags": {
+            "\"oneway\"=>\"yes\"": 89,
+            "\"lit\"=>\"yes\",\"sidewalk\"=>\"both\",\"surface\"=>\"asphalt\"": 86,
+            "\"surface\"=>\"unpaved\"": 84,
+            "\"surface\"=>\"asphalt\"": 66,
+            "\"lit\"=>\"yes\",\"oneway\"=>\"yes\",\"sidewalk\"=>\"right\",\"surface\"=>\"asphalt\"": 53,
+            "\"oneway\"=>\"yes\",\"surface\"=>\"asphalt\"": 46,
+            "\"lit\"=>\"yes\",\"oneway\"=>\"yes\",\"sidewalk\"=>\"both\",\"surface\"=>\"asphalt\"": 41,
+            "\"lit\"=>\"yes\",\"oneway\"=>\"yes\",\"sidewalk\"=>\"no\",\"surface\"=>\"asphalt\"": 38,
+            "\"access\"=>\"destination\",\"maxspeed\"=>\"20\",\"surface\"=>\"asphalt\"": 37,
+            "\"lanes\"=>\"2\",\"lit\"=>\"yes\",\"sidewalk\"=>\"both\",\"surface\"=>\"asphalt\"": 35,
+            "\"access\"=>\"destination\",\"maxspeed\"=>\"20\"": 33,
+            "\"lanes\"=>\"3\",\"maxspeed\"=>\"60\",\"oneway\"=>\"yes\",\"postal_code\"=>\"18013-004\",\"surface\"=>\"asphalt\"": 31,
+            "\"lit\"=>\"yes\",\"surface\"=>\"asphalt\"": 26,
+            "\"access\"=>\"destination\",\"lit\"=>\"yes\",\"maxspeed\"=>\"20\",\"sidewalk\"=>\"both\",\"surface\"=>\"asphalt\"": 25,
+            "\"lanes\"=>\"2\",\"lit\"=>\"yes\",\"old_name\"=>\"Estrada do Matarazzo\",\"oneway\"=>\"yes\",\"postal_code\"=>\"18055-215\",\"surface\"=>\"asphalt\"": 23,
+            "\"lanes\"=>\"2\",\"oneway\"=>\"yes\",\"surface\"=>\"asphalt\"": 23,
+            "\"lit\"=>\"yes\",\"oneway\"=>\"yes\",\"sidewalk\"=>\"left\",\"surface\"=>\"asphalt\"": 23,
+            "\"lanes\"=>\"2\",\"lit\"=>\"yes\",\"oneway\"=>\"yes\",\"sidewalk\"=>\"both\",\"surface\"=>\"asphalt\"": 22,
+            "\"access\"=>\"destination\",\"surface\"=>\"asphalt\"": 21,
+            "\"lanes\"=>\"2\",\"old_name\"=>\"Avenida Doutor Armando Salles Oliveira\",\"oneway\"=>\"yes\",\"postal_code\"=>\"18030-005\",\"source:name\"=>\"P.M. de Sorocaba, LEI Nº 252, DE 12 DE DEZEMBRO DE 1951.\",\"source:old_name\"=>\"P.M. de Sorocaba, LEI Nº 77, DE 27 DE NOVEMBRO DE 1948.\",\"surface\"=>\"asphalt\"": 21
+        }
+    },
+    "data_quality": {
+        "completeness": {
+            "percent_missing": {
+                "osm_id": 0.0,
+                "name": 0.05972388955582233,
+                "highway": 0.0,
+                "waterway": 1.0,
+                "aerialway": 1.0,
+                "barrier": 1.0,
+                "man_made": 1.0,
+                "railway": 0.9993247298919568,
+                "z_order": 0.0,
+                "other_tags": 0.014780912364945978,
+                "geometry": 0.0
+            },
+            "total_missing_values": 67624,
+            "columns_with_nulls": [
+                "name",
+                "waterway",
+                "aerialway",
+                "barrier",
+                "man_made",
+                "railway",
+                "other_tags"
+            ]
+        },
+        "uniqueness": {
+            "duplicate_rows": 0,
+            "unique_values_by_column": {
+                "osm_id": 13328,
+                "name": 5989,
+                "highway": 6,
+                "waterway": 0,
+                "aerialway": 0,
+                "barrier": 0,
+                "man_made": 0,
+                "railway": 1,
+                "z_order": 18,
+                "other_tags": 8904
+            }
+        }
+    },
+    "spatial_statistics": {
+        "bounds": {
+            "minx": -47.5654775226983,
+            "miny": -23.58507,
+            "maxx": -47.3046351,
+            "maxy": -23.3539839
+        },
+        "area": null,
+        "length": null,
+        "centroid": {
+            "x": -47.46545055317579,
+            "y": -23.48134116034117
+        },
+        "distribution": {
+            "mean_x": -47.46545055317579,
+            "mean_y": -23.48134116034117,
+            "std_x": 0.040950083328254276,
+            "std_y": 0.037792493636296255,
+            "spatial_distribution": "clustered"
+        }
+    },
+    "sample_geometries": [
+        "LINESTRING (-47.4986411 -23.5828789, -47.4993927 -23.5842411)",
+        "LINESTRING (-47.4976852 -23.5833628, -47.4969324 -23.5821152)",
+        "LINESTRING (-47.4981043 -23.5816351, -47.4987754 -23.5828105)",
+        "LINESTRING (-47.4969857 -23.5776271, -47.4971047 -23.5779109)",
+        "LINESTRING (-47.4970176 -23.5774546, -47.4969857 -23.5776271)"
+    ],
+    "preprocessing_recommendations": [
+        "Handle missing values in columns: name, waterway, aerialway, barrier, man_made, railway, other_tags.",
+        "Investigate potential outliers in column 'z_order'.",
+        "Data appears spatially clustered, consider analyzing this pattern."
+    ],
+    "topology": {
+        "error": "No module named 'networkx'"
+    },
+    "graph_integration_recommendations": [
+        "Consider attribute-based graph links using categorical attributes like 'osm_id'."
+    ]
+}

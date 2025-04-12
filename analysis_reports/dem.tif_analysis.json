@@ -1,0 +1,40 @@
+{
+    "file_path": "data\\dem.tif",
+    "width": 3101,
+    "height": 2265,
+    "count": 1,
+    "crs": "EPSG:31983",
+    "transform": [
+        192457.1295533855,
+        50.0,
+        0.0,
+        7455693.818048746,
+        0.0,
+        -50.0
+    ],
+    "resolution": {
+        "x": 50.0,
+        "y": 50.0
+    },
+    "bounds": {
+        "left": 192457.1295533855,
+        "bottom": 7342443.818048746,
+        "right": 347507.1295533855,
+        "top": 7455693.818048746
+    },
+    "band_statistics": [
+        {
+            "band": 1,
+            "min": 0.008548095028970693,
+            "max": 1400.0,
+            "mean": 712.5178477284833,
+            "std": 188.4134521375613,
+            "median": 750.0,
+            "nodata_value": null,
+            "nodata_percentage": 0
+        }
+    ],
+    "preprocessing_recommendations": [
+        "Convert coordinate system to SIRGAS 2000 (EPSG:4674) for consistency with Brazilian standards."
+    ]
+}

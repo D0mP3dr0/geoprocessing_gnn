@@ -1,0 +1,192 @@
+{
+    "layer_type": "area_drenagem",
+    "data_summary": {
+        "total_features": 78,
+        "crs": "EPSG:4674",
+        "geometry_types": [
+            "Polygon"
+        ],
+        "total_columns": 16,
+        "memory_usage_mb": 0.046896934509277344
+    },
+    "completeness": {
+        "missing_values": {
+            "dra_pk": 0,
+            "idbacia": 0,
+            "cotrecho": 0,
+            "cocursodag": 0,
+            "cobacia": 0,
+            "nuareacont": 0,
+            "nuordemcda": 0,
+            "nunivotto1": 0,
+            "nunivotto2": 0,
+            "nunivotto3": 0,
+            "nunivotto4": 0,
+            "nunivotto5": 0,
+            "nunivotto6": 0,
+            "nunivotto": 0,
+            "dsversao": 0,
+            "geometry": 0
+        },
+        "total_missing": 0
+    },
+    "numeric_statistics": {
+        "dra_pk": {
+            "min": 10176.0,
+            "max": 453065.0,
+            "mean": 240248.1794871795,
+            "std": 121550.8250437402,
+            "median": 269380.5
+        },
+        "idbacia": {
+            "min": 10176.0,
+            "max": 453065.0,
+            "mean": 240248.1794871795,
+            "std": 121550.8250437402,
+            "median": 269380.5
+        },
+        "cotrecho": {
+            "min": 20442.0,
+            "max": 441053.0,
+            "mean": 242327.88461538462,
+            "std": 105683.76031640287,
+            "median": 241227.0
+        },
+        "nuareacont": {
+            "min": 0.782519974173191,
+            "max": 47.0185928003988,
+            "mean": 9.462256217602341,
+            "std": 8.304337297324834,
+            "median": 6.874726295238281
+        },
+        "nuordemcda": {
+            "min": 4.0,
+            "max": 8.0,
+            "mean": 5.217948717948718,
+            "std": 0.8570587135055519,
+            "median": 5.0
+        },
+        "nunivotto": {
+            "min": 6.0,
+            "max": 9.0,
+            "mean": 7.3076923076923075,
+            "std": 0.5617667256463243,
+            "median": 7.0
+        }
+    },
+    "categorical_statistics": {
+        "cocursodag": {
+            "unique_values": 44,
+            "top_values": {
+                "8668": 14,
+                "86688": 8,
+                "866874": 7,
+                "866878": 3,
+                "866884": 2,
+                "866882": 2,
+                "8668794": 2,
+                "8668796": 2,
+                "866876": 2,
+                "8668852": 2
+            },
+            "null_count": 0
+        },
+        "cobacia": {
+            "unique_values": 78,
+            "top_values": {
+                "866869183": 1,
+                "86687442": 1,
+                "8668746": 1,
+                "86687441": 1,
+                "8668745": 1,
+                "86687432": 1,
+                "86687433": 1,
+                "8668782": 1,
+                "86687431": 1,
+                "8668776": 1
+            },
+            "null_count": 0
+        },
+        "nunivotto1": {
+            "unique_values": 1,
+            "top_values": {
+                "8": 78
+            },
+            "null_count": 0
+        },
+        "nunivotto2": {
+            "unique_values": 1,
+            "top_values": {
+                "86": 78
+            },
+            "null_count": 0
+        },
+        "nunivotto3": {
+            "unique_values": 1,
+            "top_values": {
+                "866": 78
+            },
+            "null_count": 0
+        },
+        "nunivotto4": {
+            "unique_values": 2,
+            "top_values": {
+                "8668": 75,
+                "8669": 3
+            },
+            "null_count": 0
+        },
+        "nunivotto5": {
+            "unique_values": 5,
+            "top_values": {
+                "86687": 39,
+                "86688": 21,
+                "86689": 14,
+                "86693": 3,
+                "86686": 1
+            },
+            "null_count": 0
+        },
+        "nunivotto6": {
+            "unique_values": 20,
+            "top_values": {
+                "866874": 14,
+                "866879": 11,
+                "866891": 9,
+                "866877": 7,
+                "866885": 5,
+                "866878": 5,
+                "866882": 4,
+                "866889": 3,
+                "866884": 3,
+                "866881": 3
+            },
+            "null_count": 0
+        },
+        "dsversao": {
+            "unique_values": 1,
+            "top_values": {
+                "BHO bho_2017_v_01_05_5k de 2018-06-20": 78
+            },
+            "null_count": 0
+        }
+    },
+    "topology": {
+        "total_features": 78,
+        "invalid_geometries": 0,
+        "overlapping_areas": 0,
+        "total_area_km2": 6.522844889806491e-08
+    },
+    "bounds": {
+        "minx": -47.620858899999995,
+        "miny": -23.607184399999998,
+        "maxx": -47.255015799999995,
+        "maxy": -23.3146839
+    },
+    "timestamp": "2025-04-12 13:39:57",
+    "area_of_interest": {
+        "file": "f:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba.gpkg",
+        "crs": "EPSG:4674",
+        "area_km2": 3.975824449557509e-08
+    }
+}

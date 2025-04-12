@@ -1,0 +1,34 @@
+{
+    "AlturaAntena": {
+        "contagem_outliers": 1,
+        "percentual": 0.0041245617653124355,
+        "valor_min": 0.1,
+        "valor_max": 618.0,
+        "limite_inferior": -90.0,
+        "limite_superior": 123.5
+    },
+    "FreqTxMHz": {
+        "contagem_outliers": 1177,
+        "percentual": 4.854609197772737,
+        "valor_min": 10.835,
+        "valor_max": 82125.0,
+        "limite_inferior": -2014.4250000000004,
+        "limite_superior": 3073.1312500000004
+    },
+    "FreqRxMHz": {
+        "contagem_outliers": 1177,
+        "percentual": 4.854609197772737,
+        "valor_min": 0.0,
+        "valor_max": 82125.0,
+        "limite_inferior": -1861.725,
+        "limite_superior": 2879.85625
+    },
+    "GanhoAntena": {
+        "contagem_outliers": 0,
+        "percentual": 0.0,
+        "valor_min": 0.0,
+        "valor_max": 50.5,
+        "limite_inferior": -43.5,
+        "limite_superior": 58.0
+    }
+}
