@@ -1,5 +1,5 @@
 {
-    "file_path": "data\\sorocaba.gpkg",
+    "file_path": "F:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba.gpkg",
     "layer": "default",
     "crs": "EPSG:4674",
     "columns": [
@@ -158,7 +158,17 @@
     ],
     "preprocessing_recommendations": [],
     "topology": {
-        "error": "No module named 'networkx'"
+        "connectivity": {},
+        "adjacency": {},
+        "potential_nodes": 1,
+        "potential_edges": 0,
+        "node_candidates": [
+            [
+                -47.446765425912204,
+                -23.464555685955677
+            ]
+        ],
+        "graph_metrics": {}
     },
     "graph_integration_recommendations": [
         "Consider attribute-based graph links using categorical attributes like 'CD_MUN'."

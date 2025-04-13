@@ -1,0 +1,73 @@
+{
+    "report_date": "2025-04-12 19:37:19",
+    "data_summary": {
+        "trecho_drenagem": {
+            "original_features": 64,
+            "enriched_features": 64,
+            "new_attributes": [
+                "betweenness",
+                "strahler_order",
+                "sinuosity"
+            ],
+            "sinuosity": {
+                "mean": 1.35258125010288,
+                "median": 1.2215907562615191,
+                "min": 1.018924457259949,
+                "max": 2.6468728073892684,
+                "std_dev": 0.35159652060175184
+            },
+            "betweenness": {
+                "mean": 0.06856343283582089,
+                "median": 0.023066485753052916,
+                "min": 0.0004522840343735866,
+                "max": 0.30529172320217096,
+                "std_dev": 0.08272552899840345
+            },
+            "strahler_order": {
+                "distribution": {
+                    "4": 12,
+                    "5": 32,
+                    "6": 17,
+                    "7": 3
+                },
+                "max_order": 7
+            },
+            "network_info": {
+                "n_nodes": 67,
+                "n_edges": 64,
+                "n_components": 3,
+                "largest_component_size": 52,
+                "network_density": 0.028946178199909543
+            }
+        },
+        "curso_dagua": {
+            "original_features": 32,
+            "enriched_features": 32,
+            "new_attributes": [
+                "sinuosity"
+            ],
+            "sinuosity": {
+                "mean": 1.3145895823634266,
+                "median": 1.2147362328635334,
+                "min": 1.018924457259949,
+                "max": 2.813446165302663,
+                "std_dev": 0.3361902749237483
+            }
+        },
+        "area_drenagem": {
+            "original_features": 78,
+            "enriched_features": 78,
+            "new_attributes": []
+        },
+        "ponto_drenagem": {
+            "original_features": 49,
+            "enriched_features": 49,
+            "new_attributes": []
+        }
+    },
+    "drainage_density": {
+        "trecho_drenagem": 0.44489718390225697,
+        "curso_dagua": 0.8236990317856462,
+        "total": 1.2685962156879032
+    }
+}

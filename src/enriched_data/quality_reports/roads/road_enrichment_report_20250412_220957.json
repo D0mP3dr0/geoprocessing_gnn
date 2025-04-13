@@ -1,0 +1,20 @@
+{
+    "report_type": "road_network_quality",
+    "timestamp": "2025-04-12T22:10:02.504006",
+    "data_source": "F:\\TESE_MESTRADO\\geoprocessing\\data\\processed\\roads_processed.gpkg",
+    "analysis_area": "N/A",
+    "road_network": {
+        "feature_count": 13328,
+        "total_length_km": 2849.473383832095,
+        "sinuosity": {
+            "mean": 1.0501658019213242,
+            "median": 1.000007371634974,
+            "max": 54.839962485442946,
+            "min": 1.0,
+            "std": 0.7783871559636224
+        }
+    },
+    "intersections": {},
+    "topography": {},
+    "quality_metrics": {}
+}

@@ -1,5 +1,5 @@
 {
-    "file_path": "data\\INMET.csv",
+    "file_path": "F:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\INMET.csv",
     "columns": [
         "REGIAO:",
         "SE",

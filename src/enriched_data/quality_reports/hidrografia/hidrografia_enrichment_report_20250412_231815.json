@@ -1,0 +1,129 @@
+{
+    "name": "Relat\u00f3rio de Qualidade dos Dados Hidrogr\u00e1ficos",
+    "report_date": "2025-04-12 23:18:15",
+    "enriched_data_path": "f:\\TESE_MESTRADO\\geoprocessing\\data\\enriched_data\\hidrografia_enriched_20250412_231815.gpkg",
+    "visualization_paths": [],
+    "metrics": {
+        "trecho_drenagem": {
+            "original_features": 64,
+            "enriched_features": 64,
+            "new_attributes": [],
+            "sinuosity": {
+                "mean": 1.3478934862332763,
+                "median": 1.2195863570394083,
+                "min": 1.0163875577017218,
+                "max": 2.596150945593896,
+                "std_dev": 0.34310608469686843
+            },
+            "betweenness": {
+                "mean": 0.06856343283582089,
+                "median": 0.023066485753052916,
+                "min": 0.0004522840343735866,
+                "max": 0.30529172320217096,
+                "std_dev": 0.08272552899840345
+            },
+            "strahler_order": {
+                "distribution": {
+                    "4": 12,
+                    "5": 32,
+                    "6": 17,
+                    "7": 3
+                },
+                "max_order": 7
+            },
+            "elevation": {
+                "mean": 603.4316393274491,
+                "min": 549.9999999999999,
+                "max": 1000.0000000000001
+            },
+            "slope": {
+                "mean": 0.7246220727657638,
+                "median": 0.37208312751124006,
+                "min": 0.0,
+                "max": 4.404857170301951
+            },
+            "stream_power_index": {
+                "mean": 0.3801436232034191,
+                "median": 0.11482996558098088,
+                "min": 0.0,
+                "max": 4.712725934762742
+            },
+            "network_info": {
+                "n_nodes": 67,
+                "n_edges": 64,
+                "n_components": 3,
+                "largest_component_size": 52,
+                "network_density": 0.028946178199909543
+            }
+        },
+        "curso_dagua": {
+            "original_features": 32,
+            "enriched_features": 32,
+            "new_attributes": [],
+            "sinuosity": {
+                "mean": 1.3098853708229736,
+                "median": 1.2002155659269893,
+                "min": 1.0163875577017218,
+                "max": 2.830700311758645,
+                "std_dev": 0.33856203866985113
+            },
+            "elevation": {
+                "mean": 617.901267133891,
+                "min": 0.008548095028970693,
+                "max": 1050.0
+            },
+            "slope": {
+                "mean": 1.007316469950323,
+                "median": 0.8582101811401182,
+                "min": 0.0,
+                "max": 3.681817136533392
+            }
+        },
+        "area_drenagem": {
+            "original_features": 78,
+            "enriched_features": 78,
+            "new_attributes": [],
+            "elevation": {
+                "mean": 623.7558468840758,
+                "min": 549.9999999999999,
+                "max": 1000.0000000000002,
+                "range": 75.1039006673357
+            },
+            "hypsometric_integral": {
+                "mean": 0.4024042838792178,
+                "median": 0.4146058235603264,
+                "min": 0.03204639272403241,
+                "max": 0.8332369034163033
+            }
+        },
+        "ponto_drenagem": {
+            "original_features": 49,
+            "enriched_features": 49,
+            "new_attributes": []
+        }
+    },
+    "drainage_density": {
+        "trecho_drenagem": 0.44489718390225697,
+        "curso_dagua": 0.8236990317856462,
+        "total": 1.2685962156879032
+    },
+    "water_quality_analysis": {
+        "sinuosity_analysis": {
+            "mean": 1.3478934862332763,
+            "high_sinuosity_percentage": 23.4375,
+            "sinuosity_quality_index": 0.440625
+        },
+        "drainage_analysis": {
+            "drainage_density": {
+                "trecho_drenagem": 0.44489718390225697,
+                "curso_dagua": 0.8236990317856462,
+                "total": 1.2685962156879032
+            },
+            "drainage_quality_index": 0.4
+        },
+        "connectivity_analysis": {
+            "mean_betweenness": 0.06856343283582089,
+            "connectivity_quality_index": 0.7118385345997287
+        }
+    }
+}

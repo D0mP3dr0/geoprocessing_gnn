@@ -1,5 +1,5 @@
 {
-    "file_path": "data\\sorocaba_railway.gpkg",
+    "file_path": "F:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba_railway.gpkg",
     "layer": "default",
     "crs": "EPSG:4674",
     "columns": [
@@ -182,9 +182,63 @@
         "Data appears spatially clustered, consider analyzing this pattern."
     ],
     "topology": {
-        "error": "No module named 'networkx'"
+        "connectivity": {},
+        "adjacency": {},
+        "potential_nodes": 1328,
+        "potential_edges": 1331,
+        "node_candidates": [
+            [
+                -47.54459403828501,
+                -23.449808757737458
+            ],
+            [
+                -47.4516947,
+                -23.4967038
+            ],
+            [
+                -47.4569939,
+                -23.4955146
+            ],
+            [
+                -47.54458507129304,
+                -23.449767003595948
+            ],
+            [
+                -47.4568293,
+                -23.4955512
+            ],
+            [
+                -47.4522558,
+                -23.4959106
+            ],
+            [
+                -47.4511422,
+                -23.4967901
+            ],
+            [
+                -47.4563757,
+                -23.4956118
+            ],
+            [
+                -47.4542796,
+                -23.4965502
+            ],
+            [
+                -47.453432,
+                -23.4966667
+            ]
+        ],
+        "graph_metrics": {
+            "num_nodes": 1328,
+            "num_edges": 1331,
+            "connected_components": 2,
+            "avg_degree": 2.0045180722891565,
+            "density": 0.0015105637319435996
+        }
     },
     "graph_integration_recommendations": [
+        "Network appears disconnected. Consider edge linking algorithms to create a fully connected graph.",
+        "Create graph with approximately 1328 nodes and 1331 edges based on spatial features.",
         "Consider attribute-based graph links using categorical attributes like 'osm_id'."
     ]
 }

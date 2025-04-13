@@ -1,0 +1,113 @@
+{
+  "data_summary": {
+    "total_features": 84,
+    "crs": "EPSG:4674",
+    "columns": [
+      "osm_id",
+      "name",
+      "highway",
+      "waterway",
+      "aerialway",
+      "barrier",
+      "man_made",
+      "railway",
+      "z_order",
+      "other_tags",
+      "geometry",
+      "length_km",
+      "sinuosity",
+      "gauge_mm",
+      "electrified",
+      "operator",
+      "service"
+    ]
+  },
+  "topology": {
+    "total_features": 84,
+    "invalid_geometries": 0,
+    "total_length_km": 73.92773859762299,
+    "disconnected_segments": 19,
+    "intersections": 1,
+    "edges_added_to_graph": 84,
+    "connected_components": 20
+  },
+  "statistics": {
+    "length_km": {
+      "count": 84,
+      "min": 0.008945506002063806,
+      "max": 7.36910720057674,
+      "mean": 0.8800921261621788,
+      "std": 1.7390734055969266,
+      "median": 0.10133773676800098
+    },
+    "sinuosity": {
+      "count": 84,
+      "min": 1.0,
+      "max": 1.6422323650294108,
+      "mean": 1.0483934167024407,
+      "std": 0.11267080613184041,
+      "median": 1.0016900321848605
+    },
+    "gauge_mm": {
+      "count": 70,
+      "min": 1000.0,
+      "max": 1000.0,
+      "mean": 1000.0,
+      "std": 0.0,
+      "median": 1000.0
+    },
+    "railway": {
+      "unique_values": 1,
+      "value_counts": {
+        "rail": 84
+      },
+      "missing": 0
+    },
+    "electrified": {
+      "unique_values": 2,
+      "value_counts": {
+        "no": 58,
+        "unknown": 26
+      },
+      "missing": 0
+    },
+    "operator": {
+      "unique_values": 1,
+      "value_counts": {
+        "Rumo S/A": 54
+      },
+      "missing": 30
+    },
+    "service": {
+      "unique_values": 2,
+      "value_counts": {
+        "yard": 11,
+        "siding": 4
+      },
+      "missing": 69
+    }
+  },
+  "network_analysis": {
+    "network_size": {
+      "nodes": 104,
+      "edges": 84,
+      "total_length_km": 73.92773859762302
+    },
+    "connectivity": {
+      "connected_components": 20,
+      "largest_component_nodes": 29,
+      "largest_component_pct": 27.884615384615387,
+      "intersections": 1
+    },
+    "density": {
+      "area_km2": 83.39256857842156,
+      "rail_density_km_per_km2": 0.8865027167031327,
+      "intersection_density_per_km2": 0.011991476183631515
+    },
+    "topology_indices": {
+      "alpha_index": 0.0,
+      "beta_index": 0.8076923076923077,
+      "gamma_index": 0.27450980392156865
+    }
+  }
+}

@@ -1,5 +1,5 @@
 {
-    "file_path": "data\\sorocaba_natural.gpkg",
+    "file_path": "F:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba_natural.gpkg",
     "layer": "default",
     "crs": "EPSG:4674",
     "columns": [
@@ -310,7 +310,33 @@
         "Handle missing values in columns: osm_id, osm_way_id, name, type, aeroway, amenity, admin_level, barrier, boundary, building, craft, geological, historic, land_area, landuse, leisure, man_made, military, office, place, shop, sport, tourism, other_tags."
     ],
     "topology": {
-        "error": "No module named 'networkx'"
+        "connectivity": {},
+        "adjacency": {},
+        "potential_nodes": 354,
+        "potential_edges": 0,
+        "node_candidates": [
+            [
+                -47.4944230555828,
+                -23.574886816523595
+            ],
+            [
+                -47.503481085241084,
+                -23.573175035456604
+            ],
+            [
+                -47.50902372520191,
+                -23.569969846636365
+            ],
+            [
+                -47.50686461572008,
+                -23.56863189968796
+            ],
+            [
+                -47.504588498086804,
+                -23.567354635227606
+            ]
+        ],
+        "graph_metrics": {}
     },
     "graph_integration_recommendations": [
         "Consider attribute-based graph links using categorical attributes like 'natural'."

@@ -1,5 +1,5 @@
 {
-    "file_path": "data\\sorocaba_buildings.gpkg",
+    "file_path": "F:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba_buildings.gpkg",
     "layer": "default",
     "crs": "EPSG:4674",
     "columns": [
@@ -468,7 +468,33 @@
         "Data appears spatially clustered, consider analyzing this pattern."
     ],
     "topology": {
-        "error": "No module named 'networkx'"
+        "connectivity": {},
+        "adjacency": {},
+        "potential_nodes": 35812,
+        "potential_edges": 0,
+        "node_candidates": [
+            [
+                -47.525722931752114,
+                -23.58371902748367
+            ],
+            [
+                -47.52522972177676,
+                -23.58340305412113
+            ],
+            [
+                -47.52392747021607,
+                -23.58293908220437
+            ],
+            [
+                -47.526026874259784,
+                -23.58255106552148
+            ],
+            [
+                -47.523838009676744,
+                -23.58252487569673
+            ]
+        ],
+        "graph_metrics": {}
     },
     "graph_integration_recommendations": [
         "Consider attribute-based graph links using categorical attributes like 'building'."

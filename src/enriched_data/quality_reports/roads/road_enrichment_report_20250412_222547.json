@@ -1,0 +1,33 @@
+{
+    "report_type": "road_network_quality",
+    "timestamp": "2025-04-12T22:26:06.350800",
+    "data_source": "f:\\TESE_MESTRADO\\geoprocessing\\data\\processed\\roads_processed.gpkg",
+    "analysis_area": "N/A",
+    "road_network": {
+        "feature_count": 13328,
+        "total_length_km": 2608.982738821395
+    },
+    "intersections": {},
+    "topography": {
+        "elevation": {
+            "mean_m": 605.4219993060995,
+            "max_m": 1000.0000000000001,
+            "min_m": 549.9999999999999,
+            "range_m": 450.0000000000002
+        },
+        "slope": {
+            "mean_pct": 0.9267251056289916,
+            "max_pct": 58.30082635411633,
+            "min_pct": 0.0,
+            "std_pct": 2.5532836151724085
+        },
+        "slope_class_distribution": {
+            "Plana": 11690,
+            "Suave": 1343,
+            "Moderada": 241,
+            "Íngreme": 41,
+            "Muito Íngreme": 13
+        }
+    },
+    "quality_metrics": {}
+}

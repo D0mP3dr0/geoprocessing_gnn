@@ -1,5 +1,5 @@
 {
-    "file_path": "data\\hidrografia-001.gpkg",
+    "file_path": "F:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\hidrografia-001.gpkg",
     "layer": "default",
     "crs": "EPSG:4674",
     "columns": [
@@ -442,9 +442,64 @@
         "Investigate potential outliers in column 'nuareacont'."
     ],
     "topology": {
-        "error": "No module named 'networkx'"
+        "connectivity": {},
+        "adjacency": {},
+        "potential_nodes": 5274,
+        "potential_edges": 5187,
+        "node_candidates": [
+            [
+                -47.54550204382713,
+                -23.392437565740714
+            ],
+            [
+                -47.5696491920717,
+                -23.386806846436127
+            ],
+            [
+                -47.555008020847275,
+                -23.483231192975357
+            ],
+            [
+                -47.56442829756665,
+                -23.466580793871838
+            ],
+            [
+                -47.564296200712214,
+                -23.466413557616555
+            ],
+            [
+                -47.56403594994753,
+                -23.464753546412005
+            ],
+            [
+                -47.563837654921066,
+                -23.464556205976372
+            ],
+            [
+                -47.56370865470044,
+                -23.46373851312536
+            ],
+            [
+                -47.56305481506199,
+                -23.463300879921782
+            ],
+            [
+                -47.562650783060285,
+                -23.461544100797592
+            ]
+        ],
+        "graph_metrics": {
+            "num_nodes": 5274,
+            "num_edges": 5187,
+            "connected_components": 87,
+            "avg_degree": 1.9670079635949944,
+            "density": 0.00037303393961596705
+        }
     },
     "graph_integration_recommendations": [
+        "Network appears disconnected. Consider edge linking algorithms to create a fully connected graph.",
+        "Low connectivity in network. May need additional edges to create meaningful paths.",
+        "Create graph with approximately 5274 nodes and 5187 edges based on spatial features.",
         "Consider attribute-based graph links using categorical attributes like 'cocursodag'."
     ]
 }

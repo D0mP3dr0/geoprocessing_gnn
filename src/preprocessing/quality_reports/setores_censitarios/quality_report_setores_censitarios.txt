@@ -1,0 +1,35 @@
+=== RELATÓRIO DE QUALIDADE: setores_censitarios ===
+
+Timestamp: 2025-04-12T18:23:07.642920
+Total de feições: 1218
+Tipo de geometria: {'Polygon': 1148, 'MultiLineString': 69, 'LineString': 1}
+
+=== VALIDAÇÃO ===
+Geometrias inválidas: 0
+Geometrias vazias: 0
+Valores ausentes por coluna:
+  - NM_SUBDIST: 1218
+  - CD_BAIRRO: 1218
+  - NM_BAIRRO: 1218
+  - CD_NU: 1151
+  - NM_NU: 1151
+  - CD_FCU: 1178
+  - NM_FCU: 1178
+  - CD_AGLOM: 1216
+  - NM_AGLOM: 1216
+  - CD_CONCURB_left: 14
+  - NM_CONCURB_left: 14
+
+=== TOPOLOGIA ===
+overlaps: 0
+gaps: 0
+invalid_geometries: 0
+self_intersections: 0
+
+=== ESTATÍSTICAS DOS SETORES ===
+area_km2:
+
+perimeter_km:
+
+compactness:
+

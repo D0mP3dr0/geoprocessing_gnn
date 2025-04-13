@@ -1,5 +1,5 @@
 {
-    "file_path": "data\\sorocaba_landuse.gpkg",
+    "file_path": "F:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba_landuse.gpkg",
     "layer": "default",
     "crs": "EPSG:4674",
     "columns": [
@@ -368,9 +368,40 @@
         "Data appears spatially clustered, consider analyzing this pattern."
     ],
     "topology": {
-        "error": "No module named 'networkx'"
+        "connectivity": {},
+        "adjacency": {
+            "5": 1,
+            "6": 1,
+            "7": 1
+        },
+        "potential_nodes": 2550,
+        "potential_edges": 0,
+        "node_candidates": [
+            [
+                -47.51952112583854,
+                -23.586337218166733
+            ],
+            [
+                -47.532134289873895,
+                -23.581430021644476
+            ],
+            [
+                -47.52230357133674,
+                -23.5806034484621
+            ],
+            [
+                -47.53024015991038,
+                -23.58000026365034
+            ],
+            [
+                -47.52373760718362,
+                -23.57265618658789
+            ]
+        ],
+        "graph_metrics": {}
     },
     "graph_integration_recommendations": [
+        "Create polygon adjacency graph using shared boundaries as edges.",
         "Consider attribute-based graph links using categorical attributes like 'landuse'."
     ]
 }

@@ -1,0 +1,68 @@
+{
+    "report_type": "road_network_quality",
+    "timestamp": "2025-04-12T21:08:56.624963",
+    "data_source": "f:\\TESE_MESTRADO\\geoprocessing\\data\\processed\\roads_processed.gpkg",
+    "analysis_area": "N/A",
+    "road_network": {
+        "feature_count": 13328,
+        "total_length_km": 2849.473383832095,
+        "sinuosity": {
+            "mean": 1.0501539264561441,
+            "median": 1.000007371634974,
+            "max": 54.839962485442946,
+            "min": 1.0,
+            "std": 0.7783841969864751
+        },
+        "sinuosity_class_distribution": {
+            "Reta": 11816,
+            "Quase Reta": 569,
+            "Pouco Sinuosa": 457,
+            "Moderadamente Sinuosa": 349,
+            "Muito Sinuosa": 137
+        },
+        "network_analysis": {
+            "n_nodes": 17068,
+            "n_edges": 13353,
+            "n_components": 4669,
+            "largest_component_size": 4958,
+            "network_density": 9.147284797097322e-05,
+            "alpha_index": 0,
+            "road_density_km_per_sqkm": 3.4952262749386054
+        }
+    },
+    "intersections": {
+        "count": 17068,
+        "type_distribution": {
+            "terminal": 11026,
+            "intersection": 6042
+        },
+        "stats": {
+            "n_intersections": 6042,
+            "n_terminals": 11026,
+            "junction_types": {
+                "Terminal": 3146,
+                "T-junction": 2206,
+                "Cross-junction": 680,
+                "Complex-junction": 10
+            },
+            "avg_degree": 2.5951671631909963,
+            "max_degree": 5,
+            "connectivity_ratio": 0.3539957815795641,
+            "intersection_density": 7.419659784098457
+        }
+    },
+    "topography": {},
+    "quality_metrics": {
+        "alpha_connectivity_index": 0,
+        "connectivity_class": "Baixa",
+        "road_density_km_per_sqkm": 3.4952262749386054,
+        "density_class": "Média",
+        "intersection_density": 7.419659784098457,
+        "intersection_density_class": "Muito Baixa",
+        "mean_sinuosity": 1.0501539264561441,
+        "max_sinuosity": 54.839962485442946,
+        "high_sinuosity_percentage": 3.6464585834333736,
+        "road_network_quality_index": 0.11593080583076404,
+        "road_network_quality_class": "Baixa"
+    }
+}

@@ -1,0 +1,129 @@
+{
+    "report_date": "2025-04-12 20:30:47",
+    "data_summary": {
+        "trecho_drenagem": {
+            "original_features": 64,
+            "enriched_features": 64,
+            "new_attributes": [
+                "strahler_order",
+                "betweenness",
+                "sinuosity"
+            ],
+            "sinuosity": {
+                "mean": 1.35258125010288,
+                "median": 1.2215907562615191,
+                "min": 1.018924457259949,
+                "max": 2.6468728073892684,
+                "std_dev": 0.35159652060175184
+            },
+            "betweenness": {
+                "mean": 0.06856343283582089,
+                "median": 0.023066485753052916,
+                "min": 0.0004522840343735866,
+                "max": 0.30529172320217096,
+                "std_dev": 0.08272552899840345
+            },
+            "strahler_order": {
+                "distribution": {
+                    "4": 12,
+                    "5": 32,
+                    "6": 17,
+                    "7": 3
+                },
+                "max_order": 7
+            },
+            "network_info": {
+                "n_nodes": 67,
+                "n_edges": 64,
+                "n_components": 3,
+                "largest_component_size": 52,
+                "network_density": 0.028946178199909543
+            }
+        },
+        "curso_dagua": {
+            "original_features": 32,
+            "enriched_features": 32,
+            "new_attributes": [
+                "sinuosity"
+            ],
+            "sinuosity": {
+                "mean": 1.3145895823634266,
+                "median": 1.2147362328635334,
+                "min": 1.018924457259949,
+                "max": 2.813446165302663,
+                "std_dev": 0.3361902749237483
+            }
+        },
+        "area_drenagem": {
+            "original_features": 78,
+            "enriched_features": 78,
+            "new_attributes": []
+        },
+        "ponto_drenagem": {
+            "original_features": 49,
+            "enriched_features": 49,
+            "new_attributes": []
+        }
+    },
+    "nodes_summary": {
+        "total_nodes": 67,
+        "springs": 32,
+        "outlets": 2,
+        "junctions": 33,
+        "n_springs": 32,
+        "n_outlets": 2,
+        "n_junctions": 33,
+        "bifurcation_ratio": 1.8571428571428572,
+        "drainage_pattern": {
+            "pattern": "dendr\u00edtico",
+            "confidence": 0.6383217594444504,
+            "angles_stats": {
+                "mean": 86.8493518184601,
+                "std": 45.673973108719,
+                "dominant_angles": [
+                    100.0,
+                    130.0,
+                    110.0
+                ]
+            }
+        },
+        "connectivity_index": 1.03125
+    },
+    "drainage_density": {
+        "trecho_drenagem": 0.44489718390225697,
+        "curso_dagua": 0.8236990317856462,
+        "total": 1.2685962156879032
+    },
+    "water_quality_analysis": {
+        "sinuosity_analysis": {
+            "mean": 1.35258125010288,
+            "high_sinuosity_percentage": 20.3125,
+            "sinuosity_quality_index": 0.4234375
+        },
+        "drainage_analysis": {
+            "drainage_density": {
+                "trecho_drenagem": 0.44489718390225697,
+                "curso_dagua": 0.8236990317856462,
+                "total": 1.2685962156879032
+            },
+            "drainage_quality_index": 0.4
+        },
+        "connectivity_analysis": {
+            "mean_betweenness": 0.06856343283582089,
+            "connectivity_quality_index": 0.7118385345997287
+        },
+        "drainage_pattern": {
+            "pattern": "dendr\u00edtico",
+            "confidence": 0.6383217594444504,
+            "angles_stats": {
+                "mean": 86.8493518184601,
+                "std": 45.673973108719,
+                "dominant_angles": [
+                    100.0,
+                    130.0,
+                    110.0
+                ]
+            }
+        }
+    }
+}

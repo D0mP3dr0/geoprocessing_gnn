@@ -1,5 +1,5 @@
 {
-    "file_path": "data\\sorocaba_roads.gpkg",
+    "file_path": "F:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba_roads.gpkg",
     "layer": "default",
     "crs": "EPSG:4674",
     "columns": [
@@ -206,9 +206,63 @@
         "Data appears spatially clustered, consider analyzing this pattern."
     ],
     "topology": {
-        "error": "No module named 'networkx'"
+        "connectivity": {},
+        "adjacency": {},
+        "potential_nodes": 52426,
+        "potential_edges": 59786,
+        "node_candidates": [
+            [
+                -47.5649537,
+                -23.5428391
+            ],
+            [
+                -47.5654775226983,
+                -23.54284330646216
+            ],
+            [
+                -47.5649186,
+                -23.5456799
+            ],
+            [
+                -47.565356302606034,
+                -23.54568376277037
+            ],
+            [
+                -47.564977178757466,
+                -23.54025616825363
+            ],
+            [
+                -47.5648919,
+                -23.5484273
+            ],
+            [
+                -47.5649144821343,
+                -23.548428097778167
+            ],
+            [
+                -47.564890997425,
+                -23.548513882999806
+            ],
+            [
+                -47.56452022118102,
+                -23.382902544186493
+            ],
+            [
+                -47.5427556,
+                -23.3886976
+            ]
+        ],
+        "graph_metrics": {
+            "num_nodes": 52426,
+            "num_edges": 59786,
+            "connected_components": 112,
+            "avg_degree": 2.2807767138442756,
+            "density": 4.3505516716152136e-05
+        }
     },
     "graph_integration_recommendations": [
+        "Network appears disconnected. Consider edge linking algorithms to create a fully connected graph.",
+        "Create graph with approximately 52426 nodes and 59786 edges based on spatial features.",
         "Consider attribute-based graph links using categorical attributes like 'osm_id'."
     ]
 }

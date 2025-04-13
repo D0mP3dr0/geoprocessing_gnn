@@ -1,5 +1,5 @@
 {
-    "file_path": "data\\sorocaba_waterways.gpkg",
+    "file_path": "F:\\TESE_MESTRADO\\geoprocessing\\data\\raw\\sorocaba_waterways.gpkg",
     "layer": "default",
     "crs": "EPSG:4674",
     "columns": [
@@ -199,9 +199,64 @@
         "Handle missing values in columns: name, highway, aerialway, barrier, man_made, railway, other_tags."
     ],
     "topology": {
-        "error": "No module named 'networkx'"
+        "connectivity": {},
+        "adjacency": {},
+        "potential_nodes": 15231,
+        "potential_edges": 14981,
+        "node_candidates": [
+            [
+                -47.56646519958111,
+                -23.391930485594553
+            ],
+            [
+                -47.570493178738054,
+                -23.388232811322233
+            ],
+            [
+                -47.569371666894575,
+                -23.386450330074638
+            ],
+            [
+                -47.568341120182936,
+                -23.38525252899723
+            ],
+            [
+                -47.56459116662648,
+                -23.3904896552517
+            ],
+            [
+                -47.56550726079176,
+                -23.391271611434952
+            ],
+            [
+                -47.56347520031403,
+                -23.38261745598751
+            ],
+            [
+                -47.56540894278677,
+                -23.382847754144866
+            ],
+            [
+                -47.56500163556693,
+                -23.46779355412586
+            ],
+            [
+                -47.563981802976784,
+                -23.464701698133407
+            ]
+        ],
+        "graph_metrics": {
+            "num_nodes": 15231,
+            "num_edges": 14981,
+            "connected_components": 256,
+            "avg_degree": 1.9671722145624055,
+            "density": 0.00012916429511243636
+        }
     },
     "graph_integration_recommendations": [
+        "Network appears disconnected. Consider edge linking algorithms to create a fully connected graph.",
+        "Low connectivity in network. May need additional edges to create meaningful paths.",
+        "Create graph with approximately 15231 nodes and 14981 edges based on spatial features.",
         "Consider attribute-based graph links using categorical attributes like 'osm_id'."
     ]
 }
