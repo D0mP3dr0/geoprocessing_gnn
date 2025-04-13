@@ -186,7 +186,7 @@ def load_data():
                 logger.info(f"Carregado {key}: {len(gdf)} feições de {file_path}")
             else:
                 logger.warning(f"Arquivo não encontrado: {file_path}")
-        except Exception as e:
+    except Exception as e:
             logger.error(f"Erro ao carregar {key}: {str(e)}")
     
     if not data:
@@ -321,8 +321,8 @@ def build_stream_network(gdf, calculate_metrics=True):
             
             # Adicionar aresta com atributos
             G.add_edge(start_point, end_point, 
-                      length=row.geometry.length,
-                      feature_id=idx)
+                       length=row.geometry.length,
+                       feature_id=idx)
             edge_count += 1
     
     logger.info(f"Rede criada com {len(G.nodes)} nós e {edge_count} arestas")
@@ -332,7 +332,7 @@ def build_stream_network(gdf, calculate_metrics=True):
     
     # Betweenness centrality (identifica segmentos importantes de conexão)
     try:
-        edge_betweenness = nx.edge_betweenness_centrality(G, weight='length')
+    edge_betweenness = nx.edge_betweenness_centrality(G, weight='length')
     except Exception as e:
         logger.warning(f"Erro ao calcular betweenness centrality: {str(e)}")
         edge_betweenness = {}
@@ -345,7 +345,7 @@ def build_stream_network(gdf, calculate_metrics=True):
             end_point = row.geometry.coords[-1]
             try:
                 betweenness = edge_betweenness.get((start_point, end_point), 
-                                                 edge_betweenness.get((end_point, start_point), 0))
+                                                  edge_betweenness.get((end_point, start_point), 0))
             except:
                 betweenness = 0
             betweenness_values.append(betweenness)
@@ -434,9 +434,9 @@ def calculate_drainage_density(data, area_sqkm=None):
                 
                 # Calcular área do bounding box em km²
                 bounds = all_gdf.total_bounds
-                width = bounds[2] - bounds[0]
-                height = bounds[3] - bounds[1]
-                area_sqkm = (width * height) / 1_000_000
+        width = bounds[2] - bounds[0]
+        height = bounds[3] - bounds[1]
+        area_sqkm = (width * height) / 1_000_000
                 logger.info(f"Área calculada a partir do bounding box: {area_sqkm:.2f} km²")
             else:
                 logger.warning("Não foi possível calcular a área. Usando 1 km² como valor padrão.")
@@ -567,9 +567,9 @@ def generate_quality_report(data, enriched_data_path, visualization_paths=None):
             
             # Dados básicos
             report["metrics"][key] = {
-                "original_features": len(original_gdf),
-                "enriched_features": len(enriched_gdf),
-                "new_attributes": list(set(enriched_gdf.columns) - set(original_gdf.columns)),
+        "original_features": len(original_gdf),
+        "enriched_features": len(enriched_gdf),
+        "new_attributes": list(set(enriched_gdf.columns) - set(original_gdf.columns)),
             }
             
             # Adicionar estatísticas específicas para cada tipo
@@ -577,9 +577,9 @@ def generate_quality_report(data, enriched_data_path, visualization_paths=None):
                 # Estatísticas de sinuosidade
                 if 'sinuosity' in enriched_gdf.columns:
                     sinuosity_stats = {
-                        "mean": float(enriched_gdf['sinuosity'].mean()),
-                        "median": float(enriched_gdf['sinuosity'].median()),
-                        "min": float(enriched_gdf['sinuosity'].min()),
+                "mean": float(enriched_gdf['sinuosity'].mean()),
+                "median": float(enriched_gdf['sinuosity'].median()),
+                "min": float(enriched_gdf['sinuosity'].min()),
                         "max": float(enriched_gdf['sinuosity'].max()),
                         "std_dev": float(enriched_gdf['sinuosity'].std())
                     }
@@ -588,9 +588,9 @@ def generate_quality_report(data, enriched_data_path, visualization_paths=None):
                 # Estatísticas de betweenness
                 if 'betweenness' in enriched_gdf.columns:
                     betweenness_stats = {
-                        "mean": float(enriched_gdf['betweenness'].mean()),
-                        "median": float(enriched_gdf['betweenness'].median()),
-                        "min": float(enriched_gdf['betweenness'].min()),
+                "mean": float(enriched_gdf['betweenness'].mean()),
+                "median": float(enriched_gdf['betweenness'].median()),
+                "min": float(enriched_gdf['betweenness'].min()),
                         "max": float(enriched_gdf['betweenness'].max()),
                         "std_dev": float(enriched_gdf['betweenness'].std())
                     }
@@ -770,7 +770,7 @@ def generate_visualizations(data, timestamp):
         
         sinuosity_hist_file = os.path.join(VISUALIZATION_DIR, f'sinuosity_histogram_{timestamp}.png')
         plt.savefig(sinuosity_hist_file, dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
         logger.info(f"Histograma de sinuosidade salvo em: {sinuosity_hist_file}")
     
     # 2. Distribuição das ordens de Strahler
@@ -809,7 +809,7 @@ def generate_visualizations(data, timestamp):
         
         strahler_dist_file = os.path.join(VISUALIZATION_DIR, f'strahler_distribution_{timestamp}.png')
         plt.savefig(strahler_dist_file, dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
         logger.info(f"Distribuição de ordens de Strahler salva em: {strahler_dist_file}")
     
     # 3. Histograma de betweenness centrality
@@ -1199,7 +1199,7 @@ def generate_visualizations(data, timestamp):
     if 'trecho_drenagem' in data and not data['trecho_drenagem'].empty and 'strahler_order' in data['trecho_drenagem'].columns:
         try:
             # Criar gráfico de pizza com tamanho e estilo aprimorados
-            plt.figure(figsize=(12, 10))
+    plt.figure(figsize=(12, 10))
             
             order_counts = data['trecho_drenagem']['strahler_order'].value_counts().sort_index()
             
@@ -2760,7 +2760,7 @@ def visualize_hydrography_with_dem(data, dem):
         
         # 1. Visualização 2D com DEM como fundo e rios sobrepostos
         plt.figure(figsize=(14, 10))
-        ax = plt.subplot(111)
+    ax = plt.subplot(111)
         
         # Obter bounds para o recorte do DEM
         bounds = None
@@ -2893,7 +2893,7 @@ def visualize_hydrography_with_dem(data, dem):
         # Salvar a figura
         output_file = os.path.join(VISUALIZATION_DIR, f'hidrografia_com_dem_{timestamp}.png')
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
         logger.info(f"Visualização 2D com DEM salva em: {output_file}")
         
         # 2. Visualização de perfil longitudinal dos rios principais

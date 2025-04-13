@@ -1,0 +1,514 @@
+{
+    "timestamp": "2025-04-13T09:56:08.777666",
+    "data_summary": {
+        "total_features": 2550,
+        "crs": "PROJCS[\"SIRGAS 2000 / UTM zone 23S\",GEOGCS[\"SIRGAS 2000\",DATUM[\"Sistema_de_Referencia_Geocentrico_para_las_AmericaS_2000\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"6674\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4674\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-45],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",10000000],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"31983\"]]",
+        "geometry_types": [
+            "Polygon"
+        ],
+        "total_columns": 50,
+        "memory_usage_mb": 2.5848541259765625
+    },
+    "enrichment_summary": {
+        "original_columns": [
+            "osm_id",
+            "osm_way_id",
+            "name",
+            "type",
+            "aeroway",
+            "amenity",
+            "admin_level",
+            "barrier",
+            "boundary",
+            "building",
+            "craft",
+            "geological",
+            "historic",
+            "land_area",
+            "landuse",
+            "leisure",
+            "man_made",
+            "military",
+            "natural",
+            "office",
+            "place",
+            "shop",
+            "sport",
+            "tourism",
+            "other_tags",
+            "area_km2",
+            "perimeter_km",
+            "compactness",
+            "land_category",
+            "geometry"
+        ],
+        "new_columns": [
+            "size_category",
+            "compactness_category",
+            "elevation_min",
+            "elevation_max",
+            "elevation_mean",
+            "elevation_median",
+            "elevation_std",
+            "elevation_range",
+            "elevation_category",
+            "slope_mean",
+            "slope_min",
+            "slope_max",
+            "slope_std",
+            "aspect_mean",
+            "aspect_min",
+            "aspect_max",
+            "aspect_std",
+            "slope_category",
+            "aspect_direction",
+            "landuse_id"
+        ],
+        "new_categories": [
+            "green",
+            "urban",
+            "agriculture",
+            "other",
+            "institutional",
+            "forest",
+            "water",
+            "extraction"
+        ],
+        "enriched_data_path": "F:\\TESE_MESTRADO\\geoprocessing\\data\\enriched_data\\landuse_enriched_20250413_095558.gpkg",
+        "visualization_paths": {
+            "categories_map": "F:\\TESE_MESTRADO\\geoprocessing\\outputs\\visualize_enriched_data\\land_use\\landuse_categories_map.png",
+            "dashboard": "F:\\TESE_MESTRADO\\geoprocessing\\outputs\\visualize_enriched_data\\land_use\\landuse_dashboard.png",
+            "elevation_3d": "F:\\TESE_MESTRADO\\geoprocessing\\outputs\\visualize_enriched_data\\land_use\\landuse_elevation_3d.png",
+            "interactive_map": "F:\\TESE_MESTRADO\\geoprocessing\\outputs\\visualize_enriched_data\\land_use\\landuse_interactive_map.html"
+        }
+    },
+    "landuse_statistics": {
+        "total_area_km2": 56.74995869234043,
+        "area_by_category_km2": {
+            "agriculture": 13.475361545979743,
+            "extraction": 0.5241991944145836,
+            "forest": 0.8831166869452096,
+            "green": 5.040527426887499,
+            "institutional": 0.4863588463474478,
+            "other": 2.454830360163088,
+            "urban": 33.81466736153683,
+            "water": 0.07089727006603154
+        },
+        "area_percentage": {
+            "agriculture": 23.745147761311973,
+            "extraction": 0.9236996933450368,
+            "forest": 1.5561538850325267,
+            "green": 8.881993120407012,
+            "institutional": 0.857020617379043,
+            "other": 4.32569541322753,
+            "urban": 59.58536030811386,
+            "water": 0.1249292011830144
+        },
+        "land_categories": {
+            "agriculture": 51,
+            "extraction": 2,
+            "forest": 10,
+            "green": 335,
+            "institutional": 97,
+            "other": 49,
+            "urban": 2002,
+            "water": 4
+        }
+    },
+    "numeric_statistics": {
+        "area_km2": {
+            "min": 2.411216371486597e-06,
+            "max": 2.5599009402374793,
+            "mean": 0.022254885761702127,
+            "std": 0.09961905031108079,
+            "median": 0.0007528157064625423
+        },
+        "perimeter_km": {
+            "min": 0.0055305761637395355,
+            "max": 8.792757244119898,
+            "mean": 0.41432566242868646,
+            "std": 0.738337468233392,
+            "median": 0.1230882236896797
+        },
+        "compactness": {
+            "min": 0.013186152556587071,
+            "max": 0.9908528267105786,
+            "mean": 0.5851734311454649,
+            "std": 0.17205228388181895,
+            "median": 0.61287950414766
+        },
+        "elevation_min": {
+            "min": 549.9999999999999,
+            "max": 700.0,
+            "mean": 605.9039678992441,
+            "std": 22.007391566410938,
+            "median": 600.0
+        },
+        "elevation_max": {
+            "min": 550.0,
+            "max": 720.6978352142362,
+            "mean": 609.1439217509952,
+            "std": 23.207065862573923,
+            "median": 600.0
+        },
+        "elevation_mean": {
+            "min": 550.0,
+            "max": 700.0,
+            "mean": 607.5069216575646,
+            "std": 22.386139452307212,
+            "median": 600.0
+        },
+        "elevation_median": {
+            "min": 550.0,
+            "max": 700.0,
+            "mean": 607.4829935934051,
+            "std": 22.55184781907983,
+            "median": 600.0
+        },
+        "elevation_std": {
+            "min": 0.0,
+            "max": 21.608746943753875,
+            "mean": 1.0565433571355862,
+            "std": 2.8096552586540153,
+            "median": 0.0
+        },
+        "elevation_range": {
+            "min": 0.0,
+            "max": 70.6978352142363,
+            "mean": 3.2399538517510953,
+            "std": 8.648533319760366,
+            "median": 0.0
+        },
+        "slope_mean": {
+            "min": 0.0,
+            "max": 83.69030970173635,
+            "mean": 19.113416824274058,
+            "std": 29.54388448642693,
+            "median": 8.496229549092109e-13
+        },
+        "slope_min": {
+            "min": 0.0,
+            "max": 83.69030970173633,
+            "mean": 14.595833185380883,
+            "std": 27.90470374109707,
+            "median": 0.0
+        },
+        "slope_max": {
+            "min": 0.0,
+            "max": 86.75202638891173,
+            "mean": 23.651440241418108,
+            "std": 33.55935141611546,
+            "median": 3.256887993818641e-12
+        },
+        "slope_std": {
+            "min": 0.0,
+            "max": 39.09107972910315,
+            "mean": 3.39583173211327,
+            "std": 8.869110160233767,
+            "median": 4.515622717635709e-13
+        },
+        "aspect_mean": {
+            "min": 0.0,
+            "max": 359.13928036683495,
+            "mean": 75.71541069075079,
+            "std": 97.39086014991621,
+            "median": 27.419354838709676
+        },
+        "aspect_min": {
+            "min": -0.0,
+            "max": 358.55316991205103,
+            "mean": 47.985420225834815,
+            "std": 94.9464605220747,
+            "median": 0.0
+        },
+        "aspect_max": {
+            "min": -0.0,
+            "max": 359.99999999999795,
+            "mean": 141.0627924333582,
+            "std": 131.0691716438356,
+            "median": 176.9594665474652
+        },
+        "aspect_std": {
+            "min": 0.0,
+            "max": 169.07166305556694,
+            "mean": 32.056787418991114,
+            "std": 45.3201787458291,
+            "median": 7.72457236001458e-13
+        },
+        "landuse_id": {
+            "min": 0.0,
+            "max": 2549.0,
+            "mean": 1274.5,
+            "std": 736.2659166361024,
+            "median": 1274.5
+        }
+    },
+    "elevation_statistics": {
+        "global": {
+            "min": 549.9999999999999,
+            "max": 720.6978352142362,
+            "mean": 607.5069216575646,
+            "range_mean": 3.2399538517510953
+        },
+        "by_category": {
+            "agriculture": {
+                "mean": 596.5518163674321,
+                "min": 549.9999999999999,
+                "max": 650.0000000000001,
+                "range": 10.459838627152102
+            },
+            "extraction": {
+                "mean": 670.4131323153733,
+                "min": 642.152205816119,
+                "max": 700.0000000000001,
+                "range": 41.574842800043314
+            },
+            "forest": {
+                "mean": 605.4982065115659,
+                "min": 589.970073661135,
+                "max": 636.6336312477223,
+                "range": 1.9118428892122412
+            },
+            "green": {
+                "mean": 606.6793810346892,
+                "min": 550.0,
+                "max": 700.0000000000001,
+                "range": 4.33391556674729
+            },
+            "institutional": {
+                "mean": 605.7418299134761,
+                "min": 550.0,
+                "max": 700.0,
+                "range": 0.590535077906445
+            },
+            "other": {
+                "mean": 604.8664094810889,
+                "min": 553.8428664359307,
+                "max": 650.0000000000001,
+                "range": 4.5820411843536855
+            },
+            "urban": {
+                "mean": 608.6284917444063,
+                "min": 550.0,
+                "max": 720.6978352142362,
+                "range": 2.613484129807526
+            },
+            "water": {
+                "mean": 587.0909466643656,
+                "min": 555.4292083556267,
+                "max": 600.0,
+                "range": 4.076249970889042
+            }
+        }
+    },
+    "terrain_statistics": {
+        "slope": {
+            "mean": 19.113416824274058,
+            "by_category": {
+                "agriculture": 19.048813140102425,
+                "extraction": 44.53826877869922,
+                "forest": 22.075856817068498,
+                "green": 23.0015146295835,
+                "institutional": 14.061122922286247,
+                "other": 12.94097476520553,
+                "urban": 18.615584085730035,
+                "water": 22.66311562920833
+            }
+        },
+        "aspect": {
+            "distribution": {
+                "Indefinido": 1313,
+                "Norte": 584,
+                "Nordeste": 209,
+                "Leste": 122,
+                "Oeste": 84,
+                "Sul": 75,
+                "Sudoeste": 73,
+                "Sudeste": 63,
+                "Noroeste": 27
+            }
+        }
+    },
+    "landscape_metrics": {
+        "green": {
+            "num_patches": 335,
+            "total_area_km2": 5.040527426887499,
+            "mean_patch_size_km2": 0.015046350528022384,
+            "largest_patch_km2": 0.20958363363132587,
+            "largest_patch_index": 4.157970305118304,
+            "patch_density": 5.903087997229065
+        },
+        "urban": {
+            "num_patches": 2002,
+            "total_area_km2": 33.814667361536834,
+            "mean_patch_size_km2": 0.016890443237530885,
+            "largest_patch_km2": 2.5599009402374793,
+            "largest_patch_index": 7.570386284944767,
+            "patch_density": 35.27755871776892
+        },
+        "agriculture": {
+            "num_patches": 51,
+            "total_area_km2": 13.475361545979744,
+            "mean_patch_size_km2": 0.2642227754113675,
+            "largest_patch_km2": 1.5613136311195375,
+            "largest_patch_index": 11.586432214023539,
+            "patch_density": 0.8986790682348725
+        },
+        "other": {
+            "num_patches": 49,
+            "total_area_km2": 2.454830360163088,
+            "mean_patch_size_km2": 0.05009857877883853,
+            "largest_patch_km2": 0.8127494437202484,
+            "largest_patch_index": 33.10817142029533,
+            "patch_density": 0.863436751833505
+        },
+        "institutional": {
+            "num_patches": 97,
+            "total_area_km2": 0.48635884634744786,
+            "mean_patch_size_km2": 0.005014008725231421,
+            "largest_patch_km2": 0.05882003440262775,
+            "largest_patch_index": 12.093957958072702,
+            "patch_density": 1.7092523454663262
+        },
+        "forest": {
+            "num_patches": 10,
+            "total_area_km2": 0.8831166869452096,
+            "mean_patch_size_km2": 0.08831166869452096,
+            "largest_patch_km2": 0.3580526405315214,
+            "largest_patch_index": 40.54420506649715,
+            "patch_density": 0.17621158200683776
+        },
+        "water": {
+            "num_patches": 4,
+            "total_area_km2": 0.07089727006603154,
+            "mean_patch_size_km2": 0.017724317516507885,
+            "largest_patch_km2": 0.03535069695988393,
+            "largest_patch_index": 49.86185917590251,
+            "patch_density": 0.0704846328027351
+        },
+        "extraction": {
+            "num_patches": 2,
+            "total_area_km2": 0.5241991944145836,
+            "mean_patch_size_km2": 0.2620995972072918,
+            "largest_patch_km2": 0.32822966506080464,
+            "largest_patch_index": 62.615446295633035,
+            "patch_density": 0.03524231640136755
+        },
+        "overall": {
+            "shannon_diversity_index": 1.158008032460602,
+            "simpson_diversity_index": 0.5784126424465426,
+            "dominance_index": 0.42158735755345744,
+            "total_edge_km": 528.2652195965752,
+            "edge_density_km_per_km2": 9.308645006430206,
+            "num_categories": 8,
+            "total_patches": 2550,
+            "landscape_area_km2": 56.74995869234043
+        }
+    },
+    "adjacency_matrix": {
+        "agriculture": {
+            "agriculture": 8,
+            "extraction": 0,
+            "forest": 2,
+            "green": 0,
+            "institutional": 0,
+            "other": 0,
+            "urban": 4,
+            "water": 0
+        },
+        "extraction": {
+            "agriculture": 0,
+            "extraction": 0,
+            "forest": 0,
+            "green": 0,
+            "institutional": 0,
+            "other": 0,
+            "urban": 0,
+            "water": 0
+        },
+        "forest": {
+            "agriculture": 2,
+            "extraction": 0,
+            "forest": 0,
+            "green": 2,
+            "institutional": 0,
+            "other": 0,
+            "urban": 2,
+            "water": 0
+        },
+        "green": {
+            "agriculture": 0,
+            "extraction": 0,
+            "forest": 2,
+            "green": 216,
+            "institutional": 4,
+            "other": 0,
+            "urban": 74,
+            "water": 0
+        },
+        "institutional": {
+            "agriculture": 0,
+            "extraction": 0,
+            "forest": 0,
+            "green": 4,
+            "institutional": 28,
+            "other": 6,
+            "urban": 22,
+            "water": 0
+        },
+        "other": {
+            "agriculture": 0,
+            "extraction": 0,
+            "forest": 0,
+            "green": 0,
+            "institutional": 6,
+            "other": 4,
+            "urban": 12,
+            "water": 0
+        },
+        "urban": {
+            "agriculture": 4,
+            "extraction": 0,
+            "forest": 2,
+            "green": 74,
+            "institutional": 22,
+            "other": 12,
+            "urban": 2748,
+            "water": 0
+        },
+        "water": {
+            "agriculture": 0,
+            "extraction": 0,
+            "forest": 0,
+            "green": 0,
+            "institutional": 0,
+            "other": 0,
+            "urban": 0,
+            "water": 0
+        }
+    },
+    "interspersion_index": {
+        "agriculture": 32.67979465405651,
+        "extraction": 0.0,
+        "forest": 56.45750340535796,
+        "green": 22.534523502465575,
+        "institutional": 40.015857344062404,
+        "other": 35.20046566977949,
+        "urban": 8.692519660630817,
+        "water": 0.0
+    },
+    "topology": {
+        "total_features": 2550,
+        "invalid_geometries": 0,
+        "multipolygon_count": 0,
+        "polygon_count": 2550,
+        "self_intersections": 0,
+        "potential_overlaps": 0
+    },
+    "bounds": {
+        "minx": 238303.76430270425,
+        "miny": 7389277.00827297,
+        "maxx": 263336.75285360904,
+        "maxy": 7414228.733472386
+    }
+}

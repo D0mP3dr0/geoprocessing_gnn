@@ -24,6 +24,12 @@ import networkx as nx
 from tqdm import tqdm
 import logging
 import time
+import numba
+from numba import jit, cuda, prange
+from functools import lru_cache
+from rtree import index
+import multiprocessing as mp
+import shapely
 
 # Obter o caminho absoluto para o diretório do projeto
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,13 +39,179 @@ workspace_dir = os.path.dirname(src_dir)
 # Definir diretórios de entrada e saída
 INPUT_DIR = os.path.join(workspace_dir, 'data', 'processed')
 OUTPUT_DIR = os.path.join(workspace_dir, 'data', 'enriched')
-REPORT_DIR = os.path.join(workspace_dir, 'src', 'enriched_data', 'quality_reports', 'erb')
+REPORT_DIR = os.path.join(workspace_dir, 'src', 'enriched_data', 'rbs', 'quality_reports')
 VISUALIZATION_DIR = os.path.join(workspace_dir, 'outputs', 'visualize_enriched_data', 'rbs')
 
 # Garantir que os diretórios de saída existam
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(REPORT_DIR, exist_ok=True)
 os.makedirs(VISUALIZATION_DIR, exist_ok=True)
+
+def ensure_directories():
+    """
+    Garante que todos os diretórios necessários existam.
+    Cria a estrutura completa de diretórios se necessário.
+    """
+    directories = [
+        OUTPUT_DIR,
+        REPORT_DIR,
+        VISUALIZATION_DIR,
+        os.path.join(REPORT_DIR, 'json'),
+        os.path.join(REPORT_DIR, 'csv'),
+        os.path.join(REPORT_DIR, 'summary')
+    ]
+    
+    for directory in directories:
+        os.makedirs(directory, exist_ok=True)
+        logger.debug(f"Diretório garantido: {directory}")
+
+# Verificar disponibilidade de CUDA
+def is_cuda_available():
+    """
+    Verifica se CUDA está disponível no sistema.
+    
+    Returns:
+        bool: True se CUDA estiver disponível, False caso contrário.
+    """
+    try:
+        cuda_devices = numba.cuda.list_devices()
+        return len(cuda_devices) > 0
+    except Exception:
+        return False
+
+# Funções para processamento paralelo e uso de GPU
+@jit(nopython=True, parallel=True)
+def calculate_densities_parallel(coords, buffer_size=1000):
+    """
+    Calcula densidades de ERBs de forma paralela.
+    
+    Args:
+        coords (np.ndarray): Array de coordenadas [x, y] de ERBs.
+        buffer_size (float): Tamanho do buffer em metros para considerar vizinhos.
+        
+    Returns:
+        np.ndarray: Array de densidades para cada ERB.
+    """
+    n = len(coords)
+    densities = np.zeros(n, dtype=np.int32)
+    
+    for i in prange(n):
+        x, y = coords[i]
+        count = 0
+        for j in range(n):
+            if i == j:
+                continue
+            dist = np.sqrt((x - coords[j, 0])**2 + (y - coords[j, 1])**2)
+            if dist <= buffer_size:
+                count += 1
+        densities[i] = count
+    
+    return densities
+
+@cuda.jit
+def calculate_densities_cuda(coords, results, buffer_size):
+    """
+    Kernel CUDA para calcular densidades de ERBs.
+    
+    Args:
+        coords (np.ndarray): Array de coordenadas [x, y] de ERBs.
+        results (np.ndarray): Array de saída para densidades.
+        buffer_size (float): Tamanho do buffer em metros.
+    """
+    i = cuda.grid(1)
+    if i < coords.shape[0]:
+        count = 0
+        x, y = coords[i, 0], coords[i, 1]
+        
+        for j in range(coords.shape[0]):
+            if i == j:
+                continue
+            dist = math.sqrt((x - coords[j, 0])**2 + (y - coords[j, 1])**2)
+            if dist <= buffer_size:
+                count += 1
+        
+        results[i] = count
+
+def calculate_densities_with_gpu(coords, buffer_size=1000):
+    """
+    Calcula densidades usando GPU se disponível, senão usa CPU paralela.
+    
+    Args:
+        coords (np.ndarray): Array de coordenadas [x, y] de ERBs.
+        buffer_size (float): Tamanho do buffer em metros.
+        
+    Returns:
+        np.ndarray: Array de densidades para cada ERB.
+    """
+    if is_cuda_available():
+        logger.info("Usando GPU (CUDA) para cálculo de densidades")
+        results = np.zeros(len(coords), dtype=np.int32)
+        threadsperblock = 256
+        blockspergrid = (coords.shape[0] + (threadsperblock - 1)) // threadsperblock
+        calculate_densities_cuda[blockspergrid, threadsperblock](coords, results, buffer_size)
+        return results
+    else:
+        logger.info("GPU não disponível, usando CPU paralela para cálculo de densidades")
+        return calculate_densities_parallel(coords, buffer_size)
+
+@jit(nopython=True)
+def calculate_raio_coverage(eirp, freq, atenuacao, receptor_sensibilidade=-100):
+    """
+    Calcula o raio de cobertura com fórmula de Friis otimizada.
+    
+    Args:
+        eirp (float): Potência Efetivamente Irradiada em dBm.
+        freq (float): Frequência de transmissão em MHz.
+        atenuacao (float): Fator de atenuação baseado no tipo de área.
+        receptor_sensibilidade (float): Sensibilidade do receptor em dBm.
+        
+    Returns:
+        float: Raio de cobertura em km.
+    """
+    # Cálculo do raio usando fórmula de Friis ajustada com atenuação
+    raio_base = 10 ** ((eirp - receptor_sensibilidade - 32.44 - 20 * np.log10(freq)) / 20)
+    raio_ajustado = raio_base / (1 + atenuacao/10)
+    
+    # Limitar o raio máximo com base na frequência
+    raio_max = min(20, 25000/freq) if freq > 0 else 10
+    raio = min(raio_ajustado, raio_max)
+    
+    return raio
+
+@jit(nopython=True, parallel=True)
+def calculate_raios_coverage_batch(eirps, freqs, atenuacoes, receptor_sensibilidade=-100):
+    """
+    Calcula raios de cobertura para múltiplas ERBs em paralelo.
+    
+    Args:
+        eirps (np.ndarray): Array de valores EIRP em dBm.
+        freqs (np.ndarray): Array de frequências em MHz.
+        atenuacoes (np.ndarray): Array de fatores de atenuação.
+        receptor_sensibilidade (float): Sensibilidade do receptor em dBm.
+        
+    Returns:
+        np.ndarray: Array de raios de cobertura em km.
+    """
+    n = len(eirps)
+    raios = np.zeros(n)
+    
+    for i in prange(n):
+        raios[i] = calculate_raio_coverage(eirps[i], freqs[i], atenuacoes[i], receptor_sensibilidade)
+    
+    return raios
+
+@lru_cache(maxsize=1024)
+def cached_hex_boundary(hex_id):
+    """
+    Função cacheada para obter os limites de um hexágono H3.
+    
+    Args:
+        hex_id (str): ID do hexágono H3.
+        
+    Returns:
+        list: Lista de coordenadas do limite.
+    """
+    return h3.cell_to_boundary(hex_id)
 
 # Constantes para cálculos de cobertura
 RECEPTOR_SENSIBILIDADE = -100  # dBm
@@ -246,7 +418,7 @@ def create_coverage_sectors(gdf):
     if mask.any():
         logger.warning(f"Encontrados {mask.sum()} valores NaN adicionais após conversão numérica de 'Azimute'. Filtrando estes registros.")
         result = result[~mask].copy()
-        
+    
     # Criar geometria do setor para cada ERB
     setores = []
     for idx, row in result.iterrows():
@@ -318,15 +490,16 @@ def create_hexagon_coverage_grid(gdf):
     hex_ids = set()
     for lat in np.linspace(min_lat, max_lat, 20):
         for lon in np.linspace(min_lon, max_lon, 20):
-            hex_id = h3.geo_to_h3(lat, lon, H3_RESOLUTION)
+            hex_id = h3.latlng_to_cell(lat, lon, H3_RESOLUTION)
             hex_ids.add(hex_id)
     
     # Converter índices H3 para polígonos
     hex_polygons = []
     hex_ids_list = list(hex_ids)
     for hex_id in hex_ids_list:
-        boundary = h3.h3_to_geo_boundary(hex_id, geo_json=True)
-        polygon = Polygon(boundary)
+        boundary = h3.cell_to_boundary(hex_id)
+        # Convert the boundary format to be compatible with Shapely
+        polygon = Polygon([(lng, lat) for lat, lng in boundary])
         hex_polygons.append(polygon)
     
     # Criar GeoDataFrame dos hexágonos
@@ -663,10 +836,23 @@ def generate_quality_report(original_gdf, enriched_gdf, hex_gdf, G=None):
         enriched_gdf (geopandas.GeoDataFrame): Dados de ERB enriquecidos
         hex_gdf (geopandas.GeoDataFrame): Grade hexagonal de cobertura
         G (nx.Graph, optional): Grafo de rede
+    
+    Returns:
+        dict: Relatório gerado com estatísticas de qualidade
     """
-    # Criar relatório
+    logger.info("Gerando relatório de qualidade detalhado")
+    
+    # Criar timestamp para nomear os arquivos
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Garantir que os diretórios existam
+    ensure_directories()
+    
+    # Criar relatório base
     report = {
+        "report_id": timestamp,
         "report_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "data_source": RBS_FILE,
         "original_features": len(original_gdf),
         "enriched_features": len(enriched_gdf),
         "new_attributes": list(set(enriched_gdf.columns) - set(original_gdf.columns)),
@@ -675,25 +861,29 @@ def generate_quality_report(original_gdf, enriched_gdf, hex_gdf, G=None):
                 "mean": float(enriched_gdf['EIRP_dBm'].mean()),
                 "median": float(enriched_gdf['EIRP_dBm'].median()),
                 "min": float(enriched_gdf['EIRP_dBm'].min()),
-                "max": float(enriched_gdf['EIRP_dBm'].max())
+                "max": float(enriched_gdf['EIRP_dBm'].max()),
+                "std": float(enriched_gdf['EIRP_dBm'].std())
             },
             "Raio_Cobertura_km": {
                 "mean": float(enriched_gdf['Raio_Cobertura_km'].mean()),
                 "median": float(enriched_gdf['Raio_Cobertura_km'].median()),
                 "min": float(enriched_gdf['Raio_Cobertura_km'].min()),
-                "max": float(enriched_gdf['Raio_Cobertura_km'].max())
+                "max": float(enriched_gdf['Raio_Cobertura_km'].max()),
+                "std": float(enriched_gdf['Raio_Cobertura_km'].std())
             },
             "Area_Cobertura_km2": {
                 "mean": float(enriched_gdf['Area_Cobertura_km2'].mean()),
                 "median": float(enriched_gdf['Area_Cobertura_km2'].median()),
                 "min": float(enriched_gdf['Area_Cobertura_km2'].min()),
-                "max": float(enriched_gdf['Area_Cobertura_km2'].max())
+                "max": float(enriched_gdf['Area_Cobertura_km2'].max()),
+                "std": float(enriched_gdf['Area_Cobertura_km2'].std())
             },
             "densidade_local": {
                 "mean": float(enriched_gdf['densidade_local'].mean()),
                 "median": float(enriched_gdf['densidade_local'].median()),
                 "min": float(enriched_gdf['densidade_local'].min()),
-                "max": float(enriched_gdf['densidade_local'].max())
+                "max": float(enriched_gdf['densidade_local'].max()),
+                "std": float(enriched_gdf['densidade_local'].std())
             },
             "tipo_area": {
                 "distribution": {str(k): int(v) for k, v in enriched_gdf['tipo_area'].value_counts().to_dict().items()}
@@ -702,20 +892,47 @@ def generate_quality_report(original_gdf, enriched_gdf, hex_gdf, G=None):
                 "distribution": {str(k): int(v) for k, v in enriched_gdf['classe_importancia'].value_counts().to_dict().items()}
             }
         },
+        "data_validation": {
+            "valid_geometries": int(enriched_gdf.geometry.is_valid.sum()),
+            "invalid_geometries": int((~enriched_gdf.geometry.is_valid).sum()),
+            "null_values": {
+                col: int(enriched_gdf[col].isna().sum()) 
+                for col in enriched_gdf.columns if enriched_gdf[col].isna().sum() > 0
+            }
+        },
         "operadoras": {
-            str(op): int(enriched_gdf[enriched_gdf['NomeEntidade'] == op].shape[0])
-            for op in enriched_gdf['NomeEntidade'].unique()
+            str(op): {
+                "count": int(enriched_gdf[enriched_gdf['NomeEntidade'] == op].shape[0]),
+                "avg_eirp": float(enriched_gdf[enriched_gdf['NomeEntidade'] == op]['EIRP_dBm'].mean()),
+                "avg_raio": float(enriched_gdf[enriched_gdf['NomeEntidade'] == op]['Raio_Cobertura_km'].mean()),
+                "total_coverage_km2": float(enriched_gdf[enriched_gdf['NomeEntidade'] == op]['Area_Cobertura_km2'].sum())
+            } for op in enriched_gdf['NomeEntidade'].unique()
         },
         "hexagons": {
             "total": len(hex_gdf),
-            "statistics": {
-                "num_operadoras": {
-                    "mean": float(hex_gdf['num_operadoras'].mean()),
-                    "distribution": {str(k): int(v) for k, v in hex_gdf['num_operadoras'].value_counts().to_dict().items()}
-                },
-                "vulnerabilidade": {
-                    "distribution": {str(k): int(v) for k, v in hex_gdf['vulnerabilidade'].value_counts().to_dict().items()}
-                }
+            "coverage_statistics": {
+                "covered": int(hex_gdf[hex_gdf['num_operadoras'] > 0].shape[0]),
+                "uncovered": int(hex_gdf[hex_gdf['num_operadoras'] == 0].shape[0]),
+                "coverage_percentage": float(hex_gdf[hex_gdf['num_operadoras'] > 0].shape[0] / len(hex_gdf) * 100)
+            },
+            "operadoras_statistics": {
+                "mean": float(hex_gdf['num_operadoras'].mean()),
+                "distribution": {str(k): int(v) for k, v in hex_gdf['num_operadoras'].value_counts().to_dict().items()}
+            },
+            "vulnerabilidade": {
+                "distribution": {str(k): int(v) for k, v in hex_gdf['vulnerabilidade'].value_counts().to_dict().items()}
+            }
+        },
+        "spatial_metrics": {
+            "bounds": {
+                "min_lat": float(enriched_gdf.geometry.bounds.miny.min()),
+                "max_lat": float(enriched_gdf.geometry.bounds.maxy.max()),
+                "min_lon": float(enriched_gdf.geometry.bounds.minx.min()),
+                "max_lon": float(enriched_gdf.geometry.bounds.maxx.max())
+            },
+            "centroid": {
+                "lat": float(enriched_gdf.geometry.centroid.y.mean()),
+                "lon": float(enriched_gdf.geometry.centroid.x.mean())
             }
         }
     }
@@ -733,19 +950,112 @@ def generate_quality_report(original_gdf, enriched_gdf, hex_gdf, G=None):
                 "cobertura": sum(1 for u, v, d in G.edges(data=True) if d.get('tipo') == 'cobertura'),
                 "cluster": sum(1 for u, v, d in G.edges(data=True) if d.get('tipo') == 'cluster')
             },
-            "average_degree": sum(dict(G.degree()).values()) / G.number_of_nodes(),
-            "erb_criticas_evacuacao": int(enriched_gdf['erb_critica_evacuacao'].sum())
+            "average_degree": sum(dict(G.degree()).values()) / G.number_of_nodes() if G.number_of_nodes() > 0 else 0,
+            "erb_criticas_evacuacao": int(enriched_gdf['erb_critica_evacuacao'].sum()),
+            "graph_metrics": {
+                "avg_clustering": nx.average_clustering(G) if nx.is_connected(G) else None,
+                "density": nx.density(G),
+                "connected_components": nx.number_connected_components(G),
+                "largest_component_size": len(max(nx.connected_components(G), key=len)) if G.number_of_nodes() > 0 else 0
+            }
         }
     
-    # Salvar relatório como JSON
-    report_file = os.path.join(REPORT_DIR, 'enrichment_report.json')
-    with open(report_file, 'w', encoding='utf-8') as f:
-        json.dump(report, f, indent=4, ensure_ascii=False)
+    # Adicionar análises específicas para clusters
+    if 'cluster_id' in enriched_gdf.columns:
+        cluster_analysis = {}
+        cluster_ids = sorted(enriched_gdf['cluster_id'].unique())
+        
+        for cluster_id in cluster_ids:
+            if cluster_id == -1:  # Pontos de ruído
+                continue
+                
+            cluster_erbs = enriched_gdf[enriched_gdf['cluster_id'] == cluster_id]
+            
+            cluster_analysis[str(cluster_id)] = {
+                "size": len(cluster_erbs),
+                "operadoras": {
+                    op: int(cluster_erbs[cluster_erbs['NomeEntidade'] == op].shape[0])
+                    for op in cluster_erbs['NomeEntidade'].unique()
+                },
+                "avg_distance": float(cluster_erbs['distancia_media_cluster'].mean()),
+                "avg_eirp": float(cluster_erbs['EIRP_dBm'].mean())
+            }
+        
+        report["cluster_analysis"] = cluster_analysis
     
-    print(f"Relatório de qualidade salvo em {report_file}")
+    # Salvar relatório completo como JSON
+    json_report_file = os.path.join(REPORT_DIR, 'json', f'erb_quality_report_{timestamp}.json')
     
-    # Gerar visualizações
-    generate_visualizations(enriched_gdf, hex_gdf, G)
+    try:
+        with open(json_report_file, 'w', encoding='utf-8') as f:
+            json.dump(report, f, indent=4, ensure_ascii=False)
+        logger.info(f"Relatório completo de qualidade salvo em {json_report_file}")
+    except Exception as e:
+        logger.error(f"Erro ao salvar relatório JSON: {e}")
+    
+    # Salvar resumo do relatório como texto
+    summary_file = os.path.join(REPORT_DIR, 'summary', f'erb_quality_summary_{timestamp}.txt')
+    
+    try:
+        with open(summary_file, 'w', encoding='utf-8') as f:
+            f.write(f"RELATÓRIO DE QUALIDADE DE DADOS - ERBs - {timestamp}\n")
+            f.write(f"='='='='='='='='='='='='='='='='='='='='='='='='='='='=\n\n")
+            f.write(f"Data de geração: {report['report_date']}\n")
+            f.write(f"Fonte de dados: {report['data_source']}\n\n")
+            
+            f.write(f"RESUMO GERAL:\n")
+            f.write(f"  Registros originais: {report['original_features']}\n")
+            f.write(f"  Registros enriquecidos: {report['enriched_features']}\n")
+            f.write(f"  Novas colunas adicionadas: {len(report['new_attributes'])}\n\n")
+            
+            f.write(f"ESTATÍSTICAS PRINCIPAIS:\n")
+            f.write(f"  EIRP média: {report['statistics']['EIRP_dBm']['mean']:.2f} dBm\n")
+            f.write(f"  Raio médio de cobertura: {report['statistics']['Raio_Cobertura_km']['mean']:.2f} km\n")
+            f.write(f"  Área média de cobertura: {report['statistics']['Area_Cobertura_km2']['mean']:.2f} km²\n\n")
+            
+            f.write(f"DISTRIBUIÇÃO POR OPERADORA:\n")
+            for op, stats in report['operadoras'].items():
+                f.write(f"  {op}: {stats['count']} ERBs, cobertura total: {stats['total_coverage_km2']:.2f} km²\n")
+            
+            f.write(f"\nANÁLISE DE COBERTURA DOS HEXÁGONOS:\n")
+            f.write(f"  Hexágonos totais: {report['hexagons']['total']}\n")
+            f.write(f"  Hexágonos com cobertura: {report['hexagons']['coverage_statistics']['covered']} "
+                    f"({report['hexagons']['coverage_statistics']['coverage_percentage']:.2f}%)\n")
+            f.write(f"  Hexágonos sem cobertura: {report['hexagons']['coverage_statistics']['uncovered']}\n\n")
+            
+            f.write(f"ANÁLISE DE VULNERABILIDADE:\n")
+            for categoria, contagem in report['hexagons']['vulnerabilidade']['distribution'].items():
+                f.write(f"  {categoria}: {contagem} hexágonos\n")
+            
+            if 'network' in report:
+                f.write(f"\nANÁLISE DE REDE:\n")
+                f.write(f"  Nós: {report['network']['num_nodes']}\n")
+                f.write(f"  Arestas: {report['network']['num_edges']}\n")
+                f.write(f"  ERBs críticas para evacuação: {report['network']['erb_criticas_evacuacao']}\n")
+            
+            f.write(f"\n='='='='='='='='='='='='='='='='='='='='='='='='='='='=\n")
+            f.write(f"Fim do relatório. Para detalhes completos, consulte o arquivo JSON correspondente.")
+            
+        logger.info(f"Resumo do relatório de qualidade salvo em {summary_file}")
+    except Exception as e:
+        logger.error(f"Erro ao salvar resumo do relatório: {e}")
+    
+    # Salvar dados das operadoras em CSV
+    try:
+        operadoras_df = pd.DataFrame.from_dict(
+            {k: {'Operadora': k, 'Quantidade': v['count'], 'EIRP_Media': v['avg_eirp'], 
+                'Raio_Medio': v['avg_raio'], 'Cobertura_Total_km2': v['total_coverage_km2']} 
+             for k, v in report['operadoras'].items()},
+            orient='index'
+        )
+        
+        csv_op_file = os.path.join(REPORT_DIR, 'csv', f'erb_operadoras_{timestamp}.csv')
+        operadoras_df.to_csv(csv_op_file, index=False)
+        logger.info(f"Estatísticas por operadora salvas em {csv_op_file}")
+    except Exception as e:
+        logger.error(f"Erro ao salvar estatísticas das operadoras em CSV: {e}")
+    
+    return report
 
 def generate_visualizations(gdf, hex_gdf=None, G=None):
     """
@@ -783,91 +1093,13 @@ def generate_visualizations(gdf, hex_gdf=None, G=None):
     except Exception as e:
         logger.warning(f"Não foi possível adicionar mapa base: {e}")
     
-    # Salvar figura
-    plt.savefig(os.path.join(VISUALIZATION_DIR, 'erb_localizacao_operadora.png'), dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    # 2. Mapa de EIRP (Potência Efetivamente Irradiada)
-    logger.info("Gerando mapa de EIRP das ERBs")
-    plt.figure(figsize=(15, 12))
-    ax = plt.subplot(111)
-    
-    # Plotar ERBs por EIRP
-    scatter = gdf.plot(ax=ax, column='EIRP_dBm', cmap='viridis', markersize=50, 
-                     legend=True, alpha=0.7, legend_kwds={'label': 'EIRP (dBm)'})
-    
-    # Adicionar mapa base
-    try:
-        ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
-    except Exception as e:
-        logger.warning(f"Não foi possível adicionar mapa base: {e}")
-    
-    # Adicionar título
-    plt.title('Potência Efetivamente Irradiada (EIRP) das ERBs', fontsize=16)
+    # Adicionar título e legenda
+    plt.title('Localização das ERBs por Operadora', fontsize=16)
+    plt.legend(title='Operadora', loc='upper right')
     
     # Salvar figura
-    plt.savefig(os.path.join(VISUALIZATION_DIR, 'erb_eirp.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(VISUALIZATION_DIR, 'erb_cobertura_operadora.png'), dpi=300, bbox_inches='tight')
     plt.close()
-    
-    # 3. Gráfico de distribuição de EIRP por operadora (boxplot)
-    logger.info("Gerando gráfico de distribuição de EIRP por operadora")
-    plt.figure(figsize=(15, 8))
-    ax = plt.subplot(111)
-    
-    # Criar boxplot
-    data_por_operadora = [gdf[gdf['NomeEntidade'] == op]['EIRP_dBm'] for op in operadoras]
-    boxplot = ax.boxplot(data_por_operadora, patch_artist=True)
-    
-    # Colorir boxplots
-    for i, box in enumerate(boxplot['boxes']):
-        box.set(facecolor=colors_operadoras[operadoras[i]], alpha=0.7)
-    
-    # Adicionar labels
-    ax.set_xticklabels(operadoras, rotation=45, ha='right')
-    ax.set_ylabel('EIRP (dBm)')
-    ax.grid(axis='y', alpha=0.3)
-    
-    # Adicionar título
-    plt.title('Distribuição de EIRP por Operadora', fontsize=16)
-    plt.tight_layout()
-    
-    # Salvar figura
-    plt.savefig(os.path.join(VISUALIZATION_DIR, 'erb_eirp_boxplot.png'), dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    # 4. Mapa de setores de cobertura, se disponível
-    if 'setor_geometria' in gdf.columns and gdf['setor_geometria'].notna().any():
-        logger.info("Gerando mapa de setores de cobertura")
-        plt.figure(figsize=(15, 12))
-        ax = plt.subplot(111)
-        
-        # Criar GeoDataFrame de setores
-        setores_gdf = gdf[gdf['setor_geometria'].notna()].copy()
-        setores_gdf['geometry'] = setores_gdf['setor_geometria']
-        
-        # Plotar setores por operadora
-        for op in operadoras:
-            subset = setores_gdf[setores_gdf['NomeEntidade'] == op]
-            if len(subset) > 0:
-                color = colors_operadoras[op]
-                subset.plot(ax=ax, color=color, alpha=0.5, label=op)
-        
-        # Adicionar pontos das ERBs
-        gdf.plot(ax=ax, markersize=15, color='black', alpha=0.7)
-        
-        # Adicionar mapa base
-        try:
-            ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
-        except Exception as e:
-            logger.warning(f"Não foi possível adicionar mapa base: {e}")
-        
-        # Adicionar título e legenda
-        plt.title('Cobertura de ERBs por Operadora', fontsize=16)
-        plt.legend(title='Operadora', loc='upper right')
-        
-        # Salvar figura
-        plt.savefig(os.path.join(VISUALIZATION_DIR, 'erb_cobertura_operadora.png'), dpi=300, bbox_inches='tight')
-        plt.close()
     
     # 5. Mapa interativo com folium, se disponível
     try:
@@ -1113,7 +1345,7 @@ def plot_voronoi_map(gdf, voronoi_gdf):
     # Salvar figura
     plt.savefig(os.path.join(VISUALIZATION_DIR, 'erb_voronoi.png'), dpi=300, bbox_inches='tight')
     plt.close()
-
+    
 def plot_hex_vulnerability_map(hex_gdf):
     """
     Gera um mapa de vulnerabilidade baseado na grade hexagonal.
@@ -1224,7 +1456,7 @@ def plot_3d_coverage(gdf):
         # Salvar figura
         plt.savefig(os.path.join(VISUALIZATION_DIR, 'erb_cobertura_3d.png'), dpi=300, bbox_inches='tight')
         plt.close()
-        
+    
     except Exception as e:
         logger.error(f"Erro ao gerar visualização 3D: {e}")
 
@@ -1401,9 +1633,175 @@ def create_interactive_full_map(gdf, voronoi_gdf, hex_gdf):
     except Exception as e:
         logger.error(f"Erro ao gerar mapa interativo completo: {e}")
 
+def process_hex_in_parallel(hex_id, voronois, data_gdf, resolution):
+    """
+    Processa um único hexágono para análise de vulnerabilidade, otimizado para execução paralela.
+    
+    Args:
+        hex_id (str): ID do hexágono H3.
+        voronois (GeoDataFrame): GeoDataFrame com polígonos Voronoi.
+        data_gdf (GeoDataFrame): GeoDataFrame com dados de ERBs.
+        resolution (int): Resolução H3.
+        
+    Returns:
+        tuple: (hex_id, dados de vulnerabilidade)
+    """
+    try:
+        # Usar função cacheada para obter o limite
+        boundary = cached_hex_boundary(hex_id)
+        hex_geom = shapely.geometry.Polygon(boundary)
+        
+        # Contar ERBs dentro do hexágono usando índice espacial
+        hex_box = hex_geom.bounds
+        possible_matches_index = list(data_gdf.sindex.intersection(hex_box))
+        possible_matches = data_gdf.iloc[possible_matches_index]
+        erbs_dentro = possible_matches[possible_matches.intersects(hex_geom)]
+        erbs_count = len(erbs_dentro)
+        
+        # Calcular vulnerabilidade
+        if erbs_count > 0:
+            # Calcular estatísticas de cobertura
+            densidades = erbs_dentro['densidade'].mean() if erbs_count > 0 else 0
+            raios = erbs_dentro['raio_coverage'].mean() if erbs_count > 0 else 0
+            
+            # Calcular área de interseção com Voronoi usando índice espacial
+            voronoi_box = hex_geom.bounds
+            possible_voronoi_matches = list(voronois.sindex.intersection(voronoi_box))
+            intersecting_voronois = voronois.iloc[possible_voronoi_matches]
+            intersecting_voronois = intersecting_voronois[intersecting_voronois.intersects(hex_geom)]
+            
+            # Calcular percentual de cobertura
+            area_hex = hex_geom.area
+            area_intersection = sum(v.intersection(hex_geom).area for v in intersecting_voronois.geometry)
+            percentual_cobertura = 100 * area_intersection / area_hex if area_hex > 0 else 0
+            
+            return hex_id, {
+                'erbs_count': erbs_count, 
+                'densidade_media': densidades,
+                'raio_medio': raios,
+                'percentual_cobertura': percentual_cobertura,
+                'geometry': hex_geom
+            }
+        else:
+            return hex_id, {
+                'erbs_count': 0, 
+                'densidade_media': 0,
+                'raio_medio': 0,
+                'percentual_cobertura': 0,
+                'geometry': hex_geom
+            }
+    except Exception as e:
+        logger.error(f"Erro ao processar hexágono {hex_id}: {str(e)}")
+        return hex_id, None
+
+def process_hexagons_parallel(hexagons, voronois, data_gdf, resolution):
+    """
+    Processa hexágonos para análise de vulnerabilidade em paralelo.
+    
+    Args:
+        hexagons (list): Lista de IDs de hexágonos H3.
+        voronois (GeoDataFrame): GeoDataFrame com polígonos Voronoi.
+        data_gdf (GeoDataFrame): GeoDataFrame com dados de ERBs.
+        resolution (int): Resolução H3.
+        
+    Returns:
+        dict: Dicionário com dados de vulnerabilidade por hexágono.
+    """
+    # Adicionar índice espacial ao GeoDataFrame se ainda não existir
+    if not hasattr(data_gdf, 'sindex') or data_gdf.sindex is None:
+        data_gdf = data_gdf.copy()
+        data_gdf.sindex = data_gdf.geometry.sindex
+    
+    if not hasattr(voronois, 'sindex') or voronois.sindex is None:
+        voronois = voronois.copy()
+        voronois.sindex = voronois.geometry.sindex
+    
+    # Determinar número de processos baseado no sistema
+    num_processes = min(mp.cpu_count(), 8)  # Limite para evitar sobrecarga
+    
+    # Preparar para processamento paralelo
+    with mp.Pool(processes=num_processes) as pool:
+        results = pool.starmap(
+            process_hex_in_parallel,
+            [(hex_id, voronois, data_gdf, resolution) for hex_id in hexagons]
+        )
+    
+    # Filtrar resultados com erro
+    valid_results = {hex_id: data for hex_id, data in results if data is not None}
+    
+    logger.info(f"Processados {len(valid_results)} hexágonos válidos de {len(hexagons)} total")
+    return valid_results
+
+def calculate_voronoi_optimized(data_gdf):
+    """
+    Calcula diagrama de Voronoi otimizado para grande volume de dados.
+    
+    Args:
+        data_gdf (GeoDataFrame): GeoDataFrame com dados de ERBs.
+        
+    Returns:
+        GeoDataFrame: GeoDataFrame com polígonos Voronoi.
+    """
+    # Extrair coordenadas para processamento vetorizado
+    coords = np.array([(p.x, p.y) for p in data_gdf.geometry])
+    
+    # Usar SciPy para Voronoi rápido
+    vor = Voronoi(coords)
+    
+    # Processar polígonos em lotes para melhor desempenho
+    batch_size = 1000
+    voronoi_polys = []
+    
+    total_polys = len(vor.point_region)
+    num_batches = (total_polys + batch_size - 1) // batch_size
+    
+    for batch_idx in range(num_batches):
+        start_idx = batch_idx * batch_size
+        end_idx = min(start_idx + batch_size, total_polys)
+        
+        batch_polys = []
+        for i in range(start_idx, end_idx):
+            region_idx = vor.point_region[i]
+            region = vor.regions[region_idx]
+            
+            if -1 not in region and len(region) > 0:
+                polygon_vertices = [vor.vertices[v] for v in region]
+                if len(polygon_vertices) >= 3:  # Verificar se é um polígono válido
+                    poly = shapely.geometry.Polygon(polygon_vertices)
+                    if poly.is_valid:
+                        batch_polys.append((i, poly))
+                    else:
+                        # Tentar reparar polígono inválido
+                        fixed_poly = shapely.geometry.Polygon(poly.buffer(0).exterior)
+                        if fixed_poly.is_valid:
+                            batch_polys.append((i, fixed_poly))
+        
+        voronoi_polys.extend(batch_polys)
+        
+        if (batch_idx + 1) % 10 == 0 or batch_idx == num_batches - 1:
+            logger.info(f"Processados {batch_idx + 1}/{num_batches} lotes de polígonos Voronoi")
+    
+    # Criar GeoDataFrame de resultados
+    indices = [idx for idx, _ in voronoi_polys]
+    geometries = [poly for _, poly in voronoi_polys]
+    
+    voronoi_gdf = gpd.GeoDataFrame(
+        {'id': indices},
+        geometry=geometries,
+        crs=data_gdf.crs
+    )
+    
+    # Juntar dados originais
+    voronoi_gdf = voronoi_gdf.merge(data_gdf.reset_index(drop=True), left_on='id', right_index=True, how='left')
+    
+    return voronoi_gdf
+
 def main():
     """
     Função principal para executar o enriquecimento de dados de ERBs.
+    
+    Returns:
+        dict: Resultados do processamento ou None em caso de falha
     """
     # Configurar o sistema de logging
     setup_logging()
@@ -1412,11 +1810,17 @@ def main():
     start_time = time.time()
     logger.info("Iniciando processo de enriquecimento de dados de ERBs")
     
+    # Garantir que todos os diretórios existam
+    ensure_directories()
+    
     # Carregar dados
-    data = load_data()
-    if data is None or len(data) == 0:
+    original_data = load_data()
+    if original_data is None or len(original_data) == 0:
         logger.error("Não foi possível carregar os dados de ERB")
-        return
+        return None
+    
+    # Criar uma cópia dos dados originais para análise comparativa
+    data = original_data.copy()
     
     logger.info(f"Colunas disponíveis: {data.columns.tolist()}")
     
@@ -1427,12 +1831,12 @@ def main():
     if missing_columns:
         logger.error(f"Colunas obrigatórias ausentes nos dados: {missing_columns}")
         logger.error("Verifique o arquivo de entrada e tente novamente.")
-        return
+        return None
     
     # Verificar se a coluna 'Azimute' está presente
     if 'Azimute' not in data.columns:
         logger.error("Coluna 'Azimute' não encontrada. Este campo é necessário para cálculos de cobertura.")
-        return
+        return None
     else:
         # Converter Azimute para numérico se não for
         if data['Azimute'].dtype == 'object':
@@ -1472,6 +1876,22 @@ def main():
     # Criar grade hexagonal para análise de vulnerabilidade
     logger.info("Criando grade hexagonal para análise de vulnerabilidade")
     data, hex_gdf = create_hexagon_coverage_grid(data)
+    
+    # Analisar clustering espacial
+    logger.info("Realizando análise de clustering espacial")
+    data = analyze_spatial_clustering(data)
+    
+    # Criar rede de cobertura
+    logger.info("Criando rede de cobertura")
+    data, hex_gdf, G = create_coverage_network(data, hex_gdf)
+    
+    # Classificar ERBs por importância
+    logger.info("Classificando ERBs por importância")
+    data = classify_erbs_importance(data, hex_gdf, G)
+    
+    # Gerar relatório de qualidade completo
+    logger.info("Gerando relatório de qualidade detalhado")
+    quality_report = generate_quality_report(original_data, data, hex_gdf, G)
     
     # Gerar visualizações
     logger.info("Gerando visualizações")
@@ -1519,9 +1939,22 @@ def main():
     
     # Registrar fim do processo
     end_time = time.time()
-    logger.info(f"Processo de enriquecimento concluído em {end_time - start_time:.2f} segundos")
+    processing_time = end_time - start_time
+    logger.info(f"Processo de enriquecimento concluído em {processing_time:.2f} segundos")
     logger.info(f"Dados enriquecidos salvos em {output_file}")
     logger.info(f"Visualizações salvas em {VISUALIZATION_DIR}")
+    logger.info(f"Relatórios de qualidade salvos em {REPORT_DIR}")
+    
+    # Retornar objeto com resultados do processamento
+    return {
+        "enriched_data": data,
+        "voronoi": voronoi_gdf,
+        "hexagons": hex_gdf,
+        "network": G,
+        "output_file": output_file,
+        "quality_report": quality_report,
+        "processing_time_seconds": processing_time
+    }
 
 if __name__ == "__main__":
     # Importar bibliotecas adicionais que só são usadas em visualizações
