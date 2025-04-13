@@ -1,0 +1,263 @@
+{
+    "report_date": "2025-04-13 14:44:44",
+    "report_type": "nature_elevation_enrichment_quality",
+    "data_summary": {
+        "total_features": 354,
+        "crs": "PROJCS[\"SIRGAS 2000 / UTM zone 23S\",GEOGCS[\"SIRGAS 2000\",DATUM[\"Sistema_de_Referencia_Geocentrico_para_las_AmericaS_2000\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"6674\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4674\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-45],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",10000000],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"31983\"]]",
+        "geometry_types": [
+            "MultiPolygon"
+        ],
+        "original_features": 354,
+        "original_columns": [
+            "area_ha",
+            "perimeter_m",
+            "shape_index",
+            "ecological_importance",
+            "name",
+            "type",
+            "natural",
+            "landuse",
+            "leisure",
+            "geometry"
+        ],
+        "new_columns": [
+            "elevation_std",
+            "relative_roughness",
+            "elevation_min",
+            "exposure_index",
+            "terrain_profile",
+            "hydrological_relevance",
+            "elevation_percentile_10",
+            "ecological_protection_category",
+            "relief_class",
+            "elevation_zone",
+            "elevation_percentile",
+            "elevation_median",
+            "terrain_roughness_index",
+            "elevation_mean",
+            "elevation_range",
+            "elevation_max",
+            "ecological_protection_index",
+            "elevation_percentile_90"
+        ]
+    },
+    "elevation_statistics": {
+        "elevation_min": {
+            "count": 354,
+            "mean": 3.432299236928147,
+            "median": 0.0,
+            "std": 45.60255617755171,
+            "min": 0.0,
+            "max": 615.0339298725638,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "elevation_max": {
+            "count": 354,
+            "mean": 541.517524173141,
+            "median": 600.0,
+            "std": 195.04644915092388,
+            "min": 0.0,
+            "max": 850.0,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "elevation_mean": {
+            "count": 354,
+            "mean": 152.26371606388358,
+            "median": 150.0,
+            "std": 94.00648372800151,
+            "min": 0.0,
+            "max": 615.0339298725638,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "elevation_median": {
+            "count": 354,
+            "mean": 32.82814876386692,
+            "median": 0.0,
+            "std": 119.68310652774238,
+            "min": 0.0,
+            "max": 643.6749157998631,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "elevation_std": {
+            "count": 354,
+            "mean": 229.1112303886638,
+            "median": 259.8076211353316,
+            "std": 91.94849959031612,
+            "min": 0.0,
+            "max": 325.0,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "elevation_range": {
+            "count": 354,
+            "mean": 538.085224936213,
+            "median": 600.0,
+            "std": 199.1675853653316,
+            "min": 0.0,
+            "max": 850.0,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "elevation_percentile_10": {
+            "count": 354,
+            "mean": 5.314999736427862,
+            "median": 0.0,
+            "std": 46.66506719604791,
+            "min": 0.0,
+            "max": 615.0339298725638,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "elevation_percentile_90": {
+            "count": 354,
+            "mean": 478.2768140485547,
+            "median": 600.0,
+            "std": 225.77939120354267,
+            "min": 0.0,
+            "max": 700.0,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "elevation_percentile": {
+            "count": 354,
+            "mean": 50.14124293785311,
+            "median": 48.87005649717514,
+            "std": 28.871252452419927,
+            "min": 5.790960451977401,
+            "max": 100.0,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "elevation_zone": {
+            "count": 314,
+            "missing_values": 40,
+            "missing_percentage": 11.299435028248588
+        }
+    },
+    "derived_metrics": {
+        "terrain_roughness_index": {
+            "count": 354,
+            "mean": 229.1112303886638,
+            "median": 259.8076211353316,
+            "std": 91.94849959031612,
+            "min": 0.0,
+            "max": 325.0,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "relative_roughness": {
+            "count": 354,
+            "mean": 0.7049576319651194,
+            "median": 0.7994080650317895,
+            "std": 0.2829184602778957,
+            "min": 0.0,
+            "max": 1.0,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "terrain_profile": {
+            "count": 312,
+            "mean": -0.8910256410256411,
+            "median": -1.0,
+            "std": 0.38582134293631637,
+            "min": -1.0,
+            "max": 1.0,
+            "missing_values": 42,
+            "missing_percentage": 11.864406779661017
+        },
+        "elevation_percentile": {
+            "count": 354,
+            "mean": 50.14124293785311,
+            "median": 48.87005649717514,
+            "std": 28.871252452419927,
+            "min": 5.790960451977401,
+            "max": 100.0,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "hydrological_relevance": {
+            "count": 354,
+            "mean": 0.716655380178049,
+            "median": 0.75,
+            "std": 0.12380854723457319,
+            "min": 0.15487175450957202,
+            "max": 0.9522516410704249,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "ecological_protection_index": {
+            "count": 354,
+            "mean": 0.5076191888490906,
+            "median": 0.5584952900174511,
+            "std": 0.20230248022358674,
+            "min": 0.0,
+            "max": 0.8052839037354405,
+            "missing_values": 0,
+            "missing_percentage": 0.0
+        },
+        "relief_class_distribution": {
+            "Montanhoso": 312,
+            "Muito Plano": 0,
+            "Suave": 0,
+            "Moderado": 0,
+            "Acidentado": 0
+        },
+        "elevation_zone_distribution": {
+            "Baixada": 313,
+            "Colinas Baixas": 1,
+            "Colinas Altas": 0,
+            "Montanhas Baixas": 0,
+            "Montanhas Altas": 0
+        },
+        "ecological_protection_category_distribution": {
+            "Média": 179,
+            "Alta": 120,
+            "Baixa": 14,
+            "Muito Alta": 1,
+            "Muito Baixa": 0
+        }
+    },
+    "data_quality": {
+        "total_missing_values": 1148,
+        "columns_with_nulls": [
+            "name",
+            "landuse",
+            "leisure",
+            "relief_class",
+            "terrain_profile",
+            "elevation_zone",
+            "exposure_index",
+            "ecological_protection_category"
+        ],
+        "completeness_score": 0.884180790960452,
+        "potential_outliers": {
+            "elevation_mean": {
+                "count": 6,
+                "percentage": 1.694915254237288,
+                "min_value": 381.42857142857144,
+                "max_value": 615.0339298725638
+            },
+            "terrain_roughness_index": {
+                "count": 47,
+                "percentage": 13.27683615819209,
+                "min_value": 0.0,
+                "max_value": 132.34346564680965
+            },
+            "ecological_protection_index": {
+                "count": 41,
+                "percentage": 11.581920903954803,
+                "min_value": 0.0,
+                "max_value": 0.2218603153999159
+            }
+        }
+    },
+    "recommendations": [
+        "Priorizar conservação de 243 áreas com alta relevância hidrológica.",
+        "Considerar 1 áreas com alto índice de proteção ecológica para preservação prioritária.",
+        "Baixa diversidade de classes de relevo. Considerar expandir a cobertura da análise."
+    ]
+}

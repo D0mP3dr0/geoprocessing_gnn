@@ -1,0 +1,92 @@
+RELATÓRIO DE QUALIDADE DE DADOS - ERBs - 20250413_153940
+='='='='='='='='='='='='='='='='='='='='='='='='='='='=
+
+Data de geração: 2025-04-13 15:39:40
+Fonte de dados: F:\TESE_MESTRADO\geoprocessing\data\processed\licenciamento_processed.gpkg
+
+RESUMO GERAL:
+  Registros originais: 24245
+  Registros enriquecidos: 23438
+  Novas colunas adicionadas: 13
+
+ESTATÍSTICAS PRINCIPAIS:
+  EIRP média: 47.96 dBm
+  Raio médio de cobertura: 17.74 km
+  Área média de cobertura: 348.51 km²
+
+DISTRIBUIÇÃO POR OPERADORA:
+  Telefonica Brasil S.a.: 270 ERBs, cobertura total: 58990.33 km²
+  TELEFONICA BRASIL S.A.: 2550 ERBs, cobertura total: 533467.54 km²
+  CLARO S.A.: 2480 ERBs, cobertura total: 498279.60 km²
+  TIM S A: 2372 ERBs, cobertura total: 504915.51 km²
+  TELEFÔNICA BRASIL S.A.: 10 ERBs, cobertura total: 2875.07 km²
+  POLICIA MILITAR DO ESTADO DE SÃO PAULO: 20 ERBs, cobertura total: 7129.75 km²
+  PROTEGE S/A - PROTECAO E TRANSPORTE DE VALORES: 3 ERBs, cobertura total: 1256.64 km²
+  EMPRESA DE DESENVOLVIMENTO URBANO E SOCIAL DE SOROCABA - URBES: 425 ERBs, cobertura total: 178023.58 km²
+  BERBEL VIGILANCIA E SEGURANÇA PATRIMONIAL LTDA: 284 ERBs, cobertura total: 118961.64 km²
+  SAMURAY SEGURANCA E VIGILANCIA LTDA - ME: 4 ERBs, cobertura total: 1675.52 km²
+  SOCIEDADE DE MELHORAMENTOS JARDIM GRANJA OLGA III: 81 ERBs, cobertura total: 33929.20 km²
+  SOCIEDADE DE MELHORAMENTOS JARDIM GRANJA OLGA: 50 ERBs, cobertura total: 20943.95 km²
+  SOCIEDADE MELHORAMENTOS JARDIM GRANJA OLGA II: 50 ERBs, cobertura total: 20943.95 km²
+  TECSIS TECNOLOGIA E SISTEMAS AVANCADOS S.A.: 4 ERBs, cobertura total: 7.62 km²
+  OLIVEIRA MENDES SEGURANÇA PRIVADA LTDA: 107 ERBs, cobertura total: 44820.06 km²
+  IHARABRAS SA INDUSTRIAS QUIMICAS: 244 ERBs, cobertura total: 102206.48 km²
+  SHOPPING CIDADE - SOROCABA: 193 ERBs, cobertura total: 80843.65 km²
+  C & A MODAS LTDA: 11 ERBs, cobertura total: 4607.67 km²
+  ICON TAXI AEREO LTDA: 1 ERBs, cobertura total: 418.88 km²
+  LIQUIGAS DISTRIBUIDORA S.A.: 4 ERBs, cobertura total: 1675.52 km²
+  COMPANHIA PIRATININGA DE FORCA E LUZ: 2157 ERBs, cobertura total: 902376.32 km²
+  TELEVISAO SOROCABA LTDA: 4 ERBs, cobertura total: 46.05 km²
+  SCHAEFFLER BRASIL LTDA: 61 ERBs, cobertura total: 25551.62 km²
+  WOBBEN WINDPOWER INDUSTRIA E COMERCIO LTDA: 1240 ERBs, cobertura total: 519409.99 km²
+  MUNICIPIO DE SOROCABA: 6271 ERBs, cobertura total: 2617569.40 km²
+  Donizetti Macahubas Silva: 4 ERBs, cobertura total: 1675.52 km²
+  SECRETARIA DA ADMINISTRACAO PENITENCIARIA: 894 ERBs, cobertura total: 374477.84 km²
+  ENGEFORT SISTEMA AVANÇADO DE SEGURANÇA LTDA: 80 ERBs, cobertura total: 33510.32 km²
+  POLICIA CIVIL DO ESTADO DE SÃO PAULO - DIVISÃO DE COMUNICAÇÕES: 1706 ERBs, cobertura total: 714607.61 km²
+  DEPARTAMENTO AEROVIARIO DO ESTADO DE SAO PAULO: 13 ERBs, cobertura total: 5445.43 km²
+  ASSOCIACAO DOS PROFISSIONAIS DE RESGATE E EMERGENCIAS MEDICAS - APREMED: 15 ERBs, cobertura total: 6283.19 km²
+  GOCIL SERVICOS DE VIGILANCIA E SEGURANCA LTDA: 11 ERBs, cobertura total: 4607.67 km²
+  SERVICO AUTONOMO DE AGUA E ESGOTO: 489 ERBs, cobertura total: 204831.84 km²
+  CRB INCORPORACAO E CONSTRUCAO LTDA: 5 ERBs, cobertura total: 2094.40 km²
+  CNH INDUSTRIAL BRASIL LTDA.: 234 ERBs, cobertura total: 98017.69 km²
+  ROSA MARIA PAES AMATE: 7 ERBs, cobertura total: 2932.15 km²
+  SP-CAR SISTEMA PRIVADO DE COMUNICACAO DE APOIO AO RADIO EIRELI: 26 ERBs, cobertura total: 10890.85 km²
+  COMPANHIA BRASILEIRA DE ALUMINIO: 3 ERBs, cobertura total: 1256.64 km²
+  INTERFORT SEGURANCA DE VALORES LTDA: 43 ERBs, cobertura total: 18011.80 km²
+  TV ALIANCA PAULISTA LTDA: 6 ERBs, cobertura total: 70.08 km²
+  Sanovo Greenpack Embalagens do Brasil Ltda: 3 ERBs, cobertura total: 1256.64 km²
+  DONIZETTI MACAHUBAS SILVA - ME: 18 ERBs, cobertura total: 7539.82 km²
+  Sanovo Greenpack Embalagens do Brasil Ltda                                                                              : 87 ERBs, cobertura total: 36442.47 km²
+  ALGAR TELECOM S/A: 12 ERBs, cobertura total: 202.33 km²
+  EMPRESA FUNERARIA MORENO LTDA: 1 ERBs, cobertura total: 418.88 km²
+  Associacao dos Tit.direitos Rel. Aos Lotes Integrantes do Loteam. Residencial Parque Reserva Fazenda Imperial: 20 ERBs, cobertura total: 8377.58 km²
+  DENTAL MORELLI LTDA: 4 ERBs, cobertura total: 0.45 km²
+  ALGAR MULTIMÍDIA S/A: 2 ERBs, cobertura total: 837.76 km²
+  DIRECTNET PRESTACAO DE SERVICOS LTDA: 14 ERBs, cobertura total: 5047.47 km²
+  Action Infinite Communications Eireli: 1 ERBs, cobertura total: 14.93 km²
+  SAMM - SOCIEDADE DE ATIVIDADES EM MULTIMÍDIA LTDA.: 3 ERBs, cobertura total: 30.49 km²
+  Direct Lan Telecomunicacoes Sorocaba Ltda: 1 ERBs, cobertura total: 11.34 km²
+  Atacado e Auto Servico Esperanca Ltda.: 54 ERBs, cobertura total: 22619.47 km²
+  Flextronics International Tecnologia Ltda: 59 ERBs, cobertura total: 22335.84 km²
+  Servtronica Seguranca Eletronica Ltda: 15 ERBs, cobertura total: 6283.19 km²
+  COMPANHIA DE TRANSMISSAO DE ENERGIA ELETRICA PAULISTA: 2 ERBs, cobertura total: 5.90 km²
+  Associacao dos Empreendedores do Pcs: 332 ERBs, cobertura total: 139067.83 km²
+  CONSORCIO SHOPPING CENTER IGUATEMI ESPLANADA: 250 ERBs, cobertura total: 104719.76 km²
+  Comercial Esperanca Atacadista Importacao e Exportacao Ltda: 128 ERBs, cobertura total: 53616.51 km²
+
+ANÁLISE DE COBERTURA DOS HEXÁGONOS:
+  Hexágonos totais: 225
+  Hexágonos com cobertura: 106 (47.11%)
+  Hexágonos sem cobertura: 119
+
+ANÁLISE DE VULNERABILIDADE:
+  Sem cobertura: 119 hexágonos
+  Baixa vulnerabilidade: 47 hexágonos
+  Média vulnerabilidade: 8 hexágonos
+  Alta vulnerabilidade: 1 hexágonos
+
+ANÁLISE DE REDE: será processada em nuvem
+
+='='='='='='='='='='='='='='='='='='='='='='='='='='='=
+Fim do relatório. Para detalhes completos, consulte o arquivo JSON correspondente.

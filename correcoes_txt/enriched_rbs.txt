@@ -1,0 +1,1246 @@
+# Otimização de Código para Processamento de ERBs
+
+Analisando seu código, identifiquei diversas oportunidades para acelerar o processamento utilizando sua GPU 3060 Ti e os 40GB de RAM disponíveis. Vou apresentar otimizações por blocos funcionais, focando principalmente na clusterização que está causando o gargalo.
+
+## 1. Otimização da Função de Clusterização Espacial
+
+A função `analyze_spatial_clustering` está consumindo muito tempo devido ao processamento sequencial e ineficiente. Vamos substituí-la:
+
+```python
+def analyze_spatial_clustering_optimized(gdf):
+    """
+    Realiza análise de clustering espacial das ERBs usando DBSCAN otimizado com CUDA.
+    
+    Args:
+        gdf (geopandas.GeoDataFrame): Dados de ERB
+        
+    Returns:
+        geopandas.GeoDataFrame: Atualizado com informações de cluster
+    """
+    result = gdf.copy()
+    
+    # Converter para coordenadas métricas
+    gdf_proj = result.to_crs(epsg=3857)
+    
+    # Extrair coordenadas x, y
+    coords = np.vstack((gdf_proj.geometry.x, gdf_proj.geometry.y)).T
+    
+    # Verificar se CUDA está disponível para DBSCAN acelerado
+    cuda_available = is_cuda_available()
+    
+    if cuda_available:
+        logger.info("Usando GPU para clustering DBSCAN")
+        try:
+            # Usar RAPIDS cuML para DBSCAN acelerado por GPU
+            from cuml.cluster import DBSCAN as cuDBSCAN
+            import cudf
+            import cupy as cp
+            
+            # Converter para GPU
+            coords_gpu = cp.array(coords, dtype=np.float32)
+            
+            # Executar DBSCAN na GPU
+            clustering = cuDBSCAN(eps=500, min_samples=3, output_type='numpy')
+            labels = clustering.fit_predict(coords_gpu)
+            
+            # Adicionar rótulos de cluster ao GeoDataFrame
+            result['cluster_id'] = labels
+            
+        except (ImportError, Exception) as e:
+            logger.warning(f"Erro ao usar GPU para DBSCAN: {e}. Usando implementação paralelizada em CPU.")
+            # Fallback para implementação CPU paralelizada
+            use_cpu_clustering(result, coords)
+    else:
+        logger.info("GPU não disponível para DBSCAN, usando implementação CPU otimizada")
+        use_cpu_clustering(result, coords)
+    
+    # Calcular estatísticas usando vectorização NumPy em vez de loops
+    calculate_cluster_metrics_vectorized(result)
+    
+    return result
+
+def use_cpu_clustering(result, coords):
+    """Implementação otimizada de DBSCAN em CPU com particionamento espacial"""
+    from sklearn.cluster import DBSCAN
+    from joblib import parallel_backend
+    
+    # Usar paralelismo de CPU com joblib
+    with parallel_backend('threading', n_jobs=-1):
+        # Criar partições espaciais para reduzir complexidade do DBSCAN
+        n_points = len(coords)
+        if n_points > 10000:
+            # Usar particionamento para conjuntos muito grandes
+            labels = spatial_partitioning_dbscan(coords, eps=500, min_samples=3)
+        else:
+            # Para conjuntos menores, usar DBSCAN diretamente com paralelismo
+            clustering = DBSCAN(eps=500, min_samples=3, n_jobs=-1, algorithm='kd_tree')
+            labels = clustering.fit_predict(coords)
+    
+    result['cluster_id'] = labels
+
+def spatial_partitioning_dbscan(coords, eps=500, min_samples=3):
+    """
+    Implementa DBSCAN com particionamento espacial para grandes conjuntos de dados.
+    Divide o espaço em grades, aplica DBSCAN em cada uma e mescla os resultados.
+    """
+    from sklearn.cluster import DBSCAN
+    import numpy as np
+    from scipy.spatial import cKDTree
+    
+    # Criar partições espaciais
+    x_min, y_min = coords.min(axis=0)
+    x_max, y_max = coords.max(axis=0)
+    
+    # Tamanho da grade - ajustar com base no eps do DBSCAN
+    cell_size = eps * 4  # Fator de sobreposição para evitar artefatos de fronteira
+    
+    n_cells_x = max(1, int((x_max - x_min) / cell_size))
+    n_cells_y = max(1, int((y_max - y_min) / cell_size))
+    
+    # Se poucas células, não vale a pena particionar
+    if n_cells_x * n_cells_y <= 4:
+        clustering = DBSCAN(eps=eps, min_samples=min_samples, n_jobs=-1)
+        return clustering.fit_predict(coords)
+    
+    # Criar grades com sobreposição
+    overlap = eps  # Sobreposição de eps para garantir clusters contínuos
+    
+    all_labels = np.full(len(coords), -1)
+    next_label = 0
+    
+    # Criar árvore KD para buscas rápidas
+    tree = cKDTree(coords)
+    
+    # Para cada célula da grade
+    for i in range(n_cells_x):
+        x_start = x_min + i * cell_size - overlap
+        x_end = x_min + (i + 1) * cell_size + overlap
+        
+        for j in range(n_cells_y):
+            y_start = y_min + j * cell_size - overlap
+            y_end = y_min + (j + 1) * cell_size + overlap
+            
+            # Encontrar pontos nesta célula
+            mask = ((coords[:, 0] >= x_start) & (coords[:, 0] < x_end) & 
+                    (coords[:, 1] >= y_start) & (coords[:, 1] < y_end))
+            
+            if np.sum(mask) >= min_samples:
+                # Aplicar DBSCAN a esta partição
+                cell_coords = coords[mask]
+                cell_indices = np.where(mask)[0]
+                
+                clustering = DBSCAN(eps=eps, min_samples=min_samples)
+                cell_labels = clustering.fit_predict(cell_coords)
+                
+                # Mapear células de volta para o conjunto de dados completo
+                for k, label in enumerate(cell_labels):
+                    if label != -1:  # Se não for ruído
+                        # Verificar se este ponto já está em um cluster
+                        idx = cell_indices[k]
+                        if all_labels[idx] == -1:
+                            all_labels[idx] = label + next_label
+                
+                # Atualizar próximo rótulo disponível
+                valid_labels = cell_labels[cell_labels != -1]
+                if len(valid_labels) > 0:
+                    next_label += valid_labels.max() + 1
+    
+    # Segunda passagem para resolver pontos de fronteira
+    return resolve_boundary_points(coords, all_labels, tree, eps, min_samples, next_label)
+
+def resolve_boundary_points(coords, labels, tree, eps, min_samples, next_label):
+    """Resolve pontos em fronteiras de partições para evitar clusters fragmentados"""
+    # Para cada cluster, verificar se há outros clusters próximos que deveriam ser mesclados
+    unique_labels = np.unique(labels)
+    unique_labels = unique_labels[unique_labels != -1]
+    
+    # Mapeamento de equivalência de clusters
+    cluster_map = {label: label for label in unique_labels}
+    
+    # Para cada ponto em um cluster
+    for i, label in enumerate(labels):
+        if label != -1:
+            # Encontrar todos os pontos em eps de distância
+            indices = tree.query_ball_point(coords[i], eps)
+            neighbor_labels = set(labels[indices])
+            neighbor_labels.discard(-1)  # Remover pontos de ruído
+            
+            # Se há múltiplos clusters na vizinhança, eles devem ser mesclados
+            if len(neighbor_labels) > 1:
+                min_label = min(neighbor_labels)
+                for neighbor_label in neighbor_labels:
+                    cluster_map[neighbor_label] = min_label
+    
+    # Propagar mapeamentos (algoritmo de união)
+    for label in unique_labels:
+        while cluster_map[label] != cluster_map[cluster_map[label]]:
+            cluster_map[label] = cluster_map[cluster_map[label]]
+    
+    # Aplicar mapeamento final
+    final_labels = np.array([cluster_map.get(label, -1) if label != -1 else -1 for label in labels])
+    
+    # Remapear para rótulos consecutivos
+    unique_final = np.unique(final_labels)
+    unique_final = unique_final[unique_final != -1]
+    
+    remap = {old_label: new_label for new_label, old_label in enumerate(unique_final)}
+    remapped_labels = np.array([remap.get(label, -1) if label != -1 else -1 for label in final_labels])
+    
+    return remapped_labels
+
+def calculate_cluster_metrics_vectorized(result):
+    """Calcula métricas de cluster usando operações vetorizadas NumPy para performance"""
+    # Contar clusters
+    n_clusters = len(set(result['cluster_id'].unique()) - {-1})
+    n_noise = (result['cluster_id'] == -1).sum()
+    
+    # Contagem de ERBs por cluster
+    cluster_counts = result['cluster_id'].value_counts().sort_index()
+    
+    # Para cada cluster, calcular distâncias de forma vetorizada
+    cluster_ids = result['cluster_id'].unique()
+    
+    # Pré-alocar arrays para resultados
+    result['distancia_media_cluster'] = np.nan
+    result['densidade_cluster'] = 0
+    
+    for cluster_id in cluster_ids:
+        if cluster_id == -1:  # Pular pontos de ruído
+            continue
+            
+        # Filtrar pontos neste cluster
+        cluster_mask = result['cluster_id'] == cluster_id
+        same_cluster = result[cluster_mask]
+        
+        if len(same_cluster) <= 1:
+            continue
+        
+        # Para cada ponto, calcular distâncias para todos os outros pontos do cluster
+        # e armazenar a média das distâncias
+        for idx in same_cluster.index:
+            point = same_cluster.loc[idx, 'geometry']
+            other_points = same_cluster[same_cluster.index != idx]['geometry']
+            
+            # Usar coordenadas diretas em vez de operações geométricas para velocidade
+            p_coords = np.array([point.x, point.y])
+            o_coords = np.array([[p.x, p.y] for p in other_points])
+            
+            # Calcular distâncias euclidiana diretamente
+            distances = np.sqrt(np.sum((o_coords - p_coords)**2, axis=1))
+            
+            if len(distances) > 0:
+                result.at[idx, 'distancia_media_cluster'] = np.mean(distances)
+        
+        # Definir densidade do cluster
+        result.loc[cluster_mask, 'densidade_cluster'] = len(same_cluster)
+    
+    # Registrar métricas de clustering
+    result.attrs['n_clusters'] = n_clusters
+    result.attrs['n_noise'] = n_noise
+    result.attrs['cluster_counts'] = cluster_counts.to_dict()
+```
+
+## 2. Otimização do Cálculo de Densidades com CUDA
+
+A função de cálculo de densidades pode ser melhorada para usar a GPU mais eficientemente:
+
+```python
+@cuda.jit
+def calculate_densities_cuda_optimized(coords, results, buffer_size):
+    """
+    Kernel CUDA otimizado para calcular densidades de ERBs com grid e bloco 2D.
+    
+    Args:
+        coords (np.ndarray): Array de coordenadas [x, y] de ERBs.
+        results (np.ndarray): Array de saída para densidades.
+        buffer_size (float): Tamanho do buffer em metros.
+    """
+    # Obter índice 2D para melhor uso da GPU
+    tx = cuda.threadIdx.x
+    ty = cuda.threadIdx.y
+    bx = cuda.blockIdx.x
+    by = cuda.blockIdx.y
+    
+    # Dimensões do bloco
+    bw = cuda.blockDim.x
+    bh = cuda.blockDim.y
+    
+    # Calcular índice global
+    i = bx * bw + tx
+    batch_start = by * bh + ty
+    
+    # Número de ERBs a processar por thread (batch processing)
+    n = coords.shape[0]
+    batch_size = min(32, (n + 1023) // 1024)  # Ajuste baseado no tamanho do problema
+    
+    if i < n:
+        count = 0
+        x, y = coords[i, 0], coords[i, 1]
+        
+        # Buffer size ao quadrado para evitar raízes quadradas
+        buffer_size_sq = buffer_size * buffer_size
+        
+        # Processamento em lotes - cada thread processa vários pontos
+        for j_offset in range(0, batch_size):
+            j = batch_start * batch_size + j_offset
+            
+            if j < n and i != j:
+                # Cálculo de distância ao quadrado (evita raiz quadrada)
+                dx = x - coords[j, 0]
+                dy = y - coords[j, 1]
+                dist_sq = dx*dx + dy*dy
+                
+                if dist_sq <= buffer_size_sq:
+                    count += 1
+        
+        # Usar atomicAdd para acumular contagens de todos os blocos
+        cuda.atomic.add(results, i, count)
+
+def calculate_densities_with_gpu_optimized(coords, buffer_size=1000):
+    """
+    Calcula densidades usando GPU com otimizações avançadas.
+    
+    Args:
+        coords (np.ndarray): Array de coordenadas [x, y] de ERBs.
+        buffer_size (float): Tamanho do buffer em metros.
+        
+    Returns:
+        np.ndarray: Array de densidades para cada ERB.
+    """
+    try:
+        if is_cuda_available():
+            logger.info("Usando GPU (CUDA) para cálculo de densidades com otimizações")
+            # Converter para float32 para maior eficiência na GPU
+            coords_f32 = coords.astype(np.float32)
+            results = np.zeros(len(coords), dtype=np.int32)
+            
+            # Configurar grid e blocos 2D para melhor ocupação da GPU
+            n = len(coords)
+            
+            # Blocos de threads 2D (16x16=256 threads por bloco)
+            threads_per_block_x = 16
+            threads_per_block_y = 16
+            
+            # Calcular número de blocos necessários
+            blocks_x = (n + threads_per_block_x - 1) // threads_per_block_x
+            blocks_y = min(32, (n + threads_per_block_y - 1) // threads_per_block_y)  # Limitar número de blocos y
+            
+            # Definir dimensões do grid e bloco
+            blockspergrid = (blocks_x, blocks_y)
+            threadsperblock = (threads_per_block_x, threads_per_block_y)
+            
+            # Transferir dados para a GPU (usando cuda.to_device)
+            d_coords = cuda.to_device(coords_f32)
+            d_results = cuda.to_device(results)
+            
+            # Executar kernel
+            calculate_densities_cuda_optimized[blockspergrid, threadsperblock](d_coords, d_results, buffer_size)
+            
+            # Copiar resultados de volta para a CPU
+            results = d_results.copy_to_host()
+            
+            return results
+    except Exception as e:
+        logger.warning(f"Erro ao usar GPU: {e}. Caindo para CPU.")
+    
+    # Fallback para CPU
+    logger.info("Usando CPU paralela para cálculo de densidades")
+    return calculate_densities_parallel_optimized(coords, buffer_size)
+
+@jit(nopython=True, parallel=True, fastmath=True)
+def calculate_densities_parallel_optimized(coords, buffer_size=1000):
+    """
+    Versão otimizada do cálculo de densidades em CPU com técnicas avançadas.
+    
+    Args:
+        coords (np.ndarray): Array de coordenadas [x, y] de ERBs.
+        buffer_size (float): Tamanho do buffer em metros.
+        
+    Returns:
+        np.ndarray: Array de densidades para cada ERB.
+    """
+    n = len(coords)
+    densities = np.zeros(n, dtype=np.int32)
+    
+    # Buffer size ao quadrado para evitar raízes quadradas
+    buffer_size_sq = buffer_size * buffer_size
+    
+    # Dividir espaço em células para reduzir comparações
+    # Grid espacial simples implementado em Numba
+    cell_size = buffer_size * 2
+    
+    # Determinar limites do grid
+    min_x = np.min(coords[:, 0])
+    max_x = np.max(coords[:, 0])
+    min_y = np.min(coords[:, 1])
+    max_y = np.max(coords[:, 1])
+    
+    # Tamanho do grid
+    grid_width = int(np.ceil((max_x - min_x) / cell_size)) + 1
+    grid_height = int(np.ceil((max_y - min_y) / cell_size)) + 1
+    
+    # Criar grid de células vazio
+    grid = [[] for _ in range(grid_width * grid_height)]
+    
+    # Atribuir pontos às células
+    for i in range(n):
+        x, y = coords[i]
+        cell_x = int((x - min_x) / cell_size)
+        cell_y = int((y - min_y) / cell_size)
+        cell_idx = cell_y * grid_width + cell_x
+        # Uma vez que não podemos usar listas em Numba, armazenamos o índice
+        if 0 <= cell_idx < len(grid):
+            grid[cell_idx].append(i)
+    
+    # Paralelizar no nível dos pontos
+    for i in prange(n):
+        x, y = coords[i]
+        count = 0
+        
+        # Determinar célula deste ponto
+        cell_x = int((x - min_x) / cell_size)
+        cell_y = int((y - min_y) / cell_size)
+        
+        # Verificar a própria célula e células vizinhas (3x3 grade)
+        for dx in range(-1, 2):
+            nx = cell_x + dx
+            if nx < 0 or nx >= grid_width:
+                continue
+                
+            for dy in range(-1, 2):
+                ny = cell_y + dy
+                if ny < 0 or ny >= grid_height:
+                    continue
+                
+                cell_idx = ny * grid_width + nx
+                if 0 <= cell_idx < len(grid):
+                    # Verificar pontos nesta célula
+                    for j in grid[cell_idx]:
+                        if i == j:
+                            continue
+                        
+                        # Calcular distância ao quadrado
+                        dx = x - coords[j, 0]
+                        dy = y - coords[j, 1]
+                        dist_sq = dx*dx + dy*dy
+                        
+                        if dist_sq <= buffer_size_sq:
+                            count += 1
+        
+        densities[i] = count
+    
+    return densities
+```
+
+## 3. Otimização da Grade Hexagonal com Processamento Paralelo
+
+A criação da grade hexagonal é outro ponto de otimização:
+
+```python
+def create_hexagon_coverage_grid_optimized(gdf):
+    """
+    Cria um mosaico hexagonal para análise otimizado para alto desempenho.
+    
+    Args:
+        gdf (geopandas.GeoDataFrame): Dados de ERB com setores de cobertura
+        
+    Returns:
+        tuple: (gdf atualizado, gdf dos hexágonos)
+    """
+    result = gdf.copy()
+    
+    # Extrair limites da área para criar os hexágonos
+    bounds = result.total_bounds
+    min_lon, min_lat, max_lon, max_lat = bounds
+    
+    # Adicionar margem aos limites
+    margin = 0.05  # graus
+    min_lat -= margin
+    min_lon -= margin
+    max_lat += margin
+    max_lon += margin
+    
+    logger.info("Gerando índices H3 para a área")
+    # Gerar índices H3 para a área usando vetorização numpy
+    # Criar grade de pontos usando meshgrid
+    lat_points = np.linspace(min_lat, max_lat, 20)
+    lon_points = np.linspace(min_lon, max_lon, 20)
+    lat_grid, lon_grid = np.meshgrid(lat_points, lon_points)
+    
+    # Achatar para arrays 1D
+    lat_flat = lat_grid.flatten()
+    lon_flat = lon_grid.flatten()
+    
+    # Usar multiprocessamento para converter para células H3
+    with mp.Pool(processes=min(mp.cpu_count(), 8)) as pool:
+        hex_ids_list = list(set(pool.starmap(h3.latlng_to_cell, 
+                                            [(lat, lon, H3_RESOLUTION) 
+                                             for lat, lon in zip(lat_flat, lon_flat)])))
+    
+    logger.info(f"Gerando polígonos para {len(hex_ids_list)} hexágonos")
+    
+    # Converter índices H3 para polígonos em lotes para economizar memória
+    batch_size = 1000
+    hex_polygons = []
+    
+    for batch_start in range(0, len(hex_ids_list), batch_size):
+        batch_end = min(batch_start + batch_size, len(hex_ids_list))
+        batch_ids = hex_ids_list[batch_start:batch_end]
+        
+        # Processar lote em paralelo
+        with mp.Pool(processes=min(mp.cpu_count(), 8)) as pool:
+            batch_boundaries = pool.map(h3.cell_to_boundary, batch_ids)
+            
+        # Converter para polígonos Shapely
+        batch_polygons = [Polygon([(lng, lat) for lat, lng in boundary]) 
+                         for boundary in batch_boundaries]
+        
+        hex_polygons.extend(batch_polygons)
+    
+    # Criar GeoDataFrame dos hexágonos
+    hex_gdf = gpd.GeoDataFrame(geometry=hex_polygons, crs=result.crs)
+    hex_gdf['hex_index'] = range(len(hex_gdf))
+    
+    logger.info("Calculando cobertura dos hexágonos")
+    
+    # Otimizar análise de cobertura usando índice espacial e processamento em lotes
+    # Criar índice espacial para setores
+    if 'setor_geometria' in result.columns:
+        setores_gdf = result[result['setor_geometria'].notna()].copy()
+        setores_gdf['geometry'] = gpd.GeoSeries(setores_gdf['setor_geometria'])
+        
+        # Criar índice espacial para setores
+        if not hasattr(setores_gdf, 'sindex') or setores_gdf.sindex is None:
+            setores_gdf = setores_gdf.copy()
+            setores_gdf.sindex = setores_gdf.geometry.sindex
+    else:
+        setores_gdf = result
+    
+    # Lista de operadoras únicas
+    operadoras = result['NomeEntidade'].unique()
+    
+    # Funções para análise em lote de hexágonos
+    def process_hexagon_batch(hex_batch):
+        results = []
+        
+        for hex_idx, hex_row in hex_batch.iterrows():
+            hex_geom = hex_row.geometry
+            
+            # Conjunto de operadoras que têm cobertura neste hexágono
+            op_com_cobertura = set()
+            count_setores = 0
+            eirp_setores = []
+            
+            # Usar índice espacial para query mais rápida
+            possible_matches_idx = list(setores_gdf.sindex.intersection(hex_geom.bounds))
+            possible_matches = setores_gdf.iloc[possible_matches_idx]
+            
+            # Para cada operadora, verificar interseção eficientemente
+            for op in operadoras:
+                # Filtrar setores desta operadora
+                op_setores = possible_matches[possible_matches['NomeEntidade'] == op]
+                
+                # Verificar se algum setor intersecta o hexágono
+                for _, setor_row in op_setores.iterrows():
+                    if hex_geom.intersects(setor_row.geometry):
+                        op_com_cobertura.add(op)
+                        count_setores += 1
+                        eirp_setores.append(setor_row['EIRP_dBm'])
+                        break  # Basta uma interseção por operadora
+            
+            results.append({
+                'hex_idx': hex_idx,
+                'num_operadoras': len(op_com_cobertura),
+                'num_setores': count_setores,
+                'potencia_media': np.mean(eirp_setores) if eirp_setores else np.nan
+            })
+        
+        return results
+    
+    # Dividir hexágonos em lotes para processamento
+    hex_batches = []
+    batch_size = max(1, len(hex_gdf) // (mp.cpu_count() * 2))
+    
+    for i in range(0, len(hex_gdf), batch_size):
+        hex_batches.append(hex_gdf.iloc[i:i+batch_size])
+    
+    # Processar lotes em paralelo
+    logger.info(f"Processando {len(hex_batches)} lotes de hexágonos em paralelo")
+    
+    with mp.Pool(processes=min(mp.cpu_count(), 8)) as pool:
+        batch_results = pool.map(process_hexagon_batch, hex_batches)
+    
+    # Consolidar resultados
+    all_results = []
+    for batch in batch_results:
+        all_results.extend(batch)
+    
+    # Ordenar resultados pelo índice do hexágono
+    all_results.sort(key=lambda x: x['hex_idx'])
+    
+    # Adicionar colunas ao GeoDataFrame de hexágonos
+    hex_gdf['num_operadoras'] = [r['num_operadoras'] for r in all_results]
+    hex_gdf['num_setores'] = [r['num_setores'] for r in all_results]
+    hex_gdf['potencia_media'] = [r['potencia_media'] for r in all_results]
+    
+    # Classificar os hexágonos por vulnerabilidade
+    bins = [-1, 0, 1, 2, 10]
+    labels = ['Sem cobertura', 'Alta vulnerabilidade', 'Média vulnerabilidade', 'Baixa vulnerabilidade']
+    hex_gdf['vulnerabilidade'] = pd.cut(hex_gdf['num_operadoras'], bins=bins, labels=labels)
+    
+    # Calcular métricas adicionais para os hexágonos
+    # Densidade de potência: média da potência / número de setores
+    hex_gdf['densidade_potencia'] = hex_gdf['potencia_media'] / hex_gdf['num_setores'].replace(0, np.nan)
+    
+    return result, hex_gdf
+```
+
+## 4. Otimização da Rede de Cobertura
+
+A função `create_coverage_network` também pode ser otimizada:
+
+```python
+def create_coverage_network_optimized(gdf, hex_gdf):
+    """
+    Cria um grafo de rede de cobertura otimizado para análise de conectividade.
+    
+    Args:
+        gdf (geopandas.GeoDataFrame): Dados de ERB com setores
+        hex_gdf (geopandas.GeoDataFrame): Grade hexagonal de cobertura
+        
+    Returns:
+        tuple: (gdf atualizado, gdf dos hexágonos atualizado, grafo de rede)
+    """
+    result = gdf.copy()
+    hex_result = hex_gdf.copy()
+    
+    # Criar um grafo não direcionado
+    G = nx.Graph()
+    
+    # Adicionar nós para ERBs em massa (mais rápido que adicionar um por um)
+    erb_nodes = []
+    for idx, row in result.iterrows():
+        erb_nodes.append((
+            f"erb_{idx}", 
+            {
+                'tipo': 'erb', 
+                'operadora': row['NomeEntidade'], 
+                'lat': row.geometry.y, 
+                'lon': row.geometry.x,
+                'eirp': row['EIRP_dBm'],
+                'raio': row['Raio_Cobertura_km'],
+                'pos': (row.geometry.x, row.geometry.y)
+            }
+        ))
+    
+    # Adicionar todos os nós ERB de uma vez
+    G.add_nodes_from(erb_nodes)
+    
+    # Adicionar nós para hexágonos em massa
+    hex_nodes = []
+    for idx, row in hex_result.iterrows():
+        # Usar o centróide do hexágono para posição
+        centroid = row.geometry.centroid
+        hex_nodes.append((
+            f"hex_{idx}", 
+            {
+                'tipo': 'hexagono',
+                'num_operadoras': row['num_operadoras'],
+                'vulnerabilidade': row['vulnerabilidade'],
+                'pos': (centroid.x, centroid.y)
+            }
+        ))
+    
+    # Adicionar todos os nós de hexágonos de uma vez
+    G.add_nodes_from(hex_nodes)
+    
+    # Otimizar adição de arestas usando paralelismo e índices espaciais
+    logger.info("Criando arestas ERB-hexágono usando índice espacial")
+    
+    # Verificar se temos dados de setor
+    if 'setor_geometria' in result.columns:
+        # Filtrar apenas ERBs com setores válidos
+        setores_gdf = result[result['setor_geometria'].notna()].copy()
+        setores_gdf['geometry'] = gpd.GeoSeries(setores_gdf['setor_geometria'])
+    else:
+        setores_gdf = result
+    
+    # Garantir que temos índices espaciais
+    if not hasattr(setores_gdf, 'sindex') or setores_gdf.sindex is None:
+        setores_gdf = setores_gdf.copy()
+        setores_gdf.sindex = setores_gdf.geometry.sindex
+    
+    if not hasattr(hex_result, 'sindex') or hex_result.sindex is None:
+        hex_result = hex_result.copy()
+        hex_result.sindex = hex_result.geometry.sindex
+    
+    # Função para processar um lote de ERBs
+    def process_erb_batch(erb_batch):
+        edges = []
+        
+        for erb_idx, erb_row in erb_batch.iterrows():
+            erb_geom = erb_row.geometry
+            
+            # Usar índice espacial para encontrar hexágonos que intersectam
+            possible_hex_idx = list(hex_result.sindex.intersection(erb_geom.bounds))
+            possible_hex = hex_result.iloc[possible_hex_idx]
+            
+            for hex_idx, hex_row in possible_hex.iterrows():
+                if erb_geom.intersects(hex_row.geometry):
+                    edges.append((f"erb_{erb_idx}", f"hex_{hex_idx}", {'tipo': 'cobertura'}))
+        
+        return edges
+    
+    # Dividir ERBs em lotes para processamento paralelo
+    erb_batches = []
+    batch_size = max(1, len(setores_gdf) // (mp.cpu_count() * 2))
+    
+    for i in range(0, len(setores_gdf), batch_size):
+        erb_batches.append(setores_gdf.iloc[i:i+batch_size])
+    
+    # Processar lotes em paralelo
+    logger.info(f"Processando {len(erb_batches)} lotes de ERBs para criar arestas")
+    
+    with mp.Pool(processes=min(mp.cpu_count(), 8)) as pool:
+        edge_batches = pool.map(process_erb_batch, erb_batches)
+    
+    # Consolidar arestas
+    all_edges = []
+    for batch in edge_batches:
+        all_edges.extend(batch)
+    
+    # Adicionar todas as arestas de uma vez
+    G.add_edges_from(all_edges)
+    
+    # Adicionar arestas entre ERBs da mesma operadora em clusters usando particionamento espacial
+    logger.info("Adicionando arestas entre ERBs em clusters")
+    
+    # Primeiro, particionar espaço para reduzir complexidade
+    cluster_edges = []
+    
+    for cluster_id in result['cluster_id'].unique():
+        if cluster_id == -1:  # Pular pontos de ruído
+            continue
+            
+        cluster_erbs = result[result['cluster_id'] == cluster_id]
+        
+        # Se o cluster é grande, usar índice espacial
+        if len(cluster_erbs) > 100:
+            # Criar índice espacial para este cluster
+            cluster_erbs = cluster_erbs.copy()
+            cluster_erbs.sindex = cluster_erbs.geometry.sindex
+            
+            for idx1, row1 in cluster_erbs.iterrows():
+                # Encontrar pontos próximos usando índice espacial
+                buffer_geom = row1.geometry.buffer(5000)  # 5km buffer para encontrar vizinhos
+                possible_matches_idx = list(cluster_erbs.sindex.intersection(buffer_geom.bounds))
+                possible_matches = cluster_erbs.iloc[possible_matches_idx]
+                
+                for idx2, row2 in possible_matches.iterrows():
+                    if idx1 >= idx2:  # Evitar duplicação
+                        continue
+                    
+                    if row1['NomeEntidade'] == row2['NomeEntidade']:
+                        # Calcular distância em km (aproximadamente)
+                        dist = row1.geometry.distance(row2.geometry) * 111.32
+                        cluster_edges.append((
+                            f"erb_{idx1}", 
+                            f"erb_{idx2}", 
+                            {
+                                'tipo': 'cluster', 
+                                'operadora': row1['NomeEntidade'],
+                                'distancia': dist
+                            }
+                        ))
+        else:
+            # Para clusters pequenos, abordagem direta
+            indices = list(cluster_erbs.index)
+            for i, idx1 in enumerate(indices):
+                row1 = cluster_erbs.loc[idx1]
+                for idx2 in indices[i+1:]:
+                    row2 = cluster_erbs.loc[idx2]
+                    if row1['NomeEntidade'] == row2['NomeEntidade']:
+                        # Calcular distância em km (aproximadamente)
+                        dist = row1.geometry.distance(row2.geometry) * 111.32
+                        cluster_edges.append((
+                            f"erb_{idx1}", 
+                            f"erb_{idx2}", 
+                            {
+                                'tipo': 'cluster', 
+                                'operadora': row1['NomeEntidade'],
+                                'distancia': dist
+                            }
+                        ))
+    
+    # Adicionar todas as arestas de cluster de uma vez
+    G.add_edges_from(cluster_edges)
+    
+    # Calcular métricas de centralidade em paralelo quando possível
+    logger.info("Calculando métricas de centralidade no grafo")
+    
+    # Para grafos muito grandes, usar aproximação para métricas
+    if len(G) > 10000:
+        # Usar aproximação para betweenness (mais rápido)
+        k = min(500, len(G) // 10)  # Número de nós para amostragem
+        betweenness = nx.betweenness_centrality(G, k=k, seed=42)
+        
+        # Degree centrality é rápido mesmo para grafos grandes
+        degree = nx.degree_centrality(G)
+        
+        # Usar aproximação para closeness
+        closeness = nx.closeness_centrality(G, distance='distancia')
+    else:
+        # Para grafos menores, calcular métricas exatas
+        betweenness = nx.betweenness_centrality(G)
+        degree = nx.degree_centrality(G)
+        closeness = nx.closeness_centrality(G)
+    
+    # Adicionar métricas ao GeoDataFrame de ERBs usando vetorização
+    for metric_name, metric_values in [('betweenness', betweenness), 
+                                       ('degree', degree), 
+                                       ('closeness', closeness)]:
+        # Inicializar coluna com NaN
+        result[metric_name] = np.nan
+        
+        # Extrair valores para ERBs
+        erb_indices = []
+        erb_values = []
+        
+        for idx in result.index:
+            node_id = f"erb_{idx}"
+            if node_id in metric_values:
+                erb_indices.append(idx)
+                erb_values.append(metric_values[node_id])
+        
+        # Atualizar valores em massa
+        result.loc[erb_indices, metric_name] = erb_values
+    
+    # Adicionar métricas ao GeoDataFrame de hexágonos usando vetorização
+    for metric_name, metric_values in [('betweenness', betweenness), 
+                                       ('degree', degree), 
+                                       ('closeness', closeness)]:
+        # Inicializar coluna com NaN
+        hex_result[metric_name] = np.nan
+        
+        # Extrair valores para hexágonos
+        hex_indices = []
+        hex_values = []
+        
+        for idx in hex_result.index:
+            node_id = f"hex_{idx}"
+            if node_id in metric_values:
+                hex_indices.append(idx)
+                hex_values.append(metric_values[node_id])
+        
+        # Atualizar valores em massa
+        hex_result.loc[hex_indices, metric_name] = hex_values
+    
+    # Calcular redundância de cobertura (quanto maior o grau, maior a redundância)
+    hex_result['indice_redundancia'] = hex_result['degree'].fillna(0)
+    
+    return result, hex_result, G
+```
+
+## 5. Utilização Eficiente de Memória e Processadores
+
+Adicione estas funções para gerenciar melhor os recursos disponíveis:
+
+```python
+def get_optimal_resource_allocation():
+    """
+    Determina a alocação ótima de recursos com base no hardware disponível.
+    
+    Returns:
+        dict: Configurações otimizadas para o hardware atual
+    """
+    # Verificar quantidade de RAM disponível e número de CPUs
+    try:
+        import psutil
+        
+        # Memória disponível em GB
+        available_memory_gb = psutil.virtual_memory().available / (1024 * 1024 * 1024)
+        
+        # Número de CPUs físicas e lógicas
+        cpu_count_physical = psutil.cpu_count(logical=False)
+        cpu_count_logical = psutil.cpu_count(logical=True)
+        
+        logger.info(f"Hardware detectado: {cpu_count_physical} CPUs físicas, {cpu_count_logical} threads, {available_memory_gb:.1f} GB RAM disponível")
+        
+        # Determinar paralelismo máximo seguro
+        if available_memory_gb >= 30:  # Usuário indicou ter 40GB disponível
+            # Uso intensivo de memória permitido
+            max_parallel = min(cpu_count_logical, 16)
+            batch_size_factor = 0.2  # Maior tamanho de lote por ter RAM suficiente
+            use_high_precision = True
+        elif available_memory_gb >= 16:
+            # Bom equilíbrio
+            max_parallel = min(cpu_count_logical, 8)
+            batch_size_factor = 0.1
+            use_high_precision = True
+        else:
+            # Conservador com memória
+            max_parallel = min(cpu_count_physical, 4)
+            batch_size_factor = 0.05
+            use_high_precision = False
+        
+        # Configurações para CUDA
+        cuda_available = is_cuda_available()
+        if cuda_available:
+            try:
+                import numba.cuda
+                
+                # Obter informações da GPU
+                device = numba.cuda.get_current_device()
+                gpu_name = device.name
+                gpu_memory = device.total_memory / (1024**3)  # GB
+                
+                logger.info(f"GPU detectada: {gpu_name} com {gpu_memory:.1f} GB VRAM")
+                
+                # Ajustar configurações baseadas na GPU
+                if gpu_memory >= 7.5:  # Usuário tem 8GB VRAM
+                    # Configurações para 3060 Ti
+                    max_cuda_blocks = 1024
+                    threads_per_block = 256
+                    use_float16 = False  # Maior precisão por ter VRAM suficiente
+                else:
+                    # Configurações mais conservadoras
+                    max_cuda_blocks = 512
+                    threads_per_block = 128
+                    use_float16 = True
+                
+                cuda_config = {
+                    'available': True,
+                    'max_blocks': max_cuda_blocks,
+                    'threads_per_block': threads_per_block,
+                    'use_float16': use_float16
+                }
+            except Exception as e:
+                logger.warning(f"Erro ao obter informações da GPU: {e}")
+                cuda_config = {'available': True}
+        else:
+            cuda_config = {'available': False}
+        
+        return {
+            'max_parallel_processes': max_parallel,
+            'batch_size_factor': batch_size_factor,
+            'use_high_precision': use_high_precision,
+            'cuda': cuda_config
+        }
+        
+    except ImportError:
+        # Fallback se psutil não estiver disponível
+        logger.info("psutil não disponível, usando configurações padrão")
+        return {
+            'max_parallel_processes': min(mp.cpu_count(), 8),
+            'batch_size_factor': 0.1,
+            'use_high_precision': True,
+            'cuda': {'available': is_cuda_available()}
+        }
+
+def optimize_dataframe_memory(df):
+    """
+    Otimiza o uso de memória de um DataFrame reduzindo tipos de dados.
+    
+    Args:
+        df (pandas.DataFrame): DataFrame a ser otimizado
+        
+    Returns:
+        pandas.DataFrame: DataFrame otimizado
+    """
+    result = df.copy()
+    
+    # Converter inteiros
+    int_cols = result.select_dtypes(include=['int64']).columns
+    for col in int_cols:
+        # Verificar se pode ser convertido para int32 ou int16
+        col_min, col_max = result[col].min(), result[col].max()
+        
+        if col_min >= -32768 and col_max <= 32767:
+            result[col] = result[col].astype('int16')
+        elif col_min >= -2147483648 and col_max <= 2147483647:
+            result[col] = result[col].astype('int32')
+    
+    # Converter floats
+    float_cols = result.select_dtypes(include=['float64']).columns
+    for col in float_cols:
+        # Verificar precisão necessária
+        if result[col].round(2).equals(result[col]):
+            # Precisão de 2 casas decimais é suficiente
+            result[col] = result[col].astype('float32')
+    
+    # Converter objetos/strings categóricas
+    obj_cols = result.select_dtypes(include=['object']).columns
+    for col in obj_cols:
+        num_unique = result[col].nunique()
+        num_total = len(result)
+        
+        if num_unique / num_total < 0.5:  # Se menos de 50% dos valores são únicos
+            result[col] = result[col].astype('category')
+    
+    # Reportar economia de memória
+    original_size = df.memory_usage(deep=True).sum() / (1024 * 1024)  # MB
+    optimized_size = result.memory_usage(deep=True).sum() / (1024 * 1024)  # MB
+    
+    logger.info(f"Memória otimizada: {original_size:.2f} MB → {optimized_size:.2f} MB "
+              f"({(1 - optimized_size/original_size)*100:.1f}% de redução)")
+    
+    return result
+```
+
+## 6. Modificação da Função Main para Usar as Otimizações
+
+Atualize a função main para integrar todas essas otimizações:
+
+```python
+def main_optimized():
+    """
+    Função principal otimizada para executar o enriquecimento de dados de ERBs.
+    
+    Returns:
+        dict: Resultados do processamento ou None em caso de falha
+    """
+    # Configurar o sistema de logging
+    setup_logging()
+    
+    # Registrar início do processo
+    start_time = time.time()
+    logger.info("Iniciando processo de enriquecimento de dados de ERBs com otimizações")
+    
+    # Garantir que todos os diretórios existam
+    ensure_directories()
+    
+    # Obter configurações otimizadas para o hardware
+    resource_config = get_optimal_resource_allocation()
+    logger.info(f"Configuração de recursos: {resource_config}")
+    
+    # Definir número de processos para multiprocessamento
+    num_processes = resource_config['max_parallel_processes']
+    
+    # Carregar dados
+    original_data = load_data()
+    if original_data is None or len(original_data) == 0:
+        logger.error("Não foi possível carregar os dados de ERB")
+        return None
+    
+    # Otimizar uso de memória
+    original_data = optimize_dataframe_memory(original_data)
+    
+    # Criar uma cópia dos dados originais para análise comparativa
+    data = original_data.copy()
+    
+    logger.info(f"Colunas disponíveis: {data.columns.tolist()}")
+    
+    # Verificar colunas obrigatórias
+    required_columns = ['geometry', 'PotenciaTransmissorWatts', 'GanhoAntena']
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    
+    if missing_columns:
+        logger.error(f"Colunas obrigatórias ausentes nos dados: {missing_columns}")
+        logger.error("Verifique o arquivo de entrada e tente novamente.")
+        return None
+    
+    # Verificar se a coluna 'Azimute' está presente
+    if 'Azimute' not in data.columns:
+        logger.error("Coluna 'Azimute' não encontrada. Este campo é necessário para cálculos de cobertura.")
+        return None
+    else:
+        # Converter Azimute para numérico se não for
+        if data['Azimute'].dtype == 'object':
+            data['Azimute'] = pd.to_numeric(data['Azimute'], errors='coerce')
+        
+        # Filtrar registros com valores NaN em Azimute
+        mask = data['Azimute'].isna()
+        if mask.any():
+            total_registros = len(data)
+            registros_ausentes = mask.sum()
+            logger.warning(f"Encontrados {registros_ausentes} valores ausentes em 'Azimute'. Estes registros serão excluídos.")
+            
+            # Excluir registros com Azimute ausente
+            data = data[~mask].copy()
+            logger.info(f"Registros reduzidos de {total_registros} para {len(data)} após remover valores ausentes de 'Azimute'.")
+    
+    # Usar a nova implementação otimizada para cada função
+    
+    # Calcular EIRP
+    logger.info("Calculando EIRP")
+    data = calculate_eirp(data)
+    
+    # Calcular densidade (usando a implementação otimizada em GPU/CPU)
+    logger.info("Calculando densidade de ERBs com CUDA/CPU otimizada")
+    coords = np.vstack((data.geometry.x, data.geometry.y)).T
+    densities = calculate_densities_with_gpu_optimized(coords, buffer_size=1000)
+    data['densidade_local'] = densities
+    
+    # Calcular raio de cobertura
+    logger.info("Calculando raio de cobertura")
+    data = calculate_coverage_radius(data)
+    
+    # Criar setores de cobertura
+    logger.info("Criando setores de cobertura")
+    data = create_coverage_sectors(data)
+    
+    # Calcular diagrama de Voronoi
+    logger.info("Calculando diagrama de Voronoi otimizado")
+    data, voronoi_gdf = calculate_voronoi(data)
+    
+    # Criar grade hexagonal para análise de vulnerabilidade
+    logger.info("Criando grade hexagonal otimizada para análise de vulnerabilidade")
+    data, hex_gdf = create_hexagon_coverage_grid_optimized(data)
+    
+    # Analisar clustering espacial
+    logger.info("Realizando análise de clustering espacial otimizada")
+    data = analyze_spatial_clustering_optimized(data)
+    
+    # Criar rede de cobertura
+    logger.info("Criando rede de cobertura otimizada")
+    data, hex_gdf, G = create_coverage_network_optimized(data, hex_gdf)
+    
+    # Classificar ERBs por importância
+    logger.info("Classificando ERBs por importância")
+    data = classify_erbs_importance(data, hex_gdf, G)
+    
+    # Gerar relatório de qualidade completo
+    logger.info("Gerando relatório de qualidade detalhado")
+    quality_report = generate_quality_report(original_data, data, hex_gdf, G)
+    
+    # Gerar visualizações se necessário
+    if '--skip-viz' not in sys.argv:
+        logger.info("Gerando visualizações")
+        try:
+            # Visualizações básicas em thread separada para não bloquear
+            import threading
+            
+            viz_thread = threading.Thread(target=generate_visualizations, args=(data,))
+            viz_thread.start()
+            
+            # Outras visualizações podem continuar em paralelo
+            voronoi_thread = threading.Thread(target=plot_voronoi_map, args=(data, voronoi_gdf))
+            voronoi_thread.start()
+            
+            hex_thread = threading.Thread(target=plot_hex_vulnerability_map, args=(hex_gdf,))
+            hex_thread.start()
+            
+            # Aguardar conclusão das visualizações
+            viz_thread.join()
+            voronoi_thread.join()
+            hex_thread.join()
+            
+            # Visualizações potencialmente mais pesadas
+            plot_3d_coverage(data)
+            create_interactive_full_map(data, voronoi_gdf, hex_gdf)
+            
+            logger.info("Visualizações geradas com sucesso")
+        except Exception as e:
+            logger.error(f"Erro ao gerar visualizações: {e}")
+    else:
+        logger.info("Visualizações ignoradas (--skip-viz)")
+    
+    # Salvar dados enriquecidos
+    logger.info("Salvando dados enriquecidos")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = os.path.join(OUTPUT_DIR, f"rbs_enriched_{timestamp}.gpkg")
+    
+    try:
+        if not os.path.exists(OUTPUT_DIR):
+            os.makedirs(OUTPUT_DIR)
+        
+        # Salvar em lotes para minimizar uso de memória
+        # Salvar dataframe principal
+        data.to_file(output_file, driver="GPKG", layer="erbs")
+        
+        # Salvar diagrama de Voronoi
+        voronoi_gdf.to_file(output_file, driver="GPKG", layer="voronoi")
+        
+        # Salvar grade hexagonal
+        hex_gdf.to_file(output_file, driver="GPKG", layer="hexagons")
+        
+        logger.info(f"Dados enriquecidos salvos em {output_file}")
+    except Exception as e:
+        logger.error(f"Erro ao salvar dados enriquecidos: {e}")
+    
+    # Registrar fim do processo
+    end_time = time.time()
+    processing_time = end_time - start_time
+    logger.info(f"Processo de enriquecimento otimizado concluído em {processing_time:.2f} segundos")
+    logger.info(f"Dados enriquecidos salvos em {output_file}")
+    logger.info(f"Visualizações salvas em {VISUALIZATION_DIR}")
+    logger.info(f"Relatórios de qualidade salvos em {REPORT_DIR}")
+    
+    # Retornar objeto com resultados do processamento
+    return {
+        "enriched_data": data,
+        "voronoi": voronoi_gdf,
+        "hexagons": hex_gdf,
+        "network": G,
+        "output_file": output_file,
+        "quality_report": quality_report,
+        "processing_time_seconds": processing_time
+    }
+```
+
+## 7. Instalação de Pacotes Necessários para GPU
+
+Para aproveitar melhor sua GPU, você precisará instalar alguns pacotes adicionais:
+
+```python
+def setup_gpu_environment():
+    """
+    Configura o ambiente para processamento em GPU, instalando pacotes necessários
+    quando não estiverem disponíveis.
+    
+    Returns:
+        bool: True se a configuração for bem-sucedida, False caso contrário
+    """
+    try:
+        # Verificar disponibilidade de CUDA
+        if not is_cuda_available():
+            logger.warning("CUDA não disponível no sistema. Verifique sua instalação de CUDA Toolkit.")
+            return False
+            
+        # Tentar importar cuML para DBSCAN acelerado
+        try:
+            import cuml
+            logger.info("RAPIDS cuML disponível para aceleração de GPU.")
+        except ImportError:
+            logger.warning("RAPIDS cuML não encontrado. Para melhor desempenho, instale com:")
+            logger.warning("conda install -c rapidsai -c nvidia -c conda-forge cuml=24.02 python=3.11 cuda-version=12.0")
+            
+        # Tentar importar cuDF para manipulação de dados em GPU
+        try:
+            import cudf
+            logger.info("RAPIDS cuDF disponível para manipulação de dados em GPU.")
+        except ImportError:
+            logger.warning("RAPIDS cuDF não encontrado. Para melhor desempenho, instale com:")
+            logger.warning("conda install -c rapidsai -c nvidia -c conda-forge cudf=24.02 python=3.11 cuda-version=12.0")
+            
+        # Tentar importar CuPy para arrays em GPU
+        try:
+            import cupy as cp
+            logger.info("CuPy disponível para arrays em GPU.")
+        except ImportError:
+            logger.warning("CuPy não encontrado. Para melhor desempenho, instale com:")
+            logger.warning("pip install cupy-cuda12x")
+            
+        return True
+        
+    except Exception as e:
+        logger.error(f"Erro ao configurar ambiente GPU: {e}")
+        return False
+```
+
+Este código otimizado deve melhorar significativamente o desempenho do seu processamento de ERBs, especialmente na parte de clusterização que estava causando o gargalo.
+
+Você precisará atualizar a função principal no final do arquivo para chamar `main_optimized()` em vez de `main()` para usar estas otimizações:
+
+```python
+if __name__ == "__main__":
+    # Importar bibliotecas adicionais
+    import seaborn as sns
+    
+    # Configurar ambiente GPU
+    setup_gpu_environment()
+    
+    # Executar versão otimizada
+    main_optimized()
+```
+

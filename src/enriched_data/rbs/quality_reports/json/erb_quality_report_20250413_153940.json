@@ -1,0 +1,570 @@
+{
+  "report_id": "20250413_153940",
+  "report_date": "2025-04-13 15:39:40",
+  "data_source": "F:\\TESE_MESTRADO\\geoprocessing\\data\\processed\\licenciamento_processed.gpkg",
+  "original_features": 24245,
+  "enriched_features": 23438,
+  "new_attributes": [
+    "cluster_id",
+    "voronoi_area_km2",
+    "Area_Cobertura_km2",
+    "distancia_media_cluster",
+    "voronoi_vizinhos",
+    "Raio_Cobertura_km",
+    "densidade_cluster",
+    "categoria_eirp",
+    "categoria_raio",
+    "setor_geometria",
+    "densidade_local",
+    "tipo_area",
+    "EIRP_dBm"
+  ],
+  "statistics": {
+    "EIRP_dBm": {
+      "mean": 47.958618218247985,
+      "median": 45.44068044350276,
+      "min": 23.010299956639813,
+      "max": 93.20008202553814,
+      "std": 11.599817955059176
+    },
+    "Raio_Cobertura_km": {
+      "mean": 17.738829989408615,
+      "median": 20.0,
+      "min": 0.30441400304414,
+      "max": 20.0,
+      "std": 4.259211101852018
+    },
+    "Area_Cobertura_km2": {
+      "mean": 348.5138320175482,
+      "median": 418.87902047863906,
+      "min": 0.09704158250769468,
+      "max": 418.87902047863906,
+      "std": 125.93597637979492
+    },
+    "densidade_local": {
+      "mean": 2183.063998634696,
+      "median": 1367.0,
+      "min": 0.0,
+      "max": 7018.0,
+      "std": 2261.396286229868
+    },
+    "tipo_area": {
+      "distribution": {
+        "URBANA_DENSA": 23385,
+        "SUBURBANA": 33,
+        "RURAL": 14,
+        "URBANA": 0
+      }
+    },
+    "classe_importancia": {
+      "status": "Classificação de importância será processada em nuvem"
+    }
+  },
+  "data_validation": {
+    "valid_geometries": 23438,
+    "invalid_geometries": 0,
+    "null_values": {
+      "tipo_area": 6,
+      "distancia_media_cluster": 27
+    }
+  },
+  "operadoras": {
+    "Telefonica Brasil S.a.": {
+      "count": 270,
+      "avg_eirp": 62.17200308547976,
+      "avg_raio": 13.73272113265822,
+      "total_coverage_km2": 58990.32580691601
+    },
+    "TELEFONICA BRASIL S.A.": {
+      "count": 2550,
+      "avg_eirp": 62.72449284510018,
+      "avg_raio": 13.270193538819925,
+      "total_coverage_km2": 533467.5366819096
+    },
+    "CLARO S.A.": {
+      "count": 2480,
+      "avg_eirp": 63.799701147639645,
+      "avg_raio": 12.994374170858027,
+      "total_coverage_km2": 498279.59683543025
+    },
+    "TIM S A": {
+      "count": 2372,
+      "avg_eirp": 61.86430002565973,
+      "avg_raio": 13.466493853409242,
+      "total_coverage_km2": 504915.51024938474
+    },
+    "TELEFÔNICA BRASIL S.A.": {
+      "count": 10,
+      "avg_eirp": 61.169691172335305,
+      "avg_raio": 15.717472118959108,
+      "total_coverage_km2": 2875.0703774829503
+    },
+    "POLICIA MILITAR DO ESTADO DE SÃO PAULO": {
+      "count": 20,
+      "avg_eirp": 53.458971326531675,
+      "avg_raio": 17.251051900229584,
+      "total_coverage_km2": 7129.745054089306
+    },
+    "PROTEGE S/A - PROTECAO E TRANSPORTE DE VALORES": {
+      "count": 3,
+      "avg_eirp": 46.53212513775344,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 1256.637061435917
+    },
+    "EMPRESA DE DESENVOLVIMENTO URBANO E SOCIAL DE SOROCABA - URBES": {
+      "count": 425,
+      "avg_eirp": 39.197449357526615,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 178023.58370342164
+    },
+    "BERBEL VIGILANCIA E SEGURANÇA PATRIMONIAL LTDA": {
+      "count": 284,
+      "avg_eirp": 40.90485183450167,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 118961.64181593352
+    },
+    "SAMURAY SEGURANCA E VIGILANCIA LTDA - ME": {
+      "count": 4,
+      "avg_eirp": 55.53212513775344,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 1675.5160819145563
+    },
+    "SOCIEDADE DE MELHORAMENTOS JARDIM GRANJA OLGA III": {
+      "count": 81,
+      "avg_eirp": 37.150066710562164,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 33929.20065876977
+    },
+    "SOCIEDADE DE MELHORAMENTOS JARDIM GRANJA OLGA": {
+      "count": 50,
+      "avg_eirp": 36.98970004336019,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 20943.951023931953
+    },
+    "SOCIEDADE MELHORAMENTOS JARDIM GRANJA OLGA II": {
+      "count": 50,
+      "avg_eirp": 36.98970004336019,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 20943.951023931953
+    },
+    "TECSIS TECNOLOGIA E SISTEMAS AVANCADOS S.A.": {
+      "count": 4,
+      "avg_eirp": 55.235389083702174,
+      "avg_raio": 1.347207485299563,
+      "total_coverage_km2": 7.616057181748424
+    },
+    "OLIVEIRA MENDES SEGURANÇA PRIVADA LTDA": {
+      "count": 107,
+      "avg_eirp": 38.86251244506354,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 44820.05519121439
+    },
+    "IHARABRAS SA INDUSTRIAS QUIMICAS": {
+      "count": 244,
+      "avg_eirp": 36.085835980275036,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 102206.48099678796
+    },
+    "SHOPPING CIDADE - SOROCABA": {
+      "count": 193,
+      "avg_eirp": 37.90476433745058,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 80843.65095237736
+    },
+    "C & A MODAS LTDA": {
+      "count": 11,
+      "avg_eirp": 36.98970004336019,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 4607.66922526503
+    },
+    "ICON TAXI AEREO LTDA": {
+      "count": 1,
+      "avg_eirp": 42.542425094393245,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 418.87902047863906
+    },
+    "LIQUIGAS DISTRIBUIDORA S.A.": {
+      "count": 4,
+      "avg_eirp": 30.0,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 1675.5160819145563
+    },
+    "COMPANHIA PIRATININGA DE FORCA E LUZ": {
+      "count": 2157,
+      "avg_eirp": 43.89139740770573,
+      "avg_raio": 19.980441621527213,
+      "total_coverage_km2": 902376.3245613861
+    },
+    "TELEVISAO SOROCABA LTDA": {
+      "count": 4,
+      "avg_eirp": 59.62251153924635,
+      "avg_raio": 3.3154335383672024,
+      "total_coverage_km2": 46.05117929230526
+    },
+    "SCHAEFFLER BRASIL LTDA": {
+      "count": 61,
+      "avg_eirp": 36.15073434377407,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 25551.62024919698
+    },
+    "WOBBEN WINDPOWER INDUSTRIA E COMERCIO LTDA": {
+      "count": 1240,
+      "avg_eirp": 36.98970004336019,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 519409.9853935125
+    },
+    "MUNICIPIO DE SOROCABA": {
+      "count": 6271,
+      "avg_eirp": 40.929936108102886,
+      "avg_raio": 19.94039493108121,
+      "total_coverage_km2": 2617569.396641001
+    },
+    "Donizetti Macahubas Silva": {
+      "count": 4,
+      "avg_eirp": 43.638181262758266,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 1675.5160819145563
+    },
+    "SECRETARIA DA ADMINISTRACAO PENITENCIARIA": {
+      "count": 894,
+      "avg_eirp": 38.21503474586905,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 374477.8443079034
+    },
+    "ENGEFORT SISTEMA AVANÇADO DE SEGURANÇA LTDA": {
+      "count": 80,
+      "avg_eirp": 39.03462443487901,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 33510.32163829113
+    },
+    "POLICIA CIVIL DO ESTADO DE SÃO PAULO - DIVISÃO DE COMUNICAÇÕES": {
+      "count": 1706,
+      "avg_eirp": 42.07319191646704,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 714607.6089365582
+    },
+    "DEPARTAMENTO AEROVIARIO DO ESTADO DE SAO PAULO": {
+      "count": 13,
+      "avg_eirp": 40.31813853394272,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 5445.427266222308
+    },
+    "ASSOCIACAO DOS PROFISSIONAIS DE RESGATE E EMERGENCIAS MEDICAS - APREMED": {
+      "count": 15,
+      "avg_eirp": 47.13212513775343,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 6283.185307179587
+    },
+    "GOCIL SERVICOS DE VIGILANCIA E SEGURANCA LTDA": {
+      "count": 11,
+      "avg_eirp": 37.290518106923315,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 4607.66922526503
+    },
+    "SERVICO AUTONOMO DE AGUA E ESGOTO": {
+      "count": 489,
+      "avg_eirp": 47.992080354814235,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 204831.84101405455
+    },
+    "CRB INCORPORACAO E CONSTRUCAO LTDA": {
+      "count": 5,
+      "avg_eirp": 36.98970004336019,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 2094.3951023931954
+    },
+    "CNH INDUSTRIAL BRASIL LTDA.": {
+      "count": 234,
+      "avg_eirp": 36.98970004336019,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 98017.69079200155
+    },
+    "ROSA MARIA PAES AMATE": {
+      "count": 7,
+      "avg_eirp": 39.22770355394176,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 2932.153143350474
+    },
+    "SP-CAR SISTEMA PRIVADO DE COMUNICACAO DE APOIO AO RADIO EIRELI": {
+      "count": 26,
+      "avg_eirp": 37.70287023929839,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 10890.854532444613
+    },
+    "COMPANHIA BRASILEIRA DE ALUMINIO": {
+      "count": 3,
+      "avg_eirp": 55.53212513775344,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 1256.637061435917
+    },
+    "INTERFORT SEGURANCA DE VALORES LTDA": {
+      "count": 43,
+      "avg_eirp": 36.34522317312708,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 18011.79788058148
+    },
+    "TV ALIANCA PAULISTA LTDA": {
+      "count": 6,
+      "avg_eirp": 60.9244758400333,
+      "avg_raio": 3.3361724148091727,
+      "total_coverage_km2": 70.08403893199248
+    },
+    "Sanovo Greenpack Embalagens do Brasil Ltda": {
+      "count": 3,
+      "avg_eirp": 36.98970004336019,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 1256.637061435917
+    },
+    "DONIZETTI MACAHUBAS SILVA - ME": {
+      "count": 18,
+      "avg_eirp": 36.505149978319906,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 7539.822368615503
+    },
+    "Sanovo Greenpack Embalagens do Brasil Ltda                                                                              ": {
+      "count": 87,
+      "avg_eirp": 36.989700043360195,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 36442.47478164162
+    },
+    "ALGAR TELECOM S/A": {
+      "count": 12,
+      "avg_eirp": 63.154875055722336,
+      "avg_raio": 4.008602137118993,
+      "total_coverage_km2": 202.32586335113243
+    },
+    "EMPRESA FUNERARIA MORENO LTDA": {
+      "count": 1,
+      "avg_eirp": 55.53212513775344,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 418.87902047863906
+    },
+    "Associacao dos Tit.direitos Rel. Aos Lotes Integrantes do Loteam. Residencial Parque Reserva Fazenda Imperial": {
+      "count": 20,
+      "avg_eirp": 38.667851293743844,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 8377.580409572782
+    },
+    "DENTAL MORELLI LTDA": {
+      "count": 4,
+      "avg_eirp": 70.5,
+      "avg_raio": 0.3255172268253629,
+      "total_coverage_km2": 0.445715807698147
+    },
+    "ALGAR MULTIMÍDIA S/A": {
+      "count": 2,
+      "avg_eirp": 58.48388930050312,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 837.7580409572781
+    },
+    "DIRECTNET PRESTACAO DE SERVICOS LTDA": {
+      "count": 14,
+      "avg_eirp": 70.68450800444957,
+      "avg_raio": 17.593959629299654,
+      "total_coverage_km2": 5047.469155045626
+    },
+    "Action Infinite Communications Eireli": {
+      "count": 1,
+      "avg_eirp": 45.6,
+      "avg_raio": 3.7764350453172204,
+      "total_coverage_km2": 14.934567717935066
+    },
+    "SAMM - SOCIEDADE DE ATIVIDADES EM MULTIMÍDIA LTDA.": {
+      "count": 3,
+      "avg_eirp": 67.76511261364575,
+      "avg_raio": 3.1145952347352726,
+      "total_coverage_km2": 30.485581648387345
+    },
+    "Direct Lan Telecomunicacoes Sorocaba Ltda": {
+      "count": 1,
+      "avg_eirp": 56.996870826184036,
+      "avg_raio": 3.291205897840969,
+      "total_coverage_km2": 11.343281848021533
+    },
+    "Atacado e Auto Servico Esperanca Ltda.": {
+      "count": 54,
+      "avg_eirp": 36.989700043360195,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 22619.467105846506
+    },
+    "Flextronics International Tecnologia Ltda": {
+      "count": 59,
+      "avg_eirp": 35.64440162215833,
+      "avg_raio": 18.422315632151378,
+      "total_coverage_km2": 22335.844141836988
+    },
+    "Servtronica Seguranca Eletronica Ltda": {
+      "count": 15,
+      "avg_eirp": 36.107536009528296,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 6283.185307179587
+    },
+    "COMPANHIA DE TRANSMISSAO DE ENERGIA ELETRICA PAULISTA": {
+      "count": 2,
+      "avg_eirp": 63.976705030022615,
+      "avg_raio": 1.6781857032994707,
+      "total_coverage_km2": 5.899631789555459
+    },
+    "Associacao dos Empreendedores do Pcs": {
+      "count": 332,
+      "avg_eirp": 36.40046513088426,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 139067.8347989082
+    },
+    "CONSORCIO SHOPPING CENTER IGUATEMI ESPLANADA": {
+      "count": 250,
+      "avg_eirp": 37.3257824430133,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 104719.75511965978
+    },
+    "Comercial Esperanca Atacadista Importacao e Exportacao Ltda": {
+      "count": 128,
+      "avg_eirp": 36.020599913279625,
+      "avg_raio": 20.0,
+      "total_coverage_km2": 53616.51462126581
+    }
+  },
+  "clusters": {
+    "num_clusters": 118,
+    "noise_points": 27,
+    "distribution": {
+      "0": 454,
+      "1": 99,
+      "2": 156,
+      "3": 65,
+      "4": 4009,
+      "5": 481,
+      "6": 5870,
+      "7": 123,
+      "8": 228,
+      "9": 42,
+      "10": 56,
+      "11": 129,
+      "12": 104,
+      "13": 126,
+      "14": 137,
+      "15": 977,
+      "16": 207,
+      "17": 424,
+      "18": 48,
+      "19": 105,
+      "20": 75,
+      "21": 121,
+      "22": 57,
+      "23": 1369,
+      "24": 81,
+      "25": 31,
+      "26": 25,
+      "27": 51,
+      "28": 23,
+      "29": 101,
+      "30": 130,
+      "31": 44,
+      "32": 42,
+      "33": 49,
+      "34": 49,
+      "35": 99,
+      "36": 182,
+      "37": 72,
+      "38": 119,
+      "39": 516,
+      "40": 18,
+      "41": 36,
+      "42": 145,
+      "43": 37,
+      "44": 57,
+      "45": 52,
+      "46": 115,
+      "47": 106,
+      "48": 48,
+      "49": 45,
+      "50": 345,
+      "51": 40,
+      "52": 42,
+      "53": 48,
+      "54": 54,
+      "55": 64,
+      "56": 254,
+      "57": 37,
+      "58": 125,
+      "59": 61,
+      "60": 56,
+      "61": 60,
+      "62": 54,
+      "63": 63,
+      "64": 33,
+      "65": 59,
+      "66": 45,
+      "67": 36,
+      "68": 77,
+      "69": 3,
+      "70": 42,
+      "71": 2407,
+      "72": 3,
+      "73": 3,
+      "74": 8,
+      "75": 3,
+      "76": 3,
+      "77": 3,
+      "78": 165,
+      "79": 50,
+      "80": 3,
+      "81": 16,
+      "82": 13,
+      "83": 13,
+      "84": 7,
+      "85": 427,
+      "86": 3,
+      "87": 3,
+      "88": 6,
+      "89": 4,
+      "90": 131,
+      "91": 44,
+      "92": 204,
+      "93": 49,
+      "94": 3,
+      "95": 14,
+      "96": 6,
+      "97": 41,
+      "98": 36,
+      "99": 39,
+      "100": 24,
+      "101": 30,
+      "102": 6,
+      "103": 24,
+      "104": 21,
+      "105": 66,
+      "106": 36,
+      "107": 3,
+      "108": 25,
+      "109": 4,
+      "110": 3,
+      "111": 24,
+      "112": 18,
+      "113": 24,
+      "114": 6,
+      "115": 24,
+      "116": 24,
+      "117": 9
+    }
+  },
+  "hexagons": {
+    "total": 225,
+    "coverage_statistics": {
+      "covered": 106,
+      "uncovered": 119,
+      "coverage_percentage": 47.11111111111111
+    },
+    "vulnerabilidade": {
+      "distribution": {
+        "Sem cobertura": 119,
+        "Baixa vulnerabilidade": 47,
+        "Média vulnerabilidade": 8,
+        "Alta vulnerabilidade": 1
+      }
+    }
+  },
+  "network": {
+    "status": "Análise de rede será processada em nuvem"
+  }
+}

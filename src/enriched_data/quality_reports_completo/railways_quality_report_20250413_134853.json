@@ -1,0 +1,89 @@
+{
+  "timestamp": "20250413_134853",
+  "data_summary": {
+    "original_count": 84,
+    "enriched_count": 84,
+    "key_points_count": 42,
+    "crs": "EPSG:4674"
+  },
+  "columns": {
+    "original": [
+      "osm_id",
+      "name",
+      "highway",
+      "waterway",
+      "aerialway",
+      "barrier",
+      "man_made",
+      "railway",
+      "z_order",
+      "other_tags",
+      "length_km",
+      "sinuosity",
+      "gauge_mm",
+      "electrified",
+      "operator",
+      "service",
+      "geometry"
+    ],
+    "added": [
+      "owner",
+      "traffic_mode",
+      "is_bridge",
+      "is_tunnel",
+      "passenger_lines",
+      "branch",
+      "layer",
+      "usage",
+      "ref",
+      "railway_class",
+      "connectivity",
+      "betweenness",
+      "closeness",
+      "component_id",
+      "pontuacao_importancia",
+      "nivel_importancia"
+    ]
+  },
+  "geometry_types": {
+    "types": [
+      "LineString"
+    ],
+    "multilinestring_count": 0,
+    "linestring_count": 84
+  },
+  "length_statistics": {
+    "total_km": 73.92773859762299,
+    "min_km": 0.008945506002063806,
+    "max_km": 7.36910720057674,
+    "mean_km": 0.8800921261621785,
+    "median_km": 0.10133773676800098,
+    "std_km": 1.7495183848277587
+  },
+  "sinuosity_statistics": {
+    "min": 1.0,
+    "max": 1.7043823135467253,
+    "mean": 1.0462056772208663,
+    "median": 1.0016872925990699,
+    "std": 0.11270780450284612
+  },
+  "railway_class_counts": {
+    "principal": 54,
+    "p\u00e1tio": 11,
+    "desvio": 4
+  },
+  "network_statistics": {
+    "nodes": 104,
+    "edges": 84,
+    "connected_components": 20,
+    "density": 0.01568334578043316,
+    "diameter": 27
+  },
+  "key_points": {
+    "total": 42,
+    "type_counts": {
+      "terminal": 41,
+      "cruzamento": 1
+    }
+  }
+}
