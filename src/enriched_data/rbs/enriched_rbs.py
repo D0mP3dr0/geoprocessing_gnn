@@ -34,7 +34,7 @@ workspace_dir = os.path.dirname(src_dir)
 INPUT_DIR = os.path.join(workspace_dir, 'data', 'processed')
 OUTPUT_DIR = os.path.join(workspace_dir, 'data', 'enriched')
 REPORT_DIR = os.path.join(workspace_dir, 'src', 'enriched_data', 'quality_reports', 'erb')
-VISUALIZATION_DIR = os.path.join(workspace_dir, 'src', 'enriched_data', 'visualizations', 'erb')
+VISUALIZATION_DIR = os.path.join(workspace_dir, 'outputs', 'visualize_enriched_data', 'rbs')
 
 # Garantir que os diretórios de saída existam
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -997,66 +997,52 @@ def calculate_density(gdf):
 
 def calculate_voronoi(gdf):
     """
-    Calcula o diagrama de Voronoi para as ERBs, representando áreas de domínio teórico.
+    Calcula o diagrama de Voronoi para as ERBs.
     
     Args:
         gdf (geopandas.GeoDataFrame): Dados de ERB
         
     Returns:
-        geopandas.GeoDataFrame: GeoDataFrame com os polígonos de Voronoi
+        tuple: (gdf atualizado, gdf do diagrama de Voronoi)
     """
     logger.info("Calculando diagrama de Voronoi para as ERBs")
     
-    # Converter para coordenadas métricas para cálculo adequado
-    gdf_proj = gdf.to_crs(epsg=3857)
+    # Criar uma cópia projetada para cálculos geométricos
+    gdf_proj = gdf.to_crs(epsg=3857)  # Web Mercator
     
-    # Extrair coordenadas x, y
-    coords = np.vstack((gdf_proj.geometry.x, gdf_proj.geometry.y)).T
+    # Extrair coordenadas das ERBs
+    coords = np.array([(point.x, point.y) for point in gdf_proj.geometry])
     
-    # Adicionar pontos na borda para limitar os polígonos de Voronoi
-    # Encontrar bounding box e expandir
-    x_min, y_min, x_max, y_max = gdf_proj.total_bounds
-    margin = max(x_max - x_min, y_max - y_min) * 0.3
-    
+    # Adicionar pontos de contorno para limitar o diagrama de Voronoi
     boundary_points = np.array([
-        [x_min - margin, y_min - margin],
-        [x_max + margin, y_min - margin],
-        [x_max + margin, y_max + margin],
-        [x_min - margin, y_max + margin],
+        [coords[:, 0].min() - 10000, coords[:, 1].min() - 10000],
+        [coords[:, 0].min() - 10000, coords[:, 1].max() + 10000],
+        [coords[:, 0].max() + 10000, coords[:, 1].min() - 10000],
+        [coords[:, 0].max() + 10000, coords[:, 1].max() + 10000]
     ])
-    
-    # Combinar pontos das ERBs com pontos da borda
-    all_points = np.vstack((coords, boundary_points))
+    coords_extended = np.vstack([coords, boundary_points])
     
     # Calcular diagrama de Voronoi
-    vor = Voronoi(all_points)
+    vor = Voronoi(coords_extended)
+    
+    # Criar polígonos de Voronoi
+    polygons = []
+    point_indices = []
+    
+    for i, region_idx in enumerate(vor.point_region[:len(coords)]):
+        region = vor.regions[region_idx]
+        if -1 not in region and len(region) > 0:
+            polygon_vertices = [vor.vertices[v] for v in region]
+            if len(polygon_vertices) >= 3:
+                poly = Polygon(polygon_vertices)
+                polygons.append(poly)
+                point_indices.append(i)
     
     # Criar GeoDataFrame para os polígonos de Voronoi
-    voronoi_polygons = []
-    operadoras = []
-    erb_ids = []
-    
-    # Criar polígonos apenas para as ERBs (não para os pontos de borda)
-    for i in range(len(coords)):
-        # Obter região de Voronoi
-        region_idx = vor.point_region[i]
-        region_vertices = vor.regions[region_idx]
-        
-        # Verificar se é uma região válida
-        if -1 not in region_vertices and len(region_vertices) > 0:
-            # Obter coordenadas dos vértices
-            polygon_vertices = vor.vertices[region_vertices]
-            # Criar polígono
-            polygon = Polygon(polygon_vertices)
-            voronoi_polygons.append(polygon)
-            
-            # Adicionar informações da ERB
-            operadoras.append(gdf.iloc[i]['NomeEntidade'])
-            erb_ids.append(i)
-    
-    # Criar GeoDataFrame
     voronoi_gdf = gpd.GeoDataFrame(
-        {'geometry': voronoi_polygons, 'NomeEntidade': operadoras, 'erb_id': erb_ids}, 
+        {'erb_id': point_indices,
+         'NomeEntidade': gdf.iloc[point_indices]['NomeEntidade'].values,
+         'geometry': polygons},
         crs=gdf_proj.crs
     )
     
@@ -1064,7 +1050,7 @@ def calculate_voronoi(gdf):
     voronoi_gdf = voronoi_gdf.to_crs(gdf.crs)
     
     # Calcular área dos polígonos em km²
-    voronoi_gdf['area_voronoi_km2'] = voronoi_gdf.to_crs('+proj=utm +zone=23K +south').geometry.area / 1_000_000
+    voronoi_gdf['area_voronoi_km2'] = voronoi_gdf.to_crs('+proj=utm +zone=23 +south').geometry.area / 1_000_000
     
     # Adicionar informações sobre vizinhos
     voronoi_gdf['num_vizinhos'] = 0
