@@ -1,0 +1,546 @@
+# DOCUMENTAÇÃO DETALHADA DO PIPELINE DE ANÁLISE DE REDES VIÁRIAS
+==============================================================================
+Versão: 1.0
+Data: 2023-04-14
+Autor: Equipe de Desenvolvimento GNN para Análise Espacial
+==============================================================================
+
+## ÍNDICE
+--------------
+1. INTRODUÇÃO E VISÃO GERAL
+2. ARQUITETURA DO SISTEMA
+3. FLUXO DE EXECUÇÃO DETALHADO
+   3.1. Inicialização e Configuração
+   3.2. Carregamento de Dados
+   3.3. Pré-processamento
+   3.4. Construção do Grafo
+   3.5. Preparação para PyTorch Geometric
+   3.6. Criação e Treinamento do Modelo
+   3.7. Avaliação do Modelo
+   3.8. Geração de Relatórios e Visualizações
+   3.9. Salvamento de Resultados
+   3.10. Finalização e Resumo
+4. ESTRUTURA DE DIRETÓRIOS E ARQUIVOS
+5. PARÂMETROS DE CONFIGURAÇÃO
+6. ARQUIVOS DE SAÍDA
+7. TRATAMENTO DE ERROS
+8. OTIMIZAÇÕES E CONSIDERAÇÕES DE DESEMPENHO
+9. EXEMPLOS DE USO
+10. LIMITAÇÕES CONHECIDAS E TRABALHOS FUTUROS
+11. GLOSSÁRIO
+
+==============================================================================
+## 1. INTRODUÇÃO E VISÃO GERAL
+==============================================================================
+
+O Pipeline de Análise de Redes Viárias é um sistema completo para processamento, análise e classificação de dados geoespaciais de redes de estradas utilizando Redes Neurais de Grafos (GNN). O sistema foi projetado para executar no ambiente Google Colab com integração ao Google Drive, permitindo o processamento de grandes volumes de dados geoespaciais com aceleração por GPU.
+
+Este pipeline implementa uma abordagem end-to-end que inclui:
+- Carregamento de dados geoespaciais de fontes padrão (GeoPackage, Shapefile)
+- Pré-processamento e limpeza de geometrias
+- Construção de representações em grafo de redes viárias
+- Treinamento de modelos GNN para classificação de elementos da rede
+- Avaliação de desempenho e geração de métricas
+- Visualização interativa e estática dos resultados
+- Geração de relatórios detalhados
+
+A modularização do sistema permite que componentes individuais sejam facilmente modificados, estendidos ou substituídos conforme necessário para diferentes casos de uso ou conjuntos de dados.
+
+==============================================================================
+## 2. ARQUITETURA DO SISTEMA
+==============================================================================
+
+O sistema segue uma arquitetura modular com os seguintes componentes principais:
+
+1. **Módulo de Configuração**: Gerencia parâmetros do sistema, caminhos de arquivos e configurações de execução
+   - Arquivo: pipeline/config.py
+   - Responsabilidades: Definição de caminhos, parâmetros padrão, configurações do modelo
+
+2. **Módulo de Carregamento de Dados**: Responsável por carregar e validar dados geoespaciais
+   - Arquivo: pipeline/data_loading.py
+   - Responsabilidades: Leitura de arquivos, conversão de formatos, validação de CRS
+
+3. **Módulo de Pré-processamento**: Limpa e prepara dados para análise
+   - Arquivo: pipeline/preprocessing.py
+   - Responsabilidades: Explosão de multilinhas, limpeza de geometrias, validação topológica
+
+4. **Módulo de Construção de Grafo**: Transforma dados geoespaciais em representação de grafo
+   - Arquivo: pipeline/graph_construction.py
+   - Responsabilidades: Criação de grafo, definição de conectividade, atribuição de classes
+
+5. **Módulo de Modelos GNN**: Define arquiteturas de Redes Neurais de Grafos
+   - Arquivo: pipeline/gnn_models.py
+   - Responsabilidades: Implementação de modelos GNN com diferentes arquiteturas
+
+6. **Módulo de Treinamento**: Gerencia o processo de treinamento e validação
+   - Arquivo: pipeline/training.py
+   - Responsabilidades: Treinamento de modelos, otimização, avaliação
+
+7. **Módulo de Visualização**: Gera representações visuais dos dados e resultados
+   - Arquivo: pipeline/visualization.py
+   - Responsabilidades: Criação de mapas, gráficos e visualizações interativas
+
+8. **Módulo de Relatórios**: Gera relatórios detalhados sobre os resultados
+   - Arquivo: pipeline/reporting.py
+   - Responsabilidades: Geração de métricas, relatórios JSON, resumos
+
+9. **Módulo de Utilitários**: Funções auxiliares usadas por outros módulos
+   - Arquivo: pipeline/utils.py
+   - Responsabilidades: Funções de conversão, manipulação de tempo, serialização
+
+10. **Script Principal**: Orquestra a execução completa do pipeline
+    - Arquivo: run_pipeline.py
+    - Responsabilidades: Sequenciamento das operações, tratamento de erros, interface com usuário
+
+==============================================================================
+## 3. FLUXO DE EXECUÇÃO DETALHADO
+==============================================================================
+
+### 3.1. INICIALIZAÇÃO E CONFIGURAÇÃO
+---------------------------------
+
+#### Arquivo: run_pipeline.py
+#### Descrição:
+Esta etapa inicializa o ambiente de execução, verifica pré-requisitos, monta o Google Drive se necessário, e configura parâmetros do sistema.
+
+#### Tarefas Detalhadas:
+
+1. **Verificação do Ambiente de Execução:**
+   - Detecta se está sendo executado no Google Colab ou em ambiente local
+   - Configura variáveis de ambiente específicas para cada plataforma
+   - Define parâmetros de aceleração de hardware (CPU/GPU)
+   
+   ```python
+   try:
+       import google.colab
+       is_colab = True
+       print("Ambiente Google Colab detectado")
+   except ImportError:
+       is_colab = False
+       print("Ambiente local detectado")
+   ```
+
+2. **Montagem do Google Drive:**
+   - Se estiver no Colab, monta o Google Drive para acesso aos dados
+   - Verifica se a montagem foi bem-sucedida
+   - Configura permissões de acesso
+   
+   ```python
+   from google.colab import drive
+   drive.mount('/content/drive')
+   ```
+
+3. **Configuração de Caminhos:**
+   - Define caminhos base para diretórios de dados, saída e relatórios
+   - Verifica existência de diretórios necessários e cria se não existirem
+   - Configura caminhos específicos para arquivos de entrada e saída
+   
+   ```python
+   DRIVE_PATH = "/content/drive/MyDrive/geoprocessamento_gnn"
+   DATA_DIR = os.path.join(DRIVE_PATH, "DATA")
+   OUTPUT_DIR = os.path.join(DRIVE_PATH, "OUTPUT")
+   REPORT_DIR = os.path.join(DRIVE_PATH, "QUALITY_REPORT")
+   ```
+
+4. **Verificação de Pré-requisitos:**
+   - Verifica a existência de arquivos de entrada obrigatórios
+   - Valida permissões de leitura/escrita em diretórios
+   - Verifica versões de bibliotecas e dependências
+   
+   ```python
+   if not os.path.exists(ROADS_PROCESSED_PATH):
+       raise FileNotFoundError(f"Arquivo de entrada não encontrado: {ROADS_PROCESSED_PATH}")
+   ```
+
+5. **Inicialização de Temporizadores:**
+   - Registra tempo inicial para medição de desempenho
+   - Configura checkpoints para registro de progresso
+   
+   ```python
+   start_time = time.time()
+   timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+   ```
+
+6. **Configuração de Logging:**
+   - Inicializa sistema de logging para registro de eventos
+   - Define níveis de verbosidade (INFO, WARNING, ERROR)
+   - Configura handlers para console e arquivo
+   
+   ```python
+   logging.basicConfig(
+       level=logging.INFO,
+       format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+       handlers=[
+           logging.FileHandler(os.path.join(OUTPUT_DIR, f"log_{timestamp}.txt")),
+           logging.StreamHandler()
+       ]
+   )
+   ```
+
+7. **Configuração de Sementes Aleatórias:**
+   - Define sementes para geradores de números aleatórios
+   - Garante reprodutibilidade entre execuções
+   
+   ```python
+   seed = 42
+   torch.manual_seed(seed)
+   np.random.seed(seed)
+   random.seed(seed)
+   ```
+
+#### Parâmetros Detalhados:
+- **is_colab**: Booleano indicando se está executando no Google Colab
+- **DRIVE_PATH**: Caminho absoluto para diretório base no Google Drive ("/content/drive/MyDrive/geoprocessamento_gnn")
+- **DATA_DIR**: Caminho para diretório de dados (DRIVE_PATH + "/DATA")
+- **OUTPUT_DIR**: Caminho para diretório de saída (DRIVE_PATH + "/OUTPUT")
+- **REPORT_DIR**: Caminho para diretório de relatórios (DRIVE_PATH + "/QUALITY_REPORT")
+- **ROADS_PROCESSED_PATH**: Caminho absoluto para arquivo de estradas processadas
+- **timestamp**: String contendo o timestamp de execução em formato YYYYmmdd_HHMMSS
+- **seed**: Valor da semente para geradores de números aleatórios (42)
+
+#### Saída:
+- Diretórios criados (se não existirem)
+- Arquivo de log iniciado em OUTPUT_DIR/log_{timestamp}.txt
+- Mensagens de status no console confirmando inicialização
+
+### 3.2. CARREGAMENTO DE DADOS
+---------------------------
+
+#### Arquivo: pipeline/data_loading.py
+#### Função Principal: load_road_data(file_path, crs=None)
+#### Descrição:
+Esta etapa é responsável por carregar os dados geoespaciais brutos de redes viárias e convertê-los para o formato apropriado de processamento.
+
+#### Tarefas Detalhadas:
+
+1. **Validação do Arquivo de Entrada:**
+   - Verifica existência do arquivo especificado
+   - Valida o formato do arquivo com base na extensão
+   - Realiza verificações preliminares de integridade
+   
+   ```python
+   if not os.path.exists(file_path):
+       raise FileNotFoundError(f"Road data file not found: {file_path}")
+   
+   ext = os.path.splitext(file_path)[1].lower()
+   ```
+
+2. **Carregamento Baseado no Formato:**
+   - Identifica o formato do arquivo (GeoPackage, Shapefile, CSV, etc.)
+   - Utiliza funções específicas para cada formato
+   - Detecta e carrega camadas específicas em formatos multi-camada
+   
+   ```python
+   if ext in ['.gpkg', '.gdb']:
+       # Para GeoPackage ou GDB, listar camadas primeiro
+       layers = None
+       if ext == '.gpkg':
+           layers = gpd.io.fiona.listlayers(file_path)
+       
+       if layers and len(layers) > 0:
+           layer_name = next((l for l in layers if 'road' in l.lower()), layers[0])
+           gdf = gpd.read_file(file_path, layer=layer_name)
+       else:
+           gdf = gpd.read_file(file_path)
+   elif ext in ['.shp', '.geojson']:
+       gdf = gpd.read_file(file_path)
+   ```
+
+3. **Processamento de Geometrias:**
+   - Valida tipos de geometria (LineString, MultiLineString)
+   - Detecta e corrige geometrias inválidas
+   - Calcula propriedades básicas (comprimento, área)
+   
+   ```python
+   # Verificar tipos de geometria
+   geometry_types = gdf.geometry.type.unique()
+   print(f"Tipos de geometria encontrados: {geometry_types}")
+   
+   # Validar geometrias
+   invalid_geoms = ~gdf.geometry.is_valid
+   if invalid_geoms.any():
+       print(f"Encontradas {invalid_geoms.sum()} geometrias inválidas.")
+       # Tentar corrigir automaticamente
+       gdf.geometry = gdf.geometry.buffer(0)
+   ```
+
+4. **Transformação de Sistema de Coordenadas:**
+   - Verifica o sistema de coordenadas (CRS) dos dados
+   - Converte para o CRS padrão se especificado
+   - Valida projeção para cálculos espaciais
+   
+   ```python
+   # Verificar CRS atual
+   current_crs = gdf.crs
+   print(f"CRS original: {current_crs}")
+   
+   # Reprojetar se necessário
+   if crs is not None and current_crs != crs:
+       print(f"Convertendo CRS para: {crs}")
+       gdf = gdf.to_crs(crs)
+   ```
+
+5. **Indexação Espacial:**
+   - Cria índices espaciais para consultas eficientes
+   - Otimiza estrutura para processamento subsequente
+   
+   ```python
+   # Criar índice espacial se não existir
+   if not gdf.sindex:
+       print("Criando índice espacial...")
+       gdf = gdf.copy()  # Force creation of spatial index
+   ```
+
+6. **Validação e Resumo de Dados:**
+   - Verifica presença de colunas necessárias
+   - Identifica e trata valores ausentes
+   - Gera estatísticas resumidas dos dados carregados
+   
+   ```python
+   # Validar colunas essenciais
+   required_columns = ['geometry', 'highway']
+   missing_columns = [col for col in required_columns if col not in gdf.columns]
+   if missing_columns:
+       print(f"AVISO: Colunas ausentes: {missing_columns}")
+   
+   # Resumo de dados
+   print(f"Carregados {len(gdf)} segmentos de estrada.")
+   print(f"Comprimento total: {gdf.geometry.length.sum()/1000:.2f} km")
+   ```
+
+#### Parâmetros Detalhados:
+- **file_path**: Caminho absoluto para o arquivo de dados viários (string)
+  - Exemplo: "/content/drive/MyDrive/geoprocessamento_gnn/DATA/processed/roads_processed.gpkg"
+- **crs**: Sistema de coordenadas para converter os dados (opcional, padrão=None)
+  - Se None: mantém o CRS original dos dados
+  - Exemplo: "EPSG:4674" (Sistema de referência oficial do Brasil)
+- **layers**: Lista de camadas encontradas no arquivo (aplicável a formatos multi-camada)
+- **layer_name**: Nome da camada que contém dados de estradas
+- **geometry_types**: Tipos de geometria presentes nos dados
+- **invalid_geoms**: Máscara booleana indicando geometrias inválidas
+
+#### Resultado:
+- **gdf**: GeoDataFrame contendo dados viários carregados com as seguintes características:
+  - Colunas básicas: geometry, highway, name (quando disponível)
+  - Colunas adicionais dependendo da fonte de dados
+  - Sistema de coordenadas consistente
+  - Índice espacial criado
+  - Geometrias validadas
+
+### 3.3. PRÉ-PROCESSAMENTO
+-----------------------
+
+#### Arquivo: pipeline/preprocessing.py
+#### Funções Principais: 
+- explode_multilines(gdf)
+- clean_road_data(gdf)
+#### Descrição:
+Esta etapa prepara os dados geoespaciais para análise, realizando operações de limpeza, transformação e validação.
+
+#### Tarefas Detalhadas:
+
+1. **Explosão de Geometrias MultiLineString:**
+   - Identifica geometrias MultiLineString no conjunto de dados
+   - Converte cada parte em geometrias LineString individuais
+   - Preserva atributos para cada nova geometria
+   
+   ```python
+   def explode_multilines(gdf):
+       """
+       Explode multilinestrings into individual linestrings.
+       """
+       # Filtrar apenas MultiLineString
+       multi_mask = gdf.geometry.type == "MultiLineString"
+       multilines = gdf[multi_mask].copy()
+       singlelines = gdf[~multi_mask].copy()
+       
+       # Explodir MultiLineStrings
+       if len(multilines) > 0:
+           print(f"Explodindo {len(multilines)} MultiLineStrings...")
+           
+           # Criar lista para armazenar resultados
+           exploded_gdf = []
+           
+           # Para cada MultiLineString
+           for idx, row in multilines.iterrows():
+               # Obter geometria
+               geom = row.geometry
+               
+               # Para cada parte do MultiLineString
+               for part in geom.geoms:
+                   # Criar nova linha com mesmos atributos
+                   new_row = row.copy()
+                   new_row.geometry = part
+                   exploded_gdf.append(new_row)
+           
+           # Converter para GeoDataFrame
+           if exploded_gdf:
+               exploded_gdf = gpd.GeoDataFrame(exploded_gdf, crs=gdf.crs)
+               # Concatenar com linhas simples
+               result = pd.concat([singlelines, exploded_gdf], ignore_index=True)
+           else:
+               result = singlelines
+               
+           print(f"Resultado da explosão: {len(result)} LineStrings")
+           return result
+       else:
+           print("Nenhuma MultiLineString encontrada.")
+           return gdf
+   ```
+
+2. **Limpeza de Dados:**
+   - Remove geometrias nulas ou inválidas
+   - Elimina duplicatas geométricas
+   - Padroniza valores de atributos
+   - Substitui valores nulos com padrões significativos
+   
+   ```python
+   def clean_road_data(gdf):
+       """
+       Clean road data for graph construction.
+       """
+       # Remover geometrias nulas
+       null_geoms = gdf.geometry.isna()
+       if null_geoms.any():
+           print(f"Removendo {null_geoms.sum()} geometrias nulas...")
+           gdf = gdf[~null_geoms].copy()
+       
+       # Remover geometrias inválidas
+       invalid_geoms = ~gdf.geometry.is_valid
+       if invalid_geoms.any():
+           print(f"Encontradas {invalid_geoms.sum()} geometrias inválidas...")
+           print("Tentando reparar...")
+           gdf.loc[invalid_geoms, 'geometry'] = gdf.loc[invalid_geoms, 'geometry'].buffer(0)
+           # Verificar novamente
+           still_invalid = ~gdf.geometry.is_valid
+           if still_invalid.any():
+               print(f"Removendo {still_invalid.sum()} geometrias ainda inválidas...")
+               gdf = gdf[~still_invalid].copy()
+       
+       # Remover duplicatas
+       print("Verificando duplicatas...")
+       n_before = len(gdf)
+       # Considerar duplicatas geométricas
+       gdf = gdf.drop_duplicates(subset=['geometry']).copy()
+       n_after = len(gdf)
+       if n_before > n_after:
+           print(f"Removidas {n_before - n_after} geometrias duplicadas.")
+       
+       # Padronizar valores de highway
+       if 'highway' in gdf.columns:
+           highway_values = gdf['highway'].value_counts().to_dict()
+           print(f"Valores de highway: {highway_values}")
+           
+           # Padronizar valores - remover espaços, converter para minúsculas
+           gdf['highway'] = gdf['highway'].astype(str).str.strip().str.lower()
+           
+           # Substituir valores nulos
+           null_highways = gdf['highway'].isna() | (gdf['highway'] == 'nan') | (gdf['highway'] == 'none')
+           if null_highways.any():
+               print(f"Substituindo {null_highways.sum()} valores nulos de highway...")
+               gdf.loc[null_highways, 'highway'] = 'unclassified'
+       
+       return gdf
+   ```
+
+3. **Cálculo de Atributos Adicionais:**
+   - Calcula comprimento dos segmentos
+   - Computa sinuosidade das linhas
+   - Atribui identificadores únicos
+   - Adiciona metadados auxiliares
+   
+   ```python
+   # Calcular comprimento em metros
+   gdf['length_m'] = gdf.geometry.length
+   
+   # Calcular sinuosidade (razão entre comprimento e distância em linha reta)
+   gdf['sinuosity'] = calculate_sinuosity(gdf)
+   
+   # Garantir identificadores únicos
+   if 'id' not in gdf.columns:
+       gdf['id'] = range(len(gdf))
+   ```
+
+4. **Classificação de Estradas:**
+   - Padroniza tipos de estradas
+   - Mapeia para categorias hierárquicas
+   - Corrige inconsistências nos atributos
+   
+   ```python
+   # Padronizar classificação de estradas
+   highway_mapping = {
+       'motorway': 'highway',
+       'trunk': 'highway',
+       'primary': 'highway',
+       'secondary': 'highway',
+       'tertiary': 'highway',
+       'unclassified': 'minor',
+       'residential': 'minor',
+       'service': 'service',
+       'footway': 'pedestrian',
+       'cycleway': 'bicycle',
+       'path': 'pedestrian',
+       'track': 'minor',
+       'steps': 'pedestrian',
+       'living_street': 'minor',
+       'pedestrian': 'pedestrian',
+       'bus_guideway': 'service',
+       'road': 'unclassified'
+   }
+   
+   # Aplicar mapeamento
+   gdf['road_category'] = gdf['highway'].map(highway_mapping)
+   
+   # Preencher valores que não estão no mapeamento
+   missing_categories = gdf['road_category'].isna()
+   if missing_categories.any():
+       print(f"Categorias ausentes para {missing_categories.sum()} estradas...")
+       gdf.loc[missing_categories, 'road_category'] = 'other'
+   ```
+
+5. **Validação de Topologia:**
+   - Verifica conectividade entre segmentos
+   - Identifica segmentos isolados
+   - Corrige pequenas lacunas topológicas
+   
+   ```python
+   # Verificar conectividade - encontrar endpoints para cada linha
+   endpoints = extract_endpoints(gdf)
+   connected = check_connectivity(endpoints)
+   
+   if not connected:
+       print("Aviso: Rede de estradas não totalmente conectada.")
+       print(f"Existem {count_components(endpoints)} componentes distintos.")
+   ```
+
+6. **Simplificação de Geometrias:**
+   - Simplifica geometrias complexas para melhorar desempenho
+   - Preserva características essenciais da rede
+   - Aplica tolerância adequada para simplificação
+   
+   ```python
+   # Simplificar geometrias para melhorar desempenho
+   if simplify:
+       print("Simplificando geometrias...")
+       tolerance = 1.0  # metros
+       gdf.geometry = gdf.geometry.simplify(tolerance)
+   ```
+
+#### Parâmetros Detalhados:
+- **gdf**: GeoDataFrame original contendo dados viários
+- **multi_mask**: Máscara booleana identificando geometrias MultiLineString
+- **null_geoms**: Máscara booleana identificando geometrias nulas
+- **invalid_geoms**: Máscara booleana identificando geometrias inválidas
+- **highway_mapping**: Dicionário mapeando tipos de estradas para categorias
+- **tolerance**: Tolerância para simplificação de geometrias (metros)
+- **endpoints**: DataFrame contendo pontos de extremidade de cada segmento
+- **connected**: Booleano indicando se a rede está totalmente conectada
+
+#### Resultado:
+- **gdf_processed**: GeoDataFrame processado com as seguintes características:
+  - Apenas geometrias LineString válidas
+  - Sem duplicatas
+  - Atributos padronizados e valores nulos tratados
+  - Colunas adicionais: length_m, sinuosity, road_category
+  - Topologia verificada e otimizada
+  - Geometrias simplificadas (se aplicável) 

@@ -1,0 +1,561 @@
+==============================================================================
+## 3. FLUXO DE EXECUÇÃO DETALHADO (PARTE 2)
+==============================================================================
+
+### 3.4. CONSTRUÇÃO DO GRAFO
+------------------------
+
+#### Arquivo: pipeline/graph_construction.py
+#### Funções Principais: 
+- create_road_graph(gdf)
+- assign_node_classes(G, highway_to_idx)
+#### Descrição:
+Esta etapa transforma os dados geoespaciais de rede viária em uma estrutura de grafo adequada para análise e aprendizado de máquina.
+
+#### Tarefas Detalhadas:
+
+1. **Criação do Grafo:**
+   - Inicializa grafo vazio
+   - Extrai nós das extremidades dos segmentos de estrada
+   - Estabelece conexões entre nós através de arestas
+   - Atribui propriedades às arestas baseadas nos atributos viários
+   
+   ```python
+   def create_road_graph(gdf):
+       """
+       Cria um grafo a partir de um GeoDataFrame de estradas.
+       """
+       print("Construindo grafo da rede viária...")
+       
+       # Inicializar grafo vazio
+       G = nx.Graph()
+       
+       # Para cada linha no GeoDataFrame
+       print(f"Processando {len(gdf)} segmentos de estrada...")
+       
+       # Extrair pontos de extremidade para cada segmento
+       endpoints = {}  # Dicionário para armazenar extremidades das linhas
+       
+       for idx, row in gdf.iterrows():
+           # Obter geometria
+           geom = row.geometry
+           
+           if geom is None or not isinstance(geom, (LineString, MultiLineString)):
+               continue
+               
+           # Garantir que estamos trabalhando com LineString
+           if isinstance(geom, MultiLineString):
+               # Já deveria ter sido tratado pelo explode_multilines
+               print(f"AVISO: MultiLineString encontrada (id={idx}). Usando primeira parte.")
+               try:
+                   geom = geom.geoms[0]
+               except:
+                   continue
+           
+           # Obter coordenadas de início e fim
+           start_point = (geom.coords[0][0], geom.coords[0][1])
+           end_point = (geom.coords[-1][0], geom.coords[-1][1])
+           
+           # Adicionar nós ao grafo (se não existirem)
+           if start_point not in G:
+               G.add_node(start_point, x=start_point[0], y=start_point[1])
+           
+           if end_point not in G:
+               G.add_node(end_point, x=end_point[0], y=end_point[1])
+           
+           # Adicionar aresta com atributos do segmento de estrada
+           attributes = {k: v for k, v in row.items() if k != 'geometry'}
+           attributes['length'] = geom.length  # Comprimento em unidades do CRS
+           
+           G.add_edge(start_point, end_point, **attributes)
+           
+           # Armazenar endpoints para análise posterior
+           endpoints[idx] = (start_point, end_point)
+       
+       print(f"Grafo construído com {len(G.nodes)} nós e {len(G.edges)} arestas.")
+       
+       # Remover nós isolados (sem conexões)
+       isolated_nodes = list(nx.isolates(G))
+       if isolated_nodes:
+           print(f"Removendo {len(isolated_nodes)} nós isolados...")
+           G.remove_nodes_from(isolated_nodes)
+       
+       # Verificar conectividade do grafo
+       if not nx.is_connected(G):
+           components = list(nx.connected_components(G))
+           print(f"AVISO: Grafo não é conectado. Possui {len(components)} componentes.")
+           
+           # Manter apenas o maior componente conectado
+           largest_cc = max(components, key=len)
+           print(f"Mantendo apenas o maior componente com {len(largest_cc)} nós.")
+           G = G.subgraph(largest_cc).copy()
+       
+       return G
+   ```
+
+2. **Análise de Conectividade:**
+   - Identifica padrões de conectividade entre nós
+   - Calcula grau de cada nó (número de conexões)
+   - Detecta interseções e endpoints
+   - Identifica e trata componentes desconectados
+   
+   ```python
+   # Calcular grau de cada nó
+   node_degrees = dict(G.degree())
+   
+   # Identificar tipos de nó com base no grau
+   intersections = [node for node, degree in node_degrees.items() if degree > 2]
+   endpoints = [node for node, degree in node_degrees.items() if degree == 1]
+   
+   print(f"Identificadas {len(intersections)} interseções e {len(endpoints)} extremidades.")
+   ```
+
+3. **Cálculo de Métricas de Centralidade:**
+   - Computa betweenness centrality (medida da importância do nó como ponto de passagem)
+   - Calcula closeness centrality (medida da proximidade do nó a todos os outros)
+   - Estima outras métricas topológicas relevantes
+   - Atribui métricas como propriedades dos nós
+   
+   ```python
+   # Calcular métricas de centralidade
+   print("Calculando métricas de centralidade (pode levar tempo para redes grandes)...")
+   
+   # Betweenness centrality - importância do nó como ponte
+   bc = nx.betweenness_centrality(G, weight='length')
+   nx.set_node_attributes(G, bc, 'betweenness')
+   
+   # Closeness centrality - quão perto o nó está de todos os outros
+   cc = nx.closeness_centrality(G, distance='length')
+   nx.set_node_attributes(G, cc, 'closeness')
+   ```
+
+4. **Classificação de Nós:**
+   - Atribui classes aos nós com base em características topológicas
+   - Utiliza informações das estradas conectadas para classificação
+   - Define hierarquia de importância dos nós
+   - Prepara labels para treinamento supervisionado
+   
+   ```python
+   def assign_node_classes(G, highway_to_idx):
+       """
+       Atribui classes aos nós com base nos tipos de estradas conectadas.
+       
+       Args:
+           G: Grafo NetworkX
+           highway_to_idx: Dicionário mapeando tipos de estradas para índices
+           
+       Returns:
+           Grafo com classes atribuídas aos nós
+       """
+       print("Atribuindo classes aos nós...")
+       
+       # Para cada nó
+       for node in G.nodes():
+           # Obter todas as arestas conectadas
+           edges = list(G.edges(node, data=True))
+           
+           # Extrair tipos de estrada das arestas conectadas
+           highway_types = []
+           for _, _, data in edges:
+               if 'highway' in data:
+                   highway_types.append(data['highway'])
+           
+           # Se não encontrou tipos de estrada, usar valor padrão
+           if not highway_types:
+               node_class = len(highway_to_idx)  # Última classe como padrão
+           else:
+               # Determinar classe com base no tipo mais importante
+               # (assumindo que o mapeamento highway_to_idx representa importância)
+               highway_indices = [highway_to_idx.get(h, len(highway_to_idx)) for h in highway_types]
+               node_class = min(highway_indices)  # Menor índice = maior importância
+           
+           # Atribuir classe ao nó
+           G.nodes[node]['class'] = node_class
+       
+       # Contar distribuição de classes
+       class_counts = {}
+       for node, data in G.nodes(data=True):
+           class_value = data.get('class', -1)
+           class_counts[class_value] = class_counts.get(class_value, 0) + 1
+       
+       print("Distribuição de classes:")
+       for class_id, count in sorted(class_counts.items()):
+           # Obter nome da classe, se disponível
+           class_name = next((k for k, v in highway_to_idx.items() if v == class_id), f"Classe {class_id}")
+           print(f"  {class_name}: {count} nós")
+       
+       return G
+   ```
+
+5. **Otimização de Grafo:**
+   - Simplifica estrutura do grafo para melhorar desempenho
+   - Remove nós redundantes (grau 2) preservando conectividade
+   - Valida e corrige inconsistências
+   - Prepara estrutura para conversão em formato PyTorch Geometric
+   
+   ```python
+   def optimize_graph(G):
+       """
+       Otimiza o grafo para análise.
+       """
+       # Identificar nós de grau 2 (apenas pontos de passagem)
+       degree_2_nodes = [node for node, degree in dict(G.degree()).items() if degree == 2]
+       
+       # Simplificar caminhos diretos
+       if degree_2_nodes:
+           print(f"Simplificando {len(degree_2_nodes)} nós de passagem...")
+           
+           G_optimized = G.copy()
+           
+           for node in degree_2_nodes:
+               # Obter vizinhos
+               neighbors = list(G_optimized.neighbors(node))
+               if len(neighbors) != 2:
+                   continue  # Já foi modificado em iteração anterior
+                   
+               # Obter atributos das duas arestas
+               edge1_attrs = G_optimized.get_edge_data(node, neighbors[0])
+               edge2_attrs = G_optimized.get_edge_data(node, neighbors[1])
+               
+               # Mesclar atributos para nova aresta
+               new_attrs = {}
+               for key in set(edge1_attrs.keys()) | set(edge2_attrs.keys()):
+                   if key == 'length':
+                       # Somar comprimentos
+                       new_attrs[key] = edge1_attrs.get(key, 0) + edge2_attrs.get(key, 0)
+                   else:
+                       # Para outros atributos, preferir primeira aresta ou segunda se não existir
+                       new_attrs[key] = edge1_attrs.get(key, edge2_attrs.get(key))
+               
+               # Adicionar nova aresta entre os vizinhos
+               G_optimized.add_edge(neighbors[0], neighbors[1], **new_attrs)
+               
+               # Remover nó intermediário
+               G_optimized.remove_node(node)
+           
+           print(f"Grafo otimizado: {len(G_optimized.nodes)} nós, {len(G_optimized.edges)} arestas")
+           return G_optimized
+       else:
+           return G
+   ```
+
+#### Parâmetros Detalhados:
+- **gdf**: GeoDataFrame contendo dados de estradas processados
+- **G**: Grafo NetworkX representando a rede viária
+- **highway_to_idx**: Dicionário mapeando tipos de estradas para índices numéricos
+- **node_degrees**: Dicionário contendo o grau (número de conexões) de cada nó
+- **intersections**: Lista de nós identificados como interseções (grau > 2)
+- **endpoints**: Lista de nós identificados como extremidades (grau = 1)
+- **bc**: Dicionário com valores de betweenness centrality para cada nó
+- **cc**: Dicionário com valores de closeness centrality para cada nó
+- **degree_2_nodes**: Lista de nós de passagem com grau 2 (para otimização)
+
+#### Resultado:
+- **G_final**: Grafo NetworkX otimizado com as seguintes características:
+  - Nós representando interseções e extremidades
+  - Arestas representando segmentos de estrada
+  - Atributos de arestas: comprimento, tipo de estrada, etc.
+  - Atributos de nós: coordenadas, classe, métricas de centralidade
+  - Componentes conectados identificados
+  - Estrutura otimizada para análise
+
+### 3.5. PREPARAÇÃO PARA PYTORCH GEOMETRIC
+--------------------------------------
+
+#### Arquivo: pipeline/data_loading.py
+#### Função Principal: load_pytorch_geometric_data(G, node_features=None, edge_features=None)
+#### Descrição:
+Esta etapa converte o grafo NetworkX em formato adequado para processamento por redes neurais de grafo utilizando a biblioteca PyTorch Geometric.
+
+#### Tarefas Detalhadas:
+
+1. **Extração de Features dos Nós:**
+   - Identifica e seleciona atributos relevantes dos nós
+   - Normaliza valores para melhorar convergência
+   - Converte para tensores PyTorch
+   - Trata valores ausentes
+   
+   ```python
+   def load_pytorch_geometric_data(G, node_features=None, edge_features=None):
+       """
+       Converte um grafo NetworkX para dados PyTorch Geometric.
+       
+       Args:
+           G: Grafo NetworkX
+           node_features: Lista de atributos dos nós para usar como features
+           edge_features: Lista de atributos das arestas para usar como features
+           
+       Returns:
+           Objeto Data do PyTorch Geometric
+       """
+       try:
+           from torch_geometric.data import Data
+       except ImportError:
+           raise ImportError("PyTorch Geometric não encontrado. Instale com: pip install torch-geometric")
+       
+       # Definir features padrão se não foram especificados
+       if node_features is None:
+           node_features = ['x', 'y']
+       
+       if edge_features is None:
+           edge_features = ['length']
+       
+       # Obter mapeamento de nós
+       node_list = list(G.nodes())
+       node_map = {node: i for i, node in enumerate(node_list)}
+       
+       # Extrair índices das arestas
+       edge_index = []
+       for u, v in G.edges():
+           edge_index.append([node_map[u], node_map[v]])
+           # Para grafo não direcionado, adicionar aresta reversa
+           edge_index.append([node_map[v], node_map[u]])
+       
+       # Converter para tensor
+       edge_index = torch.tensor(edge_index).t().contiguous()
+       
+       # Extrair features dos nós
+       x = []
+       for node in node_list:
+           node_data = G.nodes[node]
+           # Verificar se todos os features necessários existem
+           features = []
+           for feat in node_features:
+               if feat in node_data:
+                   features.append(float(node_data[feat]))
+               else:
+                   # Usar valor padrão 0.0 para features ausentes
+                   features.append(0.0)
+           x.append(features)
+       
+       # Converter para tensor
+       x = torch.tensor(x, dtype=torch.float)
+       
+       # Extrair features das arestas (opcional)
+       edge_attr = None
+       if edge_features:
+           edge_attr_list = []
+           edge_list = list(G.edges(data=True))
+           # Para cada aresta no edge_index
+           for u, v in G.edges():
+               # Obter dados da aresta
+               edge_data = G.get_edge_data(u, v)
+               # Extrair features
+               features = []
+               for feat in edge_features:
+                   if feat in edge_data:
+                       features.append(float(edge_data[feat]))
+                   else:
+                       features.append(0.0)
+               edge_attr_list.append(features)
+               # Para grafo não direcionado, duplicar para aresta reversa
+               edge_attr_list.append(features)
+           
+           # Converter para tensor
+           edge_attr = torch.tensor(edge_attr_list, dtype=torch.float)
+       
+       # Extrair classes dos nós (se disponíveis)
+       if all('class' in G.nodes[node] for node in node_list):
+           y = torch.tensor([G.nodes[node]['class'] for node in node_list], dtype=torch.long)
+       else:
+           y = None
+       
+       # Criar objeto Data
+       data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, y=y)
+       
+       return data
+   ```
+
+2. **Criação de Índices de Aresta:**
+   - Converte conexões do grafo em formato COO (Coordinate Format)
+   - Adiciona arestas em ambas direções para grafos não-direcionados
+   - Organiza índices para processamento eficiente
+   
+   ```python
+   # Extrair índices das arestas
+   edge_index = []
+   for u, v in G.edges():
+       edge_index.append([node_map[u], node_map[v]])
+       # Para grafo não direcionado, adicionar aresta reversa
+       edge_index.append([node_map[v], node_map[u]])
+   
+   # Converter para tensor
+   edge_index = torch.tensor(edge_index).t().contiguous()
+   ```
+
+3. **Extração de Atributos de Arestas:**
+   - Seleciona características relevantes das arestas
+   - Converte para formato de tensor
+   - Normaliza valores quando necessário
+   - Duplica atributos para arestas reversas em grafos não-direcionados
+   
+   ```python
+   # Extrair features das arestas (opcional)
+   edge_attr = None
+   if edge_features:
+       edge_attr_list = []
+       edge_list = list(G.edges(data=True))
+       # Para cada aresta no edge_index
+       for u, v in G.edges():
+           # Obter dados da aresta
+           edge_data = G.get_edge_data(u, v)
+           # Extrair features
+           features = []
+           for feat in edge_features:
+               if feat in edge_data:
+                   features.append(float(edge_data[feat]))
+               else:
+                   features.append(0.0)
+           edge_attr_list.append(features)
+           # Para grafo não direcionado, duplicar para aresta reversa
+           edge_attr_list.append(features)
+       
+       # Converter para tensor
+       edge_attr = torch.tensor(edge_attr_list, dtype=torch.float)
+   ```
+
+4. **Extração de Labels para Treinamento:**
+   - Obtém classes atribuídas aos nós (se disponíveis)
+   - Converte para tensor adequado para treinamento
+   - Verifica consistência e completude dos dados
+   
+   ```python
+   # Extrair classes dos nós (se disponíveis)
+   if all('class' in G.nodes[node] for node in node_list):
+       y = torch.tensor([G.nodes[node]['class'] for node in node_list], dtype=torch.long)
+   else:
+       y = None
+   ```
+
+5. **Criação de Máscaras de Treinamento/Validação/Teste:**
+   - Divide os dados em conjuntos de treinamento, validação e teste
+   - Cria máscaras booleanas para identificar cada conjunto
+   - Garante estratificação adequada das classes
+   - Aplica divisão aleatória com seed fixo para reprodutibilidade
+   
+   ```python
+   def create_data_splits(data, train_ratio=0.7, val_ratio=0.1, seed=42):
+       """
+       Cria máscaras para divisão dos dados em treino, validação e teste.
+       
+       Args:
+           data: Objeto Data do PyTorch Geometric
+           train_ratio: Proporção de dados para treinamento
+           val_ratio: Proporção de dados para validação
+           seed: Semente para reprodutibilidade
+           
+       Returns:
+           Objeto Data com máscaras de divisão
+       """
+       # Garantir reprodutibilidade
+       torch.manual_seed(seed)
+       
+       # Número total de nós
+       num_nodes = data.x.size(0)
+       
+       # Criar permutação aleatória
+       indices = torch.randperm(num_nodes)
+       
+       # Calcular tamanhos dos conjuntos
+       train_size = int(train_ratio * num_nodes)
+       val_size = int(val_ratio * num_nodes)
+       
+       # Criar máscaras
+       train_mask = torch.zeros(num_nodes, dtype=torch.bool)
+       val_mask = torch.zeros(num_nodes, dtype=torch.bool)
+       test_mask = torch.zeros(num_nodes, dtype=torch.bool)
+       
+       # Atribuir índices às máscaras
+       train_mask[indices[:train_size]] = True
+       val_mask[indices[train_size:train_size+val_size]] = True
+       test_mask[indices[train_size+val_size:]] = True
+       
+       # Adicionar máscaras ao objeto Data
+       data.train_mask = train_mask
+       data.val_mask = val_mask
+       data.test_mask = test_mask
+       
+       # Verificar proporções
+       train_count = train_mask.sum().item()
+       val_count = val_mask.sum().item()
+       test_count = test_mask.sum().item()
+       
+       print(f"Divisão de dados:")
+       print(f"  Treinamento: {train_count} nós ({train_count/num_nodes:.2%})")
+       print(f"  Validação: {val_count} nós ({val_count/num_nodes:.2%})")
+       print(f"  Teste: {test_count} nós ({test_count/num_nodes:.2%})")
+       
+       return data
+   ```
+
+6. **Normalização de Features:**
+   - Calcula estatísticas (média, desvio padrão) para features numéricas
+   - Aplica normalização z-score ou min-max conforme apropriado
+   - Garante valores numéricos adequados para o treinamento
+   
+   ```python
+   def normalize_features(data):
+       """
+       Normaliza features para melhorar a convergência.
+       
+       Args:
+           data: Objeto Data do PyTorch Geometric
+           
+       Returns:
+           Objeto Data com features normalizadas
+       """
+       # Calcular média e desvio padrão por feature
+       mean = data.x.mean(dim=0, keepdim=True)
+       std = data.x.std(dim=0, keepdim=True)
+       
+       # Substituir valores zero em std para evitar divisão por zero
+       std[std == 0] = 1.0
+       
+       # Aplicar normalização z-score: (x - mean) / std
+       data.x = (data.x - mean) / std
+       
+       return data
+   ```
+
+#### Parâmetros Detalhados:
+- **G**: Grafo NetworkX previamente construído e processado
+- **node_features**: Lista de atributos de nós para usar como features de entrada
+  - Padrão: ['x', 'y'] (coordenadas)
+  - Exemplo expandido: ['x', 'y', 'betweenness', 'closeness', 'degree']
+- **edge_features**: Lista de atributos de arestas para usar como features
+  - Padrão: ['length'] (comprimento do segmento)
+  - Exemplo expandido: ['length', 'speed_limit', 'sinuosity']
+- **node_list**: Lista ordenada de todos os nós do grafo
+- **node_map**: Dicionário mapeando nós originais para índices sequenciais
+- **edge_index**: Tensor PyTorch de dimensão [2, num_edges*2] em formato COO
+- **x**: Tensor PyTorch de dimensão [num_nodes, num_node_features] com features dos nós
+- **edge_attr**: Tensor PyTorch de dimensão [num_edges*2, num_edge_features] com features das arestas
+- **y**: Tensor PyTorch de dimensão [num_nodes] com classes dos nós
+- **train_ratio**: Proporção de nós para conjunto de treinamento (0.7 = 70%)
+- **val_ratio**: Proporção de nós para conjunto de validação (0.1 = 10%)
+- **test_ratio**: Proporção implícita para teste (1 - train_ratio - val_ratio = 0.2 = 20%)
+
+#### Resultado:
+- **data**: Objeto Data do PyTorch Geometric contendo:
+  - **data.x**: Tensor de features dos nós
+  - **data.edge_index**: Índices de arestas em formato COO
+  - **data.edge_attr**: Tensor de features das arestas (opcional)
+  - **data.y**: Tensor de classes dos nós (target)
+  - **data.train_mask**: Máscara booleana para conjunto de treinamento
+  - **data.val_mask**: Máscara booleana para conjunto de validação
+  - **data.test_mask**: Máscara booleana para conjunto de teste
+  - Outras propriedades específicas ao problema
+
+### 3.6. CRIAÇÃO E TREINAMENTO DO MODELO
+------------------------------------
+
+#### Arquivos: 
+- pipeline/gnn_models.py (definição do modelo)
+- pipeline/training.py (funções de treinamento)
+#### Funções Principais:
+- GNN(input_dim, hidden_dim, output_dim, dropout)
+- train(model, optimizer, data, epochs)
+#### Descrição:
+Esta etapa envolve a definição da arquitetura de Rede Neural de Grafo e o processo de treinamento para aprendizado das características da rede viária.
+
+#### Tarefas Detalhadas: 

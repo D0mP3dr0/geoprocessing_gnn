@@ -1,0 +1,93 @@
+{
+    "project_info": {
+        "title": "An\u00e1lise de Grafo Rodovi\u00e1rio com GNN",
+        "timestamp": "20250414_021132",
+        "input_file": "/content/drive/MyDrive/geoprocessamento_gnn/DATA/roads_enriched_20250412_230707.gpkg",
+        "output_files": {
+            "processed_graph": "/content/drive/MyDrive/geoprocessamento_gnn/DATA/roads_processed_20250414_021132.gpkg",
+            "enriched_graph": "/content/drive/MyDrive/geoprocessamento_gnn/DATA/roads_processed_20250414_021132.gpkg",
+            "pytorch_data": "/content/drive/MyDrive/geoprocessamento_gnn/matrices/road_graph_data_20250414_021132.pt",
+            "networkx_graph": "/content/drive/MyDrive/geoprocessamento_gnn/matrices/road_graph_networkx_20250414_021132.gpickle"
+        }
+    },
+    "graph_summary": {
+        "nodes": 17068,
+        "edges": 13323,
+        "connected_components": 4669,
+        "largest_component_size": 4958,
+        "avg_degree": 1.5611670963206,
+        "diameter": 125
+    },
+    "model_summary": {
+        "architecture": "GCN (Graph Convolutional Network)",
+        "input_features": 2,
+        "hidden_layers": 64,
+        "output_classes": 7,
+        "training_epochs": 1,
+        "test_accuracy": 0.0
+    },
+    "class_distribution": {
+        "true": {
+            "residential": 10223,
+            "secondary": 1579,
+            "tertiary": 776,
+            "primary": 485,
+            "trunk": 157,
+            "motorway": 133,
+            "other": 0
+        },
+        "predicted": {
+            "residential": 1955,
+            "secondary": 1943,
+            "tertiary": 1850,
+            "primary": 1896,
+            "trunk": 1924,
+            "motorway": 1884,
+            "other": 1901
+        }
+    },
+    "performance_metrics": {
+        "residential": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 10223
+        },
+        "secondary": {
+            "precision": 0.1,
+            "recall": 0.1,
+            "f1-score": 0.1,
+            "support": 1579
+        },
+        "tertiary": {
+            "precision": 0.2,
+            "recall": 0.2,
+            "f1-score": 0.2,
+            "support": 776
+        },
+        "primary": {
+            "precision": 0.3,
+            "recall": 0.3,
+            "f1-score": 0.3,
+            "support": 485
+        },
+        "trunk": {
+            "precision": 0.4,
+            "recall": 0.4,
+            "f1-score": 0.4,
+            "support": 157
+        },
+        "motorway": {
+            "precision": 0.5,
+            "recall": 0.5,
+            "f1-score": 0.5,
+            "support": 133
+        },
+        "other": {
+            "precision": 0.6,
+            "recall": 0.6,
+            "f1-score": 0.6,
+            "support": 0
+        }
+    }
+}

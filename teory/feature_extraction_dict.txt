@@ -1,0 +1,386 @@
+import os
+import geopandas as gpd
+import pandas as pd
+import numpy as np
+import torch
+
+# ===============================
+# Função para garantir que o diretório exista
+# ===============================
+def ensure_dir(filepath):
+    directory = os.path.dirname(filepath)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+# ===============================
+# Função utilitária para reprojeção
+# ===============================
+def reproject_for_join(gdf, target_epsg=3857):
+    """
+    Se o GeoDataFrame estiver em um CRS geográfico, reprojeta para um CRS projetado (default: EPSG:3857).
+    """
+    if gdf.crs is None:
+        raise ValueError("GeoDataFrame não possui CRS definido.")
+    if gdf.crs.is_geographic:
+        return gdf.to_crs(epsg=target_epsg)
+    return gdf
+
+# ===============================
+# Funções de extração de features por camada
+# ===============================
+def extrair_features_hidrografia(gdf):
+    gdf['slope_norm'] = gdf['elevation_norm'] / (gdf['cotrecho_norm'] + 1e-6)
+    gdf['flow_potential'] = gdf['nustrahler_norm'] * (1 - gdf['elevation_norm'])
+    gdf['is_stream'] = (gdf['waterway'].str.lower() == 'stream').astype(int)
+    gdf['is_river'] = (gdf['waterway'].str.lower() == 'river').astype(int)
+    gdf['is_canal'] = (gdf['waterway'].str.lower() == 'canal').astype(int)
+    scale_factor = 1000.0
+    gdf['elev_deviation'] = gdf['elevation'] - (gdf['elevation_norm'] * scale_factor)
+    gdf['length_to_level_ratio'] = gdf['cotrecho_norm'] / (gdf['nunivotto_norm'] + 1e-6)
+    return gdf
+
+def extrair_features_curvas(gdf):
+    mean_elev = gdf['elevation'].mean()
+    gdf['diff_elev_mean'] = gdf['elevation'] - mean_elev
+    gdf['ratio_elev_mean'] = gdf['elevation'] / (mean_elev + 1e-6)
+    return gdf
+
+def extrair_features_setores(gdf):
+    gdf['area_perimetro_ratio'] = gdf['area_km2'] / (gdf['perimetro_km'] + 1e-6)
+    gdf['pop_density_calc'] = gdf['est_populacao'] / (gdf['area_km2'] + 1e-6)
+    return gdf
+
+def extrair_features_uso_terra(gdf):
+    gdf['trend_uso'] = gdf['USO2018_norm'] - gdf['USO2000_norm']
+    cols_uso = ['USO2000_norm', 'USO2010_norm', 'USO2012_norm', 'USO2014_norm', 'USO2016_norm', 'USO2018_norm']
+    gdf['media_uso_norm'] = gdf[cols_uso].mean(axis=1)
+    return gdf
+
+def extrair_features_edificacoes(gdf):
+    gdf['total_alunos_norm'] = gdf['alunos_manha_norm'] + gdf['alunos_tarde_noite_norm']
+    gdf['ratio_alunos'] = gdf['alunos_manha_norm'] / (gdf['alunos_tarde_noite_norm'] + 1e-6)
+    return gdf
+
+def extrair_features_edificacoes_prioritarias(gdf):
+    mapping = {"educational": 1, "public": 2, "health": 3}
+    gdf['building_type_code'] = gdf['building_type'].map(mapping).fillna(0)
+    return gdf
+
+def extrair_features_setores_edificacoes(gdf):
+    gdf['area_perimetro_ratio'] = gdf['area_km2'] / (gdf['perimetro_km'] + 1e-6)
+    return gdf
+
+def drop_index_right(gdf):
+    if "index_right" in gdf.columns:
+        gdf = gdf.drop(columns=["index_right"])
+    return gdf
+
+def join_edificacoes_setores(edif_gdf, setores_gdf):
+    edif_gdf = drop_index_right(edif_gdf)
+    setores_gdf = drop_index_right(setores_gdf)
+    edif_proj = reproject_for_join(edif_gdf)
+    setores_proj = reproject_for_join(setores_gdf)
+    joined = gpd.sjoin_nearest(edif_proj, setores_proj, how="left", distance_col="dist_setor")
+    return joined
+
+def join_with_priority(edif_gdf, prior_gdf):
+    edif_gdf = drop_index_right(edif_gdf)
+    prior_gdf = drop_index_right(prior_gdf)
+    edif_proj = reproject_for_join(edif_gdf)
+    prior_proj = reproject_for_join(prior_gdf)
+    joined = gpd.sjoin_nearest(edif_proj, prior_proj[['priority_norm', 'elevation_norm', 'geometry']],
+                               how="left", distance_col="dist_priority", lsuffix="_edif", rsuffix="_prior")
+    joined['is_prioritaria'] = joined['dist_priority'] < 10  # threshold ajustável
+    return joined
+
+def extrair_features_erbs_consolidada(gdf):
+    gdf['ratio_densidade_potencia'] = gdf['densidade_media_norm'] / (gdf['potencia_media_norm'] + 1e-6)
+    def map_vulnerabilidade(text):
+        text = str(text).lower()
+        if "ideal" in text:
+            return 1
+        elif "sem cobertura" in text:
+            return -1
+        else:
+            return 0
+    gdf['vulnerabilidade_encoded'] = gdf['vulnerabilidade'].apply(map_vulnerabilidade)
+    return gdf
+
+def extrair_features_erbs_merged(gdf):
+    gdf['diff_freq'] = gdf['FreqTxMHz_norm'] - gdf['FreqRxMHz_norm']
+    gdf['ratio_freq'] = gdf['FreqTxMHz_norm'] / (gdf['FreqRxMHz_norm'] + 1e-6)
+    gdf['indice_tecnico'] = (gdf['GanhoAntena_norm'] + gdf['PotenciaTransmissorWatts_norm']) / 2
+    return gdf
+
+def join_erbs_layers(gdf_cons, gdf_merged):
+    gdf_cons = drop_index_right(gdf_cons)
+    gdf_merged = drop_index_right(gdf_merged)
+    cons_proj = reproject_for_join(gdf_cons)
+    merged_proj = reproject_for_join(gdf_merged)
+    gdf_join = gpd.sjoin_nearest(cons_proj, merged_proj, how="left", distance_col="dist_merged")
+    return gdf_join
+
+def join_with_voronoi(gdf_erbs, gdf_voronoi):
+    gdf_erbs = drop_index_right(gdf_erbs)
+    gdf_voronoi = drop_index_right(gdf_voronoi)
+    erbs_proj = reproject_for_join(gdf_erbs)
+    voronoi_proj = reproject_for_join(gdf_voronoi)
+    cols_voronoi = ['area_km2_norm', 'perimetro_km_norm', 'compacidade_norm', 'geometry']
+    gdf_joined = gpd.sjoin_nearest(erbs_proj, voronoi_proj[cols_voronoi], how="left", distance_col="dist_voronoi")
+    return gdf_joined
+
+def extrair_features_rodovias(gdf):
+    gdf['delta_elev_norm'] = gdf['elevation_max_norm'] - gdf['elevation_min_norm']
+    gdf['ratio_elev_mean'] = gdf['elevation_mean_norm'] / (gdf['elevation_norm'] + 1e-6)
+    gdf['ratio_comprimento_importancia'] = gdf['comprimento_km_norm'] / (gdf['importancia_via_norm'] + 1e-6)
+    return gdf
+
+def extrair_features_ferrovias(gdf):
+    gdf['log_elevation_norm'] = np.log(gdf['elevation_norm'] + 1e-6)
+    return gdf
+
+def extrair_features_pontos(gdf):
+    gdf['dif_elevacao_norm'] = gdf['z_norm'] - gdf['elevacao_base_norm']
+    gdf['ratio_elevacao'] = gdf['z_norm'] / (gdf['elevacao_base_norm'] + 1e-6)
+    return gdf
+
+def extrair_features_arestas(gdf_arestas, gdf_pontos):
+    cols_ponto = ['ponto_id',
+                  'TEMPERATURA DO PONTO DE ORVALHO (°C)_norm',
+                  'VENTO, RAJADA MAXIMA (m/s)_norm',
+                  'precipitacao_norm',
+                  'RADIACAO GLOBAL (Kj/m²)_norm']
+    gdf_origin = gdf_pontos[cols_ponto].rename(columns={
+        'ponto_id': 'from_id',
+        'TEMPERATURA DO PONTO DE ORVALHO (°C)_norm': 'temp_orig',
+        'VENTO, RAJADA MAXIMA (m/s)_norm': 'vento_orig',
+        'precipitacao_norm': 'precipitacao_orig',
+        'RADIACAO GLOBAL (Kj/m²)_norm': 'radiacao_orig'
+    })
+    gdf_arestas = gdf_arestas.merge(gdf_origin, on='from_id', how='left')
+    gdf_dest = gdf_pontos[cols_ponto].rename(columns={
+        'ponto_id': 'to_id',
+        'TEMPERATURA DO PONTO DE ORVALHO (°C)_norm': 'temp_dest',
+        'VENTO, RAJADA MAXIMA (m/s)_norm': 'vento_dest',
+        'precipitacao_norm': 'precipitacao_dest',
+        'RADIACAO GLOBAL (Kj/m²)_norm': 'radiacao_dest'
+    })
+    gdf_arestas = gdf_arestas.merge(gdf_dest, on='to_id', how='left')
+    gdf_arestas['delta_temp'] = gdf_arestas['temp_dest'] - gdf_arestas['temp_orig']
+    gdf_arestas['delta_vento'] = gdf_arestas['vento_dest'] - gdf_arestas['vento_orig']
+    gdf_arestas['delta_precipitacao'] = gdf_arestas['precipitacao_dest'] - gdf_arestas['precipitacao_orig']
+    gdf_arestas['delta_radiacao'] = gdf_arestas['radiacao_dest'] - gdf_arestas['radiacao_orig']
+    gdf_arestas['rel_delta_temp'] = gdf_arestas['delta_temp'] / (gdf_arestas['temp_orig'] + 1e-6)
+    gdf_arestas['rel_delta_vento'] = gdf_arestas['delta_vento'] / (gdf_arestas['vento_orig'] + 1e-6)
+    return gdf_arestas
+
+# ===============================
+# Funções genéricas de salvamento
+# ===============================
+def salvar_dados(gdf, caminho):
+    ensure_dir(caminho)
+    gdf.drop(columns="geometry", errors="ignore").to_csv(caminho, index=False)
+    print(f"Arquivo CSV salvo em: {caminho}")
+
+def salvar_features_pytorch(gdf, caminho):
+    ensure_dir(caminho)
+    df_numeric = gdf.select_dtypes(include=[np.number])
+    tensor = torch.tensor(df_numeric.to_numpy(), dtype=torch.float32)
+    torch.save(tensor, caminho)
+    print(f"Features salvos em formato PyTorch em: {caminho}")
+
+# ===============================
+# Pipeline principal e consolidação final
+# ===============================
+def main():
+    gpkg_path = "/content/drive/MyDrive/GrafosGeoespaciais/MBA/grapho/mba_preparado.gpkg"
+
+    # Prefixos para salvar os arquivos individuais
+    base_csv = "/content/drive/MyDrive/GrafosGeoespaciais/MBA/grapho/feature_extraction"
+    base_pt = "/content/drive/MyDrive/GrafosGeoespaciais/MBA/grapho/feature_extraction"
+
+    # Lista para armazenar os DataFrames individuais (com a coluna "layer")
+    consolidated_dfs = []
+
+    # Dicionário para armazenar os dados CSV por camada (cada valor será uma lista de registros)
+    csv_data = {}
+
+    # Função auxiliar para armazenar os registros de uma camada
+    def add_to_csv_data(gdf):
+        layer = gdf["layer"].iloc[0]
+        records = gdf.drop(columns="geometry", errors="ignore").to_dict(orient="records")
+        if layer in csv_data:
+            csv_data[layer].extend(records)
+        else:
+            csv_data[layer] = records
+
+    # --- Camada "hidrografia" ---
+    print("Processando camada 'hidrografia'...")
+    gdf = gpd.read_file(gpkg_path, layer="hidrografia")
+    gdf = extrair_features_hidrografia(gdf)
+    gdf["layer"] = "hidrografia"
+    salvar_dados(gdf, f"{base_csv}_hidrografia.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_hidrografia.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Camada "curvas_nivel_com_elevacao" ---
+    print("Processando camada 'curvas_nivel_com_elevacao'...")
+    gdf = gpd.read_file(gpkg_path, layer="curvas_nivel_com_elevacao")
+    gdf = extrair_features_curvas(gdf)
+    gdf["layer"] = "curvas_nivel_com_elevacao"
+    salvar_dados(gdf, f"{base_csv}_curvas_nivel_com_elevacao.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_curvas_nivel_com_elevacao.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Camada "setores_censitarios" ---
+    print("Processando camada 'setores_censitarios'...")
+    gdf = gpd.read_file(gpkg_path, layer="setores_censitarios")
+    gdf = extrair_features_setores(gdf)
+    gdf["layer"] = "setores_censitarios"
+    salvar_dados(gdf, f"{base_csv}_setores_censitarios.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_setores_censitarios.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Camada "uso_terra_ocupacao" ---
+    print("Processando camada 'uso_terra_ocupacao'...")
+    gdf = gpd.read_file(gpkg_path, layer="uso_terra_ocupacao")
+    gdf = extrair_features_uso_terra(gdf)
+    gdf["layer"] = "uso_terra_ocupacao"
+    salvar_dados(gdf, f"{base_csv}_uso_terra_ocupacao.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_uso_terra_ocupacao.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Camada "edificacoes" ---
+    print("Processando camada 'edificacoes'...")
+    gdf = gpd.read_file(gpkg_path, layer="edificacoes")
+    gdf = extrair_features_edificacoes(gdf)
+    gdf["layer"] = "edificacoes"
+    salvar_dados(gdf, f"{base_csv}_edificacoes.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_edificacoes.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Camada "setores_com_edificacoes" ---
+    print("Processando camada 'setores_com_edificacoes'...")
+    gdf = gpd.read_file(gpkg_path, layer="setores_com_edificacoes")
+    gdf = extrair_features_setores_edificacoes(gdf)
+    gdf["layer"] = "setores_com_edificacoes"
+    salvar_dados(gdf, f"{base_csv}_setores_com_edificacoes.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_setores_com_edificacoes.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Camada "edificacoes_prioritarias" ---
+    print("Processando camada 'edificacoes_prioritarias'...")
+    gdf = gpd.read_file(gpkg_path, layer="edificacoes_prioritarias")
+    gdf = extrair_features_edificacoes_prioritarias(gdf)
+    gdf["layer"] = "edificacoes_prioritarias"
+    salvar_dados(gdf, f"{base_csv}_edificacoes_prioritarias.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_edificacoes_prioritarias.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Junções para edificações ---
+    print("Realizando junção entre 'edificacoes' e 'setores_com_edificacoes'...")
+    gdf_joined = join_edificacoes_setores(consolidated_dfs[-4], consolidated_dfs[-3])
+    print("Realizando junção para identificar edificações prioritárias...")
+    gdf_enriquecidas = join_with_priority(gdf_joined, consolidated_dfs[-1])
+    gdf_enriquecidas["layer"] = "edificacoes_enriquecidas"
+    salvar_dados(gdf_enriquecidas, f"{base_csv}_edificacoes_enriquecidas.csv")
+    salvar_features_pytorch(gdf_enriquecidas, f"{base_pt}_edificacoes_enriquecidas.pt")
+    consolidated_dfs.append(gdf_enriquecidas)
+    add_to_csv_data(gdf_enriquecidas)
+
+    # --- Camada dos ERBs ---
+    print("Processando ERBs...")
+    gdf_cons = gpd.read_file(gpkg_path, layer="analise_consolidada")
+    gdf_merged = gpd.read_file(gpkg_path, layer="merged_layer")
+    gdf_voronoi = gpd.read_file(gpkg_path, layer="voronoi")
+    gdf_cons = extrair_features_erbs_consolidada(gdf_cons)
+    gdf_merged = extrair_features_erbs_merged(gdf_merged)
+    gdf_erbs = join_erbs_layers(gdf_cons, gdf_merged)
+    gdf_erbs = join_with_voronoi(gdf_erbs, gdf_voronoi)
+    gdf_erbs["layer"] = "ERBs"
+    salvar_dados(gdf_erbs, f"{base_csv}_ERBs.csv")
+    salvar_features_pytorch(gdf_erbs, f"{base_pt}_ERBs.pt")
+    consolidated_dfs.append(gdf_erbs)
+    add_to_csv_data(gdf_erbs)
+
+    # --- Camada "rodovias" ---
+    print("Processando camada 'rodovias'...")
+    gdf = gpd.read_file(gpkg_path, layer="rodovias")
+    gdf = extrair_features_rodovias(gdf)
+    gdf["layer"] = "rodovias"
+    salvar_dados(gdf, f"{base_csv}_rodovias.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_rodovias.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Camada "ferrovias" ---
+    print("Processando camada 'ferrovias'...")
+    gdf = gpd.read_file(gpkg_path, layer="ferrovias")
+    gdf = extrair_features_ferrovias(gdf)
+    gdf["layer"] = "ferrovias"
+    salvar_dados(gdf, f"{base_csv}_ferrovias.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_ferrovias.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Camada "clima_pontos_grade" ---
+    print("Processando camada 'clima_pontos_grade'...")
+    gdf = gpd.read_file(gpkg_path, layer="clima_pontos_grade")
+    gdf = extrair_features_pontos(gdf)
+    gdf["layer"] = "clima_pontos_grade"
+    salvar_dados(gdf, f"{base_csv}_clima_pontos_grade.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_clima_pontos_grade.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Camada "clima_arestas_grade" ---
+    print("Processando camada 'clima_arestas_grade'...")
+    gdf = gpd.read_file(gpkg_path, layer="clima_arestas_grade")
+    gdf = extrair_features_arestas(gdf, consolidated_dfs[-1])  # usando gdf_pontos já processado
+    gdf["layer"] = "clima_arestas_grade"
+    salvar_dados(gdf, f"{base_csv}_clima_arestas_grade.csv")
+    salvar_features_pytorch(gdf, f"{base_pt}_clima_arestas_grade.pt")
+    consolidated_dfs.append(gdf)
+    add_to_csv_data(gdf)
+
+    # --- Consolidação final ---
+    print("Realizando consolidação de todas as camadas...")
+    consolidated_df = pd.concat([df.drop(columns="geometry", errors="ignore") for df in consolidated_dfs],
+                                ignore_index=True, sort=False)
+    # Cria o tensor consolidado de features (apenas as colunas numéricas)
+    df_numeric = consolidated_df.select_dtypes(include=[np.number])
+    node_features = torch.tensor(df_numeric.to_numpy(), dtype=torch.float32)
+
+    # Cria o mapeamento global dos nós por camada (ordenando as chaves alfabeticamente)
+    mapping = {}
+    start = 0
+    for nt in sorted(csv_data.keys()):
+        count = len(csv_data[nt])
+        mapping[nt] = (start, start + count)
+        start += count
+    total_nodes = start
+    print(f"Total de nós (conforme CSV): {total_nodes}")
+    print("Mapping dos nós por camada:")
+    print(mapping)
+
+    # Cria o dicionário final para extração de features
+    output = {
+        "csv": csv_data,
+        "node_features": node_features,
+        "node_mapping": mapping
+    }
+
+    # Salva o dicionário final
+    output_path = os.path.join("/content/drive/MyDrive/GrafosGeoespaciais/MBA/grapho", "feature_extraction_dict.pt")
+    torch.save(output, output_path)
+    print(f"\nDicionário de extração de features salvo em: {output_path}")
+
+if __name__ == "__main__":
+    main()

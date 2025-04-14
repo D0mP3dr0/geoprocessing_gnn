@@ -1,0 +1,37 @@
+RELATÓRIO DE QUALIDADE DO GRAFO VIÁRIO
+Data e hora: 2025-04-14 02:14:23
+
+ESTATÍSTICAS DO GRAFO
+Número de nós: 17068
+Número de arestas: 13323
+Grau médio: 1.5612
+Grau máximo: 5
+Número de componentes conectados: 4669
+Tamanho do maior componente: 4958 nós (29.05%)
+
+ESTATÍSTICAS DAS VIAS
+Distribuição por tipo de via:
+  - residential: 10223 (76.56%)
+  - secondary: 1579 (11.83%)
+  - tertiary: 776 (5.81%)
+  - primary: 485 (3.63%)
+  - trunk: 157 (1.18%)
+  - motorway: 133 (1.00%)
+
+Estatísticas de comprimento:
+  - Mínimo: 0.2119
+  - Máximo: 8542.2977
+  - Média: 195.3855
+  - Mediana: 121.9848
+  - Desvio padrão: 305.3540
+
+ANÁLISE DE CORRELAÇÃO
+Matriz de correlação das características das arestas:
+                       length  highway_residential  highway_secondary  highway_tertiary  highway_primary  highway_trunk  highway_motorway
+length               1.000000            -0.064509          -0.027011          0.038097         0.015434       0.045246          0.194906
+highway_residential -0.064509             1.000000          -0.662232         -0.448400        -0.350660      -0.197433         -0.181551
+highway_secondary   -0.027011            -0.662232           1.000000         -0.090841        -0.071040      -0.039998         -0.036781
+highway_tertiary     0.038097            -0.448400          -0.090841          1.000000        -0.048102      -0.027083         -0.024904
+highway_primary      0.015434            -0.350660          -0.071040         -0.048102         1.000000      -0.021179         -0.019476
+highway_trunk        0.045246            -0.197433          -0.039998         -0.027083        -0.021179       1.000000         -0.010965
+highway_motorway     0.194906            -0.181551          -0.036781         -0.024904        -0.019476      -0.010965          1.000000

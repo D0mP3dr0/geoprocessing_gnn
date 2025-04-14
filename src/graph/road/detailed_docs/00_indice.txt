@@ -1,0 +1,137 @@
+# DOCUMENTAÇÃO DETALHADA DO PIPELINE DE ANÁLISE DE REDES VIÁRIAS
+==============================================================================
+Versão: 1.0
+Data: 2023-04-14
+Autor: Equipe de Desenvolvimento GNN para Análise Espacial
+==============================================================================
+
+## ÍNDICE GERAL
+--------------
+
+Este documento serve como um índice para a documentação detalhada do pipeline de análise de redes viárias. A documentação completa foi dividida em vários arquivos para facilitar a navegação e leitura.
+
+### Arquivos de Documentação
+
+1. [01_introducao.txt](01_introducao.txt) - Introdução e visão geral do sistema
+   - Objetivos
+   - Abordagem
+   - Tecnologias principais
+   - Requisitos
+   - Vantagens
+   - Aplicações potenciais
+   - Integração com outros sistemas
+
+2. [02_arquitetura.txt](02_arquitetura.txt) - Arquitetura do sistema
+   - Visão geral da arquitetura
+   - Componentes principais
+   - Descrição detalhada de cada módulo
+   - Fluxo de dados
+   - Estratégias de tratamento de erros
+   - Gerenciamento de estado
+   - Extensibilidade
+
+3. [03_fluxo_execucao_part1.txt](03_fluxo_execucao_part1.txt) - Fluxo de execução (Parte 1)
+   - Inicialização e configuração
+   - Carregamento de dados
+   - Pré-processamento
+
+4. [04_fluxo_execucao_part2.txt](04_fluxo_execucao_part2.txt) - Fluxo de execução (Parte 2)
+   - Construção do grafo
+   - Preparação para PyTorch Geometric
+   - Criação e treinamento do modelo
+
+5. [05_fluxo_execucao_part3.txt](05_fluxo_execucao_part3.txt) - Fluxo de execução (Parte 3)
+   - Avaliação do modelo
+   - Geração de relatórios e visualizações
+   - Salvamento de resultados
+   - Finalização e resumo
+
+6. [06_estrutura_diretorios.txt](06_estrutura_diretorios.txt) - Estrutura de diretórios e arquivos
+   - Estrutura do projeto
+   - Descrição de diretórios
+   - Arquivos principais
+   - Organização dos dados
+
+7. [07_parametros_configuracao.txt](07_parametros_configuracao.txt) - Parâmetros de configuração
+   - Parâmetros do pipeline
+   - Configurações do modelo
+   - Opções de visualização
+   - Personalização do processamento
+
+8. [08_arquivos_saida.txt](08_arquivos_saida.txt) - Arquivos de saída
+   - Modelos treinados
+   - Relatórios gerados
+   - Visualizações
+   - Formato e estrutura de cada arquivo
+   - Uso e interpretação
+
+9. [09_tratamento_erros.txt](09_tratamento_erros.txt) - Tratamento de erros
+   - Estratégias de tratamento
+   - Erros comuns e soluções
+   - Logging e depuração
+   - Recuperação de falhas
+
+10. [10_otimizacoes.txt](10_otimizacoes.txt) - Otimizações e considerações de desempenho
+    - Otimizações implementadas
+    - Processamento paralelo
+    - Uso de GPU
+    - Perfil de memória
+    - Recomendações para conjuntos grandes
+
+11. [11_exemplos_uso.txt](11_exemplos_uso.txt) - Exemplos de uso
+    - Casos de uso comuns
+    - Exemplos de comando
+    - Workflows típicos
+    - Customizações
+
+12. [12_limitacoes.txt](12_limitacoes.txt) - Limitações conhecidas e trabalhos futuros
+    - Limitações atuais
+    - Problemas conhecidos
+    - Melhorias planejadas
+    - Roadmap de desenvolvimento
+
+13. [13_glossario.txt](13_glossario.txt) - Glossário
+    - Termos técnicos
+    - Conceitos de aprendizado em grafos
+    - Terminologia geoespacial
+    - Acrônimos e abreviações
+
+### Navegação Rápida por Tópico
+
+- **Iniciando com o Pipeline:**
+  - Introdução: [01_introducao.txt](01_introducao.txt)
+  - Requisitos: [01_introducao.txt](01_introducao.txt) (Seção 1.4)
+  - Estrutura: [06_estrutura_diretorios.txt](06_estrutura_diretorios.txt)
+  - Exemplos: [11_exemplos_uso.txt](11_exemplos_uso.txt)
+
+- **Compreendendo a Arquitetura:**
+  - Visão geral: [02_arquitetura.txt](02_arquitetura.txt)
+  - Componentes: [02_arquitetura.txt](02_arquitetura.txt) (Seção 2.2)
+  - Fluxo de dados: [02_arquitetura.txt](02_arquitetura.txt) (Seção 2.3)
+
+- **Ajustando Parâmetros:**
+  - Configurações: [07_parametros_configuracao.txt](07_parametros_configuracao.txt)
+  - Otimizações: [10_otimizacoes.txt](10_otimizacoes.txt)
+
+- **Interpretando Resultados:**
+  - Arquivos de saída: [08_arquivos_saida.txt](08_arquivos_saida.txt)
+  - Visualizações: [05_fluxo_execucao_part3.txt](05_fluxo_execucao_part3.txt) (Seção 3.8)
+  - Relatórios: [05_fluxo_execucao_part3.txt](05_fluxo_execucao_part3.txt) (Seção 3.8)
+
+- **Resolução de Problemas:**
+  - Tratamento de erros: [09_tratamento_erros.txt](09_tratamento_erros.txt)
+  - Limitações: [12_limitacoes.txt](12_limitacoes.txt)
+
+### Arquivos de Código Relacionados
+
+- Código principal: `run_pipeline.py`
+- Módulos:
+  - Configuração: `pipeline/config.py`
+  - Carregamento de dados: `pipeline/data_loading.py`
+  - Pré-processamento: `pipeline/preprocessing.py`
+  - Construção de grafo: `pipeline/graph_construction.py`
+  - Modelos GNN: `pipeline/gnn_models.py`
+  - Treinamento: `pipeline/training.py`
+  - Visualização: `pipeline/visualization.py`
+  - Relatórios: `pipeline/reporting.py`
+  - Utilitários: `pipeline/utils.py` 

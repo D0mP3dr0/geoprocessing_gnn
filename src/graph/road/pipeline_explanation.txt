@@ -1,0 +1,163 @@
+# EXPLICAÇÃO DO PIPELINE DE ANÁLISE DE REDES VIÁRIAS
+================================================
+
+## FLUXO DE EXECUÇÃO CRONOLÓGICO
+------------------------------------------------
+
+1. INICIALIZAÇÃO E CONFIGURAÇÃO
+-------------------------------
+* Arquivo: run_pipeline.py
+* Tarefas:
+  - Verifica o ambiente (Colab ou local)
+  - Monta o Google Drive se estiver no Colab
+  - Verifica a existência dos arquivos de entrada
+  - Configura caminhos do Google Drive: "/content/drive/MyDrive/geoprocessamento_gnn"
+  - Diretórios principais: DATA_DIR, OUTPUT_DIR, REPORT_DIR
+  - Inicializa temporizador para medir o tempo de execução
+
+2. CARREGAMENTO DE DADOS
+------------------------
+* Arquivo: pipeline/data_loading.py
+* Função: load_road_data(ROADS_PROCESSED_PATH)
+* Tarefas:
+  - Carrega dados de rodovias do arquivo: "DATA/processed/roads_processed.gpkg"
+  - Verifica o sistema de referência espacial (CRS)
+  - Parâmetros usados:
+    * file_path: Caminho absoluto para o arquivo de dados processados
+    * crs: EPSG:4674 (padrão para Brasil)
+
+3. PRÉ-PROCESSAMENTO
+-------------------
+* Arquivo: pipeline/preprocessing.py
+* Funções: 
+  - explode_multilines(gdf)
+  - clean_road_data(gdf)
+* Tarefas:
+  - Explode geometrias MultiLineString em LineStrings individuais
+  - Limpa e prepara dados para construção do grafo
+  - Remove geometrias inválidas
+  - Parâmetros usados:
+    * gdf: GeoDataFrame com dados de estradas
+
+4. CONSTRUÇÃO DO GRAFO
+----------------------
+* Arquivo: pipeline/graph_construction.py
+* Funções:
+  - create_road_graph(gdf)
+  - assign_node_classes(G, highway_to_idx)
+* Tarefas:
+  - Cria grafo a partir das geometrias de estradas
+  - Conecta segmentos de estrada adjacentes
+  - Atribui classes aos nós com base nos tipos de estradas conectadas
+  - Parâmetros usados:
+    * gdf: GeoDataFrame de estradas pré-processado
+    * highway_to_idx: Dicionário mapeando tipos de estradas para índices numéricos
+
+5. PREPARAÇÃO PARA PYTORCH GEOMETRIC
+----------------------------------
+* Arquivo: pipeline/data_loading.py
+* Função: load_pytorch_geometric_data(G)
+* Tarefas:
+  - Converte o grafo NetworkX para formato PyTorch Geometric
+  - Extrai features dos nós
+  - Cria labels para nós
+  - Cria máscaras para treinamento (70%), validação (10%) e teste (20%)
+  - Parâmetros usados:
+    * G: Grafo NetworkX
+    * train_ratio: 0.7
+    * val_ratio: 0.1
+
+6. CRIAÇÃO E TREINAMENTO DO MODELO
+---------------------------------
+* Arquivo: pipeline/gnn_models.py e pipeline/training.py
+* Funções:
+  - GNN(input_dim, hidden_dim, output_dim, dropout)
+  - train(model, optimizer, data, epochs)
+* Tarefas:
+  - Cria modelo GNN com arquitetura definida
+  - Configura otimizador Adam
+  - Treina modelo com dados de treinamento
+  - Parâmetros usados:
+    * input_dim: Dimensão de entrada (baseada nos features dos nós)
+    * hidden_dim: 64
+    * output_dim: Número de classes (baseado nos tipos de estradas)
+    * dropout: 0.5
+    * learning_rate: 0.01
+    * epochs: 200
+
+7. AVALIAÇÃO DO MODELO
+---------------------
+* Arquivo: pipeline/training.py
+* Função: evaluate(model, data, data.test_mask)
+* Tarefas:
+  - Avalia desempenho do modelo no conjunto de teste
+  - Calcula acurácia, matriz de confusão e outras métricas
+  - Gera previsões para todos os nós
+  - Parâmetros usados:
+    * model: Modelo GNN treinado
+    * data: Dados PyTorch Geometric
+    * mask: Máscara para seleção de nós para avaliação
+
+8. GERAÇÃO DE RELATÓRIOS E VISUALIZAÇÕES
+---------------------------------------
+* Arquivos: pipeline/reporting.py e pipeline/visualization.py
+* Funções:
+  - generate_quality_report(G, pred, data.y.cpu().numpy(), idx_to_class, output_dir)
+  - plot_training_history(history)
+  - plot_road_network(gdf)
+  - plot_node_classes(G, node_class_attr='class')
+  - create_interactive_map(gdf, output_path)
+* Tarefas:
+  - Gera relatório de qualidade com métricas detalhadas
+  - Cria gráficos do histórico de treinamento (perda e acurácia)
+  - Visualiza a rede de estradas
+  - Visualiza classes atribuídas aos nós
+  - Cria mapa interativo com resultados
+  - Parâmetros usados:
+    * G: Grafo NetworkX
+    * pred: Previsões do modelo
+    * idx_to_class: Dicionário mapeando índices para nomes de classes
+    * output_dir: Diretório de saída para relatórios
+    * node_class_attr: Nome do atributo contendo classes dos nós
+
+9. SALVAMENTO DE RESULTADOS
+--------------------------
+* Arquivo: pipeline/training.py
+* Função: save_results(test_results, model, history, output_dir, prefix)
+* Tarefas:
+  - Salva o modelo treinado
+  - Salva histórico de treinamento
+  - Salva métricas de avaliação
+  - Parâmetros usados:
+    * test_results: Resultados da avaliação
+    * model: Modelo GNN treinado
+    * history: Histórico de treinamento
+    * output_dir: Diretório para salvar resultados (MODELS_DIR)
+    * prefix: Prefixo para nomes de arquivos ("gnn_road")
+
+10. FINALIZAÇÃO E RESUMO
+-----------------------
+* Arquivo: run_pipeline.py
+* Tarefas:
+  - Calcula e exibe tempo total de execução
+  - Exibe resumo dos resultados (acurácia, caminhos dos relatórios, etc.)
+  - Encerra o pipeline
+
+## PRINCIPAIS ARQUIVOS DE SAÍDA
+-------------------------------
+1. Modelo treinado: OUTPUT/models/gnn_road_[timestamp].pt
+2. Histórico de treinamento: OUTPUT/models/training_history_[timestamp].json
+3. Relatório de qualidade: QUALITY_REPORT/quality_report_[timestamp].json
+4. Visualizações: OUTPUT/visualizations/
+   - training_history_[timestamp].png
+   - road_network_[timestamp].png
+   - node_classes_[timestamp].png
+   - interactive_map_[timestamp].html
+
+## PARÂMETROS CONFIGURÁVEIS
+---------------------------
+* Todos os caminhos de arquivos são baseados no caminho do Google Drive: "/content/drive/MyDrive/geoprocessamento_gnn"
+* Sistema de referência: EPSG:4674 (Brasil)
+* Dimensões do modelo: input_dim (variável), hidden_dim (64), output_dim (variável)
+* Parâmetros de treinamento: learning_rate (0.01), epochs (200), dropout (0.5)
+* Divisão de dados: train_ratio (0.7), val_ratio (0.1), test_ratio (0.2) 

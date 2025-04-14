@@ -1,0 +1,221 @@
+==============================================================================
+## 2. ARQUITETURA DO SISTEMA
+==============================================================================
+
+O sistema segue uma arquitetura modular com componentes especializados que interagem entre si para executar o fluxo completo de processamento de dados geoespaciais e aprendizado de máquina em grafos.
+
+### 2.1 Visão Geral da Arquitetura
+
+A arquitetura do pipeline é organizada em camadas funcionais:
+
+1. **Camada de Dados**: Responsável pela entrada, transformação e gerenciamento de dados geoespaciais
+2. **Camada de Grafo**: Foca na representação e análise de estruturas de grafo
+3. **Camada de Aprendizado**: Contém componentes para treinamento e avaliação de modelos
+4. **Camada de Visualização**: Gera representações visuais dos dados e resultados
+5. **Camada de Infraestrutura**: Fornece suporte operacional, configurações e utilitários
+
+Cada camada contém módulos especializados com responsabilidades bem definidas. A comunicação entre os módulos ocorre através de interfaces claras, permitindo flexibilidade e substituição de componentes.
+
+### 2.2 Componentes Principais
+
+#### 2.2.1 Módulo de Configuração (pipeline/config.py)
+Atua como o "cérebro" administrativo do sistema, gerenciando configurações globais e parâmetros de execução.
+
+**Responsabilidades**:
+- Definição de caminhos de arquivo e diretório
+- Configuração de parâmetros padrão para processamento de dados
+- Definição de hiperparâmetros para modelos
+- Configurações de visualização
+- Gerenciamento de dependências entre componentes
+
+**Interfaces Principais**:
+- Constantes de caminho: `DRIVE_PATH`, `DATA_DIR`, `OUTPUT_DIR`, `REPORT_DIR`
+- Configurações de modelo: `DEFAULT_MODEL`, `DEFAULT_HIDDEN_DIM`, `DEFAULT_DROPOUT`
+- Utilitários: `get_timestamp()`, `get_output_filename()`
+
+#### 2.2.2 Módulo de Carregamento de Dados (pipeline/data_loading.py)
+Responsável pela ingestão e validação inicial de dados geoespaciais.
+
+**Responsabilidades**:
+- Leitura de diferentes formatos de arquivo geoespacial (GeoPackage, Shapefile, etc.)
+- Verificação de sistemas de coordenadas e conversão quando necessário
+- Validação inicial de dados
+- Montagem do Google Drive em ambiente Colab
+- Conversão entre formatos de representação de dados
+
+**Interfaces Principais**:
+- `load_road_data(file_path, crs)`: Carrega dados viários de arquivo
+- `load_from_osm(place_name, bbox)`: Obtém dados de OpenStreetMap
+- `convert_nx_to_gdf(G)`: Converte grafo NetworkX para GeoDataFrame
+- `load_pytorch_geometric_data(G)`: Prepara dados para PyTorch Geometric
+
+#### 2.2.3 Módulo de Pré-processamento (pipeline/preprocessing.py)
+Foca na limpeza, transformação e preparação de dados para análise.
+
+**Responsabilidades**:
+- Limpeza de geometrias inválidas
+- Explosão de multilinhas em segmentos individuais
+- Padronização de atributos
+- Cálculo de métricas geométricas
+- Validação topológica
+
+**Interfaces Principais**:
+- `explode_multilines(gdf)`: Divide MultiLineStrings em LineStrings individuais
+- `clean_road_data(gdf)`: Realiza limpeza e validação de dados
+- `calculate_road_metrics(gdf)`: Calcula métricas como comprimento e sinuosidade
+- `validate_topology(gdf)`: Verifica integridade topológica da rede
+
+#### 2.2.4 Módulo de Construção de Grafo (pipeline/graph_construction.py)
+Transforma dados geoespaciais em representação de grafo adequada para análise de redes.
+
+**Responsabilidades**:
+- Criação de estrutura de grafo a partir de geometrias
+- Definição de relações de conectividade entre nós
+- Atribuição de propriedades a nós e arestas
+- Extração de métricas de centralidade e importância
+- Classificação preliminar de elementos do grafo
+
+**Interfaces Principais**:
+- `create_road_graph(gdf)`: Constrói grafo a partir de GeoDataFrame
+- `assign_node_classes(G, highway_to_idx)`: Classifica nós com base em conectividade
+- `extract_graph_features(G)`: Calcula métricas topológicas para análise
+- `prepare_graph_for_pytorch(G)`: Adapta grafo para uso com PyTorch Geometric
+
+#### 2.2.5 Módulo de Modelos GNN (pipeline/gnn_models.py)
+Define arquiteturas de Redes Neurais de Grafo para análise de redes viárias.
+
+**Responsabilidades**:
+- Implementação de diferentes arquiteturas GNN
+- Definição de camadas de rede neural
+- Controle de fluxo de informação no grafo
+- Otimização de hiperparâmetros
+
+**Interfaces Principais**:
+- `GNN`: Modelo base de Rede Neural de Grafo
+- `ImprovedGNN`: Implementação avançada com recursos adicionais
+- `AttentionGNN`: Modelo com mecanismos de atenção para análise ponderada
+
+#### 2.2.6 Módulo de Treinamento (pipeline/training.py)
+Gerencia o processo de aprendizado dos modelos e avaliação de desempenho.
+
+**Responsabilidades**:
+- Execução de loops de treinamento
+- Otimização de parâmetros do modelo
+- Validação de desempenho
+- Implementação de early stopping
+- Avaliação de métricas
+
+**Interfaces Principais**:
+- `train(model, optimizer, data, epochs)`: Realiza treinamento do modelo
+- `evaluate(model, data, mask)`: Avalia desempenho em conjunto de dados
+- `save_results(results, model, history)`: Salva artefatos do treinamento
+- `plot_training_history(history)`: Visualiza progresso do treinamento
+
+#### 2.2.7 Módulo de Visualização (pipeline/visualization.py)
+Gera representações visuais dos dados e resultados para interpretação e análise.
+
+**Responsabilidades**:
+- Criação de mapas estáticos e interativos
+- Visualização de grafos e redes
+- Plotagem de métricas e resultados
+- Geração de dashboards
+
+**Interfaces Principais**:
+- `plot_road_network(gdf)`: Visualiza rede viária
+- `plot_graph(G)`: Exibe representação do grafo
+- `plot_node_classes(G)`: Visualiza classificação de nós
+- `create_interactive_map(gdf)`: Gera mapa interativo com Folium
+
+#### 2.2.8 Módulo de Relatórios (pipeline/reporting.py)
+Produz documentação detalhada dos resultados e métricas de análise.
+
+**Responsabilidades**:
+- Geração de relatórios estruturados
+- Cálculo de métricas de qualidade
+- Formatação de resultados para consumo humano e máquina
+- Arquivamento de resultados
+
+**Interfaces Principais**:
+- `generate_quality_report(G, predictions, true_labels)`: Cria relatório detalhado
+- `load_reports(report_dir)`: Carrega relatórios existentes
+- `save_results_summary(results_dict)`: Exporta resumo em formato acessível
+
+#### 2.2.9 Módulo de Utilitários (pipeline/utils.py)
+Contém funções auxiliares usadas por diferentes componentes do sistema.
+
+**Responsabilidades**:
+- Funções de manipulação de tempo e timestamp
+- Processamento de JSON e serialização
+- Cálculos matemáticos especializados
+- Funções de conversão de formato
+
+**Interfaces Principais**:
+- `setup_logging(log_file)`: Configura sistema de logging
+- `save_json(data, file_path)`: Salva dados em formato JSON
+- `calculate_network_metrics(G)`: Computa métricas de rede
+- `create_timestamp_directory(base_dir)`: Cria diretório com nome baseado em timestamp
+
+#### 2.2.10 Script Principal (run_pipeline.py)
+Orquestra a execução completa do pipeline, integrando todos os componentes.
+
+**Responsabilidades**:
+- Inicialização do ambiente
+- Sequenciamento das operações
+- Tratamento de erros global
+- Interface com usuário
+- Relatório de execução
+
+**Interfaces Principais**:
+- `main()`: Função principal que executa o pipeline completo
+- `ensure_directories()`: Garante existência de diretórios necessários
+- Tratamento de argumentos e parâmetros de linha de comando
+
+### 2.3 Fluxo de Dados
+
+O fluxo de dados através do sistema segue um padrão sequencial com feedback em alguns pontos:
+
+1. Dados brutos são carregados do Google Drive (GeoPackage, Shapefile, etc.)
+2. Pré-processamento limpa e valida os dados geoespaciais
+3. Dados são transformados em representação de grafo
+4. Features são extraídos de nós e arestas do grafo
+5. Modelo GNN é treinado usando os dados de grafo
+6. Avaliação gera métricas de desempenho
+7. Relatórios e visualizações são produzidos
+8. Resultados são salvos no Google Drive
+
+Em alguns pontos do fluxo, existem loops de feedback:
+- Validação durante treinamento pode ajustar hiperparâmetros
+- Avaliação de qualidade pode sugerir novo pré-processamento
+- Visualização pode identificar problemas que requerem ajustes
+
+### 2.4 Estratégia de Tratamento de Erros
+
+O sistema implementa uma abordagem em camadas para tratamento de erros:
+
+1. **Validação Preventiva**: Verificação de pré-requisitos antes da execução
+2. **Tratamento Local**: Cada módulo gerencia seus próprios erros quando possível
+3. **Propagação Controlada**: Erros críticos são propagados para níveis superiores
+4. **Recuperação Parcial**: Tentativa de prosseguir mesmo com falhas em componentes não críticos
+5. **Logging Detalhado**: Registro de erros com contexto para diagnóstico
+
+### 2.5 Gerenciamento de Estado
+
+O estado do sistema é mantido principalmente através:
+
+1. **Arquivos em Disco**: Dados intermediários e resultados são salvos no Google Drive
+2. **Objetos em Memória**: Durante a execução, objetos Python mantêm o estado
+3. **Logs**: Histórico de operações é registrado para referência
+
+Não há banco de dados persistente, mas os arquivos de saída servem como registro histórico das execuções e podem ser carregados para análise posterior.
+
+### 2.6 Extensibilidade
+
+A arquitetura foi projetada para permitir extensão em várias dimensões:
+
+1. **Novos Modelos**: Adição de arquiteturas GNN alternativas
+2. **Fontes de Dados**: Suporte a outros formatos de entrada
+3. **Métricas Adicionais**: Inclusão de novas métricas de avaliação
+4. **Visualizações Personalizadas**: Implementação de visualizações específicas
+5. **Integração com APIs**: Conectividade com serviços externos
+
+A adição de novos componentes requer apenas a implementação de interfaces compatíveis com o fluxo existente. 
