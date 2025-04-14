@@ -1,0 +1,1755 @@
+5.3 GRAPHSAGE PARA ANÁLISE DE ROTAS CRÍTICAS
+5.3.1 Fundamentos Teóricos e Motivação
+A identificação de rotas críticas em redes viárias urbanas representa um desafio fundamental para planejamento urbano, gestão de emergências e resiliência de infraestrutura. Diferentemente da análise de congestionamento, que foca em segmentos individuais, a análise de rotas críticas busca identificar caminhos completos cuja interrupção causaria impactos sistêmicos significativos na mobilidade urbana. As abordagens tradicionais baseiam-se em métricas de centralidade simples e simulações computacionalmente intensivas, frequentemente incapazes de capturar a complexidade multidimensional deste problema.
+O framework GraphSAGE (Graph SAmple and aggreGatE) emerge como uma solução poderosa para este contexto, oferecendo capacidade de aprendizado em grafos de grande escala através de sua abordagem de amostragem e agregação de vizinhança, permitindo capturar padrões estruturais complexos que determinam a criticidade de rotas urbanas.
+5.3.1.1 O Problema da Identificação de Rotas Críticas
+Rotas críticas são sequências de segmentos viários que, quando comprometidas, causam perturbações desproporcionais na acessibilidade e mobilidade urbana. A criticidade de uma rota é determinada por múltiplos fatores:
+
+Redundância de rede: Disponibilidade de alternativas viáveis quando a rota é interrompida
+Volume de tráfego: Quantidade de deslocamentos afetados por interrupções
+Funcionalidade sistêmica: Papel da rota na conectividade entre regiões
+Acessibilidade a serviços essenciais: Impacto na conectividade com hospitais, escolas, equipamentos públicos
+Vulnerabilidade física: Suscetibilidade a interrupções por eventos naturais ou antrópicos
+Tempos de resposta emergencial: Impacto em rotas de veículos de emergência
+
+A identificação eficaz destas rotas requer métodos que possam integrar estas múltiplas dimensões em uma análise unificada, considerando tanto a topologia da rede quanto seus atributos contextuais.
+5.3.1.2 GraphSAGE: Fundamentos Matemáticos
+O GraphSAGE, introduzido por Hamilton et al. (2017), representa uma evolução significativa na aprendizagem de representações em grafos, permitindo inductive learning em grafos grandes e dinâmicos. Diferentemente de abordagens anteriores que calculavam embeddings para todos os nós simultaneamente, o GraphSAGE gera embeddings através de uma função parametrizada treinável que pode ser aplicada a nós não vistos durante o treinamento.
+A formulação matemática central do GraphSAGE envolve um processo de amostragem e agregação iterativo:
+Para cada nó vv
+v e cada camada kk
+k, o GraphSAGE:
+
+
+Amostra um número fixo de vizinhos N(v)\mathcal{N}(v)
+N(v)
+Agrega informações da vizinhança através de uma função parametrizada
+Combina o estado do próprio nó com a informação agregada
+Normaliza o vetor resultante
+
+Formalmente, para uma camada kk
+k:
+
+hvk=σ(Wk⋅CONCAT(hvk−1,AGGREGATEk({huk−1,∀u∈N(v)})))h_v^k = \sigma \left( W^k \cdot \text{CONCAT} \left( h_v^{k-1}, \text{AGGREGATE}_k \left( \{ h_u^{k-1}, \forall u \in \mathcal{N}(v) \} \right) \right) \right)hvk​=σ(Wk⋅CONCAT(hvk−1​,AGGREGATEk​({huk−1​,∀u∈N(v)})))
+Onde:
+
+hvkh_v^k
+hvk​ é o embedding do nó vv
+v na camada kk
+k
+N(v)\mathcal{N}(v)
+N(v) é o conjunto de vizinhos amostrados do nó vv
+v
+AGGREGATEk\text{AGGREGATE}_k
+AGGREGATEk​ é uma função de agregação (média, pooling, LSTM, etc.)
+
+WkW^k
+Wk é uma matriz de pesos treinável
+
+σ\sigma
+σ é uma função de ativação não-linear
+
+CONCAT\text{CONCAT}
+CONCAT é a operação de concatenação
+
+
+O processo inicia com hv0h_v^0
+hv0​ sendo as características originais do nó vv
+v e prossegue iterativamente através das KK
+K camadas da rede.
+
+A função de agregação pode assumir diferentes formas:
+
+Mean Aggregator: AGGREGATE=MEAN({hu,∀u∈N(v)})\text{AGGREGATE} = \text{MEAN}(\{h_u, \forall u \in \mathcal{N}(v)\})
+AGGREGATE=MEAN({hu​,∀u∈N(v)})
+LSTM Aggregator: Aplica um LSTM à sequência de vetores de características dos vizinhos
+Pooling Aggregator: AGGREGATE=MAX({σ(Wpoolhu+b),∀u∈N(v)})\text{AGGREGATE} = \text{MAX}(\{\sigma(W_{\text{pool}} h_u + b), \forall u \in \mathcal{N}(v)\})
+AGGREGATE=MAX({σ(Wpool​hu​+b),∀u∈N(v)})
+
+5.3.1.3 Vantagens do GraphSAGE para Análise de Rotas Críticas
+O GraphSAGE oferece vantagens fundamentais para a identificação de rotas críticas em redes viárias:
+
+Escalabilidade: Capacidade de processar redes urbanas completas através da amostragem de vizinhança
+Aprendizado indutivo: Generalização para novos segmentos viários não vistos durante o treinamento
+Incorporação de contexto multidimensional: Integração natural de múltiplas fontes de dados contextuais
+Flexibilidade de agregação: Diferentes funções de agregação podem capturar distintos aspectos da criticidade
+Robustez a dados esparsos: Eficácia mesmo com informações incompletas sobre segmentos viários
+Aplicabilidade em diferentes escalas: Funciona tanto para análises locais quanto regionais
+
+Estas características tornam o GraphSAGE particularmente adequado para a análise de rotas críticas em contextos urbanos complexos, onde múltiplas dimensões de criticidade precisam ser consideradas simultaneamente.
+5.3.2 Modelagem de Rede para Análise de Rotas Críticas
+A representação adequada da rede viária é fundamental para a análise de rotas críticas, exigindo uma abordagem específica que capture tanto a estrutura física quanto o papel funcional de cada segmento.
+5.3.2.1 Representação Path-centric
+Para análise de rotas críticas, adotamos uma representação centrada em caminhos (path-centric), onde:
+
+Unidade de análise: Sequências de segmentos conectados (rotas) são a unidade primária
+Decomposição em subgrafos: A rede completa é decomposta em potenciais rotas críticas
+Estrutura hierárquica: Caminhos são analisados considerando sua posição na hierarquia viária
+Conectividade regional: Foco em rotas que conectam diferentes regiões funcionais da cidade
+
+Esta representação é implementada através de um algoritmo de extração de caminhos candidatos:
+pythondef extract_critical_path_candidates(G, weight='length', top_betweenness=0.2, min_path_length=5):
+    """
+    Extrai caminhos candidatos a rotas críticas baseado em betweenness e outras métricas.
+    
+    Args:
+        G: Grafo NetworkX da rede viária
+        weight: Atributo para cálculo de caminhos mínimos
+        top_betweenness: Percentil para filtrar arestas com alta betweenness
+        min_path_length: Número mínimo de segmentos em uma rota candidata
+        
+    Returns:
+        List: Lista de caminhos candidatos (cada caminho é uma lista de nós)
+    """
+    # Calcula edge betweenness centrality
+    edge_betweenness = nx.edge_betweenness_centrality(G, weight=weight, normalized=True)
+    
+    # Identifica arestas com alta betweenness (potencialmente críticas)
+    threshold = np.percentile(list(edge_betweenness.values()), 100 - top_betweenness*100)
+    critical_edges = [edge for edge, centrality in edge_betweenness.items() 
+                     if centrality >= threshold]
+    
+    # Extrai componentes conectados principais
+    components = list(nx.connected_components(G))
+    main_component = max(components, key=len)
+    
+    # Seleciona nós importantes (ex: entrada/saída de bairros, interseções principais)
+    important_nodes = []
+    
+    # 1. Nós com alta closeness centrality (acessibilidade global)
+    closeness = nx.closeness_centrality(G, distance=weight)
+    closeness_threshold = np.percentile(list(closeness.values()), 90)
+    important_nodes.extend([node for node, c in closeness.items() 
+                          if c >= closeness_threshold and node in main_component])
+    
+    # 2. Nós em extremidades de arestas críticas
+    for u, v in critical_edges:
+        important_nodes.extend([u, v])
+    
+    # 3. Nós que são pontos de entrada/saída de regiões
+    # (implementação depende da definição de regiões disponível)
+    if 'region_id' in G.nodes[list(G.nodes())[0]]:
+        region_borders = find_region_borders(G)
+        important_nodes.extend(region_borders)
+    
+    # Remove duplicatas
+    important_nodes = list(set(important_nodes))
+    
+    # Gerar caminhos candidatos entre pares de nós importantes
+    candidate_paths = []
+    
+    for i, source in enumerate(important_nodes):
+        for target in important_nodes[i+1:]:
+            try:
+                # Encontra caminho mais curto entre nós importantes
+                path = nx.shortest_path(G, source, target, weight=weight)
+                
+                # Filtra apenas caminhos longos o suficiente para serem relevantes
+                if len(path) >= min_path_length:
+                    candidate_paths.append(path)
+            except nx.NetworkXNoPath:
+                continue
+    
+    # Filtra caminhos redundantes
+    filtered_paths = filter_redundant_paths(candidate_paths, similarity_threshold=0.7)
+    
+    return filtered_paths
+Esta abordagem identifica rotas candidatas baseadas em múltiplos critérios de importância, formando a base para posterior análise através do GraphSAGE.
+5.3.2.2 Integração com Centros de Atividade
+Para enriquecer a análise, integramos dados sobre centros de atividade urbana, extraídos dos dados contextuais:
+pythondef integrate_activity_centers(G, candidate_paths, buildings_gdf, landuse_gdf, census_gdf):
+    """
+    Enriquece análise com dados sobre centros de atividade urbana.
+    
+    Args:
+        G: Grafo NetworkX
+        candidate_paths: Lista de caminhos candidatos
+        buildings_gdf: GeoDataFrame com dados de edificações
+        landuse_gdf: GeoDataFrame com dados de uso do solo
+        census_gdf: GeoDataFrame com dados censitários
+        
+    Returns:
+        Dictionary: Paths com métricas de importância associadas
+    """
+    # Identificar centros de atividade por tipo
+    activity_centers = {
+        'healthcare': identify_centers(buildings_gdf, landuse_gdf, 'healthcare'),
+        'education': identify_centers(buildings_gdf, landuse_gdf, 'education'),
+        'commercial': identify_centers(buildings_gdf, landuse_gdf, 'commercial'),
+        'transportation': identify_centers(buildings_gdf, landuse_gdf, 'transportation'),
+        'government': identify_centers(buildings_gdf, landuse_gdf, 'government')
+    }
+    
+    # Para cada centro de atividade, encontrar nó da rede mais próximo
+    center_nodes = {}
+    for center_type, centers in activity_centers.items():
+        center_nodes[center_type] = []
+        for center in centers:
+            # Encontra nó mais próximo do centro na rede
+            nearest_node = find_nearest_node(G, center['geometry'])
+            if nearest_node:
+                center_nodes[center_type].append({
+                    'node_id': nearest_node,
+                    'importance': center['importance'],
+                    'name': center.get('name', 'Unnamed')
+                })
+    
+    # Calcular métricas de importância para cada rota candidata
+    enriched_paths = {}
+    
+    for i, path in enumerate(candidate_paths):
+        path_id = f"path_{i}"
+        
+        # Métricas de serviço
+        service_metrics = {}
+        for center_type, centers in center_nodes.items():
+            # Verifica quantos centros deste tipo são servidos por esta rota
+            served_centers = []
+            for center in centers:
+                # Um centro é considerado servido se está no caminho ou a uma distância curta
+                if center['node_id'] in path or any(nx.shortest_path_length(G, center['node_id'], node) <= 3 for node in path):
+                    served_centers.append(center)
+            
+            # Calcula importância agregada dos centros servidos
+            importance = sum(center['importance'] for center in served_centers)
+            service_metrics[f'serves_{center_type}'] = importance
+        
+        # Métricas de população servida (baseado nos setores censitários)
+        path_buffer = create_path_buffer(G, path, buffer_distance=500)  # 500m de buffer
+        intersecting_sectors = census_gdf[census_gdf.intersects(path_buffer)]
+        
+        # Estima população servida pela rota
+        if not intersecting_sectors.empty:
+            population_served = intersecting_sectors['est_populacao'].sum()
+            # Normaliza por comprimento para obter densidade de serviço
+            path_length = calculate_path_length(G, path)
+            population_density = population_served / path_length if path_length > 0 else 0
+        else:
+            population_served = 0
+            population_density = 0
+        
+        # Salva todas as métricas
+        enriched_paths[path_id] = {
+            'path': path,
+            'path_length': calculate_path_length(G, path),
+            'service_metrics': service_metrics,
+            'population_served': population_served,
+            'population_density': population_density
+        }
+    
+    return enriched_paths
+Esta integração captura explicitamente a importância funcional de cada rota em termos de acesso a serviços essenciais e conectividade urbana.
+5.3.3 Extração de Features para Rotas Críticas
+Um aspecto crucial na análise de rotas críticas é a definição de características relevantes que capturam adequadamente a importância de cada rota no contexto urbano.
+5.3.3.1 Features Estruturais e Topológicas
+Extraímos características que capturam a posição estrutural de cada rota no sistema viário:
+pythondef extract_structural_features(G, path, path_metadata=None):
+    """
+    Extrai características estruturais e topológicas de uma rota.
+    
+    Args:
+        G: Grafo NetworkX
+        path: Lista de nós representando uma rota
+        path_metadata: Metadados adicionais da rota
+        
+    Returns:
+        Dict: Features estruturais e topológicas
+    """
+    features = {}
+    
+    # 1. Comprimento total do caminho
+    total_length = 0
+    for i in range(len(path) - 1):
+        u, v = path[i], path[i+1]
+        if G.has_edge(u, v) and 'length' in G.edges[u, v]:
+            total_length += G.edges[u, v]['length']
+    features['total_length'] = total_length
+    
+    # 2. Betweenness médio dos segmentos
+    if 'edge_betweenness' not in G.edges[list(G.edges())[0]]:
+        # Calcula se não existir
+        edge_betweenness = nx.edge_betweenness_centrality(G)
+        nx.set_edge_attributes(G, edge_betweenness, 'edge_betweenness')
+    
+    edge_bc_values = []
+    for i in range(len(path) - 1):
+        u, v = path[i], path[i+1]
+        if G.has_edge(u, v):
+            edge_bc_values.append(G.edges[u, v].get('edge_betweenness', 0))
+    
+    features['mean_edge_betweenness'] = np.mean(edge_bc_values) if edge_bc_values else 0
+    features['max_edge_betweenness'] = np.max(edge_bc_values) if edge_bc_values else 0
+    
+    # 3. Alternativas de rota (redundância)
+    # Para cada par de nós não adjacentes no caminho, verifica caminhos alternativos
+    redundancy_ratios = []
+    
+    sample_step = max(1, len(path) // 5)  # Amostra para eficiência
+    for i in range(0, len(path) - sample_step, sample_step):
+        for j in range(i + sample_step, len(path), sample_step):
+            source, target = path[i], path[j]
+            
+            # Caminho original entre estes nós
+            original_path = path[i:j+1]
+            original_length = calculate_path_length(G, original_path)
+            
+            # Remove temporariamente as arestas do caminho original
+            edges_to_remove = [(original_path[k], original_path[k+1]) 
+                              for k in range(len(original_path)-1)]
+            G_temp = G.copy()
+            G_temp.remove_edges_from(edges_to_remove)
+            
+            try:
+                # Tenta encontrar caminho alternativo
+                alt_path = nx.shortest_path(G_temp, source, target, weight='length')
+                alt_length = calculate_path_length(G, alt_path)
+                
+                # Calcula ratio entre comprimento alternativo e original
+                if original_length > 0:
+                    redundancy_ratios.append(alt_length / original_length)
+            except nx.NetworkXNoPath:
+                # Sem alternativa: redundância muito baixa
+                redundancy_ratios.append(float('inf'))
+    
+    # Métricas de redundância
+    valid_ratios = [r for r in redundancy_ratios if r != float('inf')]
+    features['redundancy_mean'] = np.mean(valid_ratios) if valid_ratios else 10.0
+    features['redundancy_min'] = np.min(valid_ratios) if valid_ratios else 10.0
+    features['pct_segments_no_alternative'] = (sum(1 for r in redundancy_ratios if r == float('inf')) / 
+                                              len(redundancy_ratios) if redundancy_ratios else 1.0)
+    
+    # 4. Conectividade com rede principal
+    # Conta conexões com vias hierarquicamente superiores
+    highway_counts = {hw: 0 for hw in ['motorway', 'trunk', 'primary', 'secondary']}
+    
+    for node in path:
+        for neighbor in G.neighbors(node):
+            if neighbor not in path:  # Conexão externa
+                for edge in G.edges(node, data=True):
+                    if edge[1] == neighbor:
+                        hw_type = edge[2].get('highway', 'unclassified')
+                        if hw_type in highway_counts:
+                            highway_counts[hw_type] += 1
+    
+    for hw, count in highway_counts.items():
+        features[f'connections_to_{hw}'] = count
+    
+    # 5. Continuidade hierárquica
+    # Verifica se a rota mantém hierarquia consistente
+    highway_types = []
+    for i in range(len(path) - 1):
+        u, v = path[i], path[i+1]
+        if G.has_edge(u, v):
+            hw_type = G.edges[u, v].get('highway', 'unclassified')
+            highway_types.append(hw_type)
+    
+    # Conta mudanças de hierarquia
+    hierarchy_changes = 0
+    for i in range(1, len(highway_types)):
+        if highway_types[i] != highway_types[i-1]:
+            hierarchy_changes += 1
+    
+    features['hierarchy_changes'] = hierarchy_changes
+    features['hierarchy_changes_ratio'] = hierarchy_changes / len(highway_types) if highway_types else 0
+    
+    # Adiciona metadados se disponíveis
+    if path_metadata:
+        for key, value in path_metadata.items():
+            if key not in ['path']:  # Evita duplicação do próprio caminho
+                features[key] = value
+    
+    return features
+5.3.3.2 Features de Vulnerabilidade e Resiliência
+Adicionalmente, extraímos características específicas que capturam a vulnerabilidade de cada rota:
+pythondef extract_vulnerability_features(G, path, buildings_gdf, elevation_data):
+    """
+    Extrai características relacionadas à vulnerabilidade física da rota.
+    
+    Args:
+        G: Grafo NetworkX
+        path: Lista de nós representando uma rota
+        buildings_gdf: GeoDataFrame com edificações
+        elevation_data: Dados de elevação
+        
+    Returns:
+        Dict: Features de vulnerabilidade
+    """
+    features = {}
+    
+    # 1. Características de elevação e declividade
+    elevation_values = []
+    slope_values = []
+    
+    for node in path:
+        if 'elevation' in G.nodes[node]:
+            elevation_values.append(G.nodes[node]['elevation'])
+        
+        # Calcula declividade para cada segmento
+        if node != path[-1]:
+            next_node = path[path.index(node) + 1]
+            if G.has_edge(node, next_node):
+                if 'slope' in G.edges[node, next_node]:
+                    slope_values.append(abs(G.edges[node, next_node]['slope']))
+    
+    # Métricas de elevação
+    if elevation_values:
+        features['elevation_mean'] = np.mean(elevation_values)
+        features['elevation_std'] = np.std(elevation_values)
+        features['elevation_range'] = max(elevation_values) - min(elevation_values)
+    else:
+        features['elevation_mean'] = 0
+        features['elevation_std'] = 0
+        features['elevation_range'] = 0
+    
+    # Métricas de declividade
+    if slope_values:
+        features['mean_slope'] = np.mean(slope_values)
+        features['max_slope'] = np.max(slope_values)
+        features['steep_segment_ratio'] = sum(1 for s in slope_values if s > 0.08) / len(slope_values)
+    else:
+        features['mean_slope'] = 0
+        features['max_slope'] = 0
+        features['steep_segment_ratio'] = 0
+    
+    # 2. Vulnerabilidade a eventos naturais
+    # Baseado na combinação de fatores topográficos e ambientais
+    
+    # Identifica segmentos em áreas de risco (ex: próximos a corpos d'água, encostas íngremes)
+    path_geom = create_path_geometry(G, path)
+    buffer_geom = path_geom.buffer(50)  # 50m de buffer
+    
+    # Verifica áreas de risco específicas
+    if 'risk_areas' in G.graph and isinstance(G.graph['risk_areas'], gpd.GeoDataFrame):
+        risk_areas_gdf = G.graph['risk_areas']
+        intersecting_risks = risk_areas_gdf[risk_areas_gdf.intersects(buffer_geom)]
+        
+        if not intersecting_risks.empty:
+            risk_length = 0
+            for _, risk_area in intersecting_risks.iterrows():
+                # Calcula comprimento da interseção
+                intersection = path_geom.intersection(risk_area.geometry)
+                risk_length += intersection.length if not intersection.is_empty else 0
+            
+            features['risk_area_ratio'] = risk_length / path_geom.length if path_geom.length > 0 else 0
+        else:
+            features['risk_area_ratio'] = 0
+    else:
+        # Se não há dados de áreas de risco, estima baseado em heurísticas
+        features['risk_area_ratio'] = features['steep_segment_ratio'] * 0.5
+    
+    # 3. Vulnerabilidade de infraestrutura
+    
+    # Identifica pontos críticos como pontes ou túneis
+    critical_infrastructure = []
+    for i in range(len(path) - 1):
+        u, v = path[i], path[i+1]
+        if G.has_edge(u, v):
+            edge_data = G.edges[u, v]
+            
+            # Verifica atributos que indicam infraestrutura crítica
+            is_bridge = edge_data.get('bridge', 'no') != 'no'
+            is_tunnel = edge_data.get('tunnel', 'no') != 'no'
+            
+            if is_bridge or is_tunnel:
+                critical_infrastructure.append((u, v, 'bridge' if is_bridge else 'tunnel'))
+    
+    features['critical_points_count'] = len(critical_infrastructure)
+    features['critical_points_ratio'] = len(critical_infrastructure) / (len(path) - 1) if len(path) > 1 else 0
+    
+    # 4. Idade e condição da infraestrutura (quando disponível)
+    age_values = []
+    condition_values = []
+    
+    for i in range(len(path) - 1):
+        u, v = path[i], path[i+1]
+        if G.has_edge(u, v):
+            if 'year_built' in G.edges[u, v]:
+                current_year = 2025  # Ano atual
+                age = current_year - G.edges[u, v]['year_built']
+                age_values.append(age)
+            
+            if 'condition' in G.edges[u, v]:
+                # Condição normalmente em escala 1-5, onde 5 é excelente
+                condition_values.append(G.edges[u, v]['condition'])
+    
+    features['mean_age'] = np.mean(age_values) if age_values else 30  # Valor padrão se desconhecido
+    features['mean_condition'] = np.mean(condition_values) if condition_values else 3  # Valor médio padrão
+    
+    return features
+5.3.3.3 Features de Importância Funcional
+Extraímos características que capturam a importância funcional de cada rota no sistema urbano:
+pythondef extract_functional_importance(G, path, census_gdf, activity_centers, emergency_facilities):
+    """
+    Extrai características relacionadas à importância funcional da rota.
+    
+    Args:
+        G: Grafo NetworkX
+        path: Lista de nós representando uma rota
+        census_gdf: GeoDataFrame com dados censitários
+        activity_centers: Dict com diferentes tipos de centros de atividade
+        emergency_facilities: GeoDataFrame com instalações de emergência
+        
+    Returns:
+        Dict: Features de importância funcional
+    """
+    features = {}
+    
+    # 1. Conectividade regional
+    # Identifica se a rota conecta diferentes regiões da cidade
+    
+    # Cria geometria do caminho e buffer
+    path_geom = create_path_geometry(G, path)
+    buffer_geom = path_geom.buffer(500)  # 500m de buffer
+    
+    # Identifica setores censitários que intersectam o buffer
+    intersecting_sectors = census_gdf[census_gdf.intersects(buffer_geom)]
+    
+    # Verifica diversidade de tipos de áreas
+    if 'tipo_area' in intersecting_sectors.columns:
+        area_types = intersecting_sectors['tipo_area'].unique()
+        features['distinct_area_types'] = len(area_types)
+    else:
+        features['distinct_area_types'] = 1
+    
+    # 2. População servida e densidade
+    if not intersecting_sectors.empty:
+        # Estimativa de população servida pela rota
+        if 'est_populacao' in intersecting_sectors.columns:
+            features['population_served'] = intersecting_sectors['est_populacao'].sum()
+        else:
+            # Estimativa baseada em densidade média se disponível
+            if 'densidade_pop' in intersecting_sectors.columns:
+                avg_density = intersecting_sectors['densidade_pop'].mean()
+                features['population_served'] = avg_density * buffer_geom.area / 1000000  # Converte para km²
+            else:
+                features['population_served'] = 0
+        
+        # Calcula população servida por km de rota
+        path_length_km = path_geom.length / 1000
+        features['population_per_km'] = features['population_served'] / path_length_km if path_length_km > 0 else 0
+    else:
+        features['population_served'] = 0
+        features['population_per_km'] = 0
+    
+    # 3. Importância em termos de serviços e atividades
+    
+    # Para cada tipo de centro de atividade
+    for center_type, centers in activity_centers.items():
+        # Encontra centros próximos à rota
+        centers_served = 0
+        importance_sum = 0
+        
+        for center in centers:
+            # Verifica se o centro está no buffer da rota
+            if center['geometry'].intersects(buffer_geom):
+                centers_served += 1
+                importance_sum += center.get('importance', 1)
+        
+        features[f'{center_type}_centers_count'] = centers_served
+        features[f'{center_type}_importance'] = importance_sum
+    
+    # 4. Criticidade para serviços de emergência
+    
+    # Identifica instalações de emergência próximas
+    if emergency_facilities is not None:
+        emergency_nearby = emergency_facilities[emergency_facilities.intersects(buffer_geom)]
+        features['emergency_facilities_count'] = len(emergency_nearby)
+        
+        # Verifica se a rota é um caminho crítico para instalações de emergência
+        if not emergency_nearby.empty:
+            # Amostra alguns pares origem-destino para instalações de emergência
+            emergency_routes_count = 0
+            emergency_routes_overlap = 0
+            
+            # Seleciona um subconjunto de origens/destinos para análise
+            sample_origins = random.sample(list(G.nodes()), min(5, len(G.nodes())))
+            
+            for origin in sample_origins:
+                for _, facility in emergency_nearby.iterrows():
+                    # Encontra nó mais próximo da instalação
+                    facility_node = find_nearest_node(G, facility.geometry)
+                    
+                    # Tenta encontrar caminho mais curto
+                    try:
+                        emergency_path = nx.shortest_path(G, origin, facility_node, weight='length')
+                        
+                        # Verifica sobreposição com a rota analisada
+                        common_nodes = set(emergency_path).intersection(set(path))
+                        
+                        if common_nodes:
+                            emergency_routes_count += 1
+                            overlap_ratio = len(common_nodes) / len(emergency_path)
+                            emergency_routes_overlap += overlap_ratio
+                    except nx.NetworkXNoPath:
+                        pass
+            
+            if emergency_routes_count > 0:
+                features['emergency_route_overlap_ratio'] = emergency_routes_overlap / emergency_routes_count
+            else:
+                features['emergency_route_overlap_ratio'] = 0
+        else:
+            features['emergency_route_overlap_ratio'] = 0
+    else:
+        features['emergency_facilities_count'] = 0
+        features['emergency_route_overlap_ratio'] = 0
+    
+    # 5. Centralidade funcional baseada no número de viagens
+    
+    # Estima importância baseada no modelo gravitacional entre regiões
+    if len(path) >= 2:
+        # Identifica regiões nas extremidades do caminho
+        start_node, end_node = path[0], path[-1]
+        
+        # Encontra setores que contêm estes nós
+        start_point = Point(G.nodes[start_node]['x'], G.nodes[start_node]['y'])
+        end_point = Point(G.nodes[end_node]['x'], G.nodes[end_node]['y'])
+        
+        start_sector = census_gdf[census_gdf.contains(start_point)]
+        end_sector = census_gdf[census_gdf.contains(end_point)]
+        
+        # Estima fluxo baseado em população e atividades
+        flow_estimate = 0
+        
+        if not start_sector.empty and not end_sector.empty:
+            # Modelo gravitacional simples: Fluxo ~ (Pop_i * Pop_j) / Distância²
+            if 'est_populacao' in start_sector.columns and 'est_populacao' in end_sector.columns:
+                start_pop = start_sector.iloc[0]['est_populacao']
+                end_pop = end_sector.iloc[0]['est_populacao']
+                
+                distance = path_geom.length / 1000  # km
+                if distance > 0:
+                    flow_estimate = (start_pop * end_pop) / (distance ** 2)
+        
+        features['estimated_flow'] = flow_estimate
+    else:
+        features['estimated_flow'] = 0
+    
+    return features
+5.3.3.4 Agregação e Normalização de Features
+Combinamos as múltiplas categorias de features e aplicamos normalização adequada:
+pythondef aggregate_path_features(structural_features, vulnerability_features, functional_features):
+    """
+    Combina todas as categorias de features e aplica normalização.
+    
+    Args:
+        structural_features: Dict com features estruturais
+        vulnerability_features: Dict com features de vulnerabilidade
+        functional_features: Dict com features funcionais
+        
+    Returns:
+        Dict: Features agregadas e normalizadas
+    """
+    # Combina todos os dicionários
+    all_features = {**structural_features, **vulnerability_features, **functional_features}
+    
+    # Substitui valores inválidos
+    for key, value in all_features.items():
+        if np.isnan(value) or np.isinf(value):
+            all_features[key] = 0.0
+    
+    return all_features
+
+def normalize_features_across_paths(paths_features):
+    """
+    Normaliza features considerando toda a população de caminhos.
+    
+    Args:
+        paths_features: Lista de dicionários de features por caminho
+        
+    Returns:
+        List: Features normalizadas
+    """
+    # Extrai todos os nomes de features
+    all_keys = set()
+    for path_feat in paths_features:
+        all_keys.update(path_feat.keys())
+    
+    # Organiza features em arrays
+    feature_arrays = {key: [] for key in all_keys}
+    for path_feat in paths_features:
+        for key in all_keys:
+            feature_arrays[key].append(path_feat.get(key, 0.0))
+    
+    # Calcula estatísticas
+    stats = {}
+    for key, values in feature_arrays.items():
+        values_array = np.array(values)
+        stats[key] = {
+            'mean': np.mean(values_array),
+            'std': np.std(values_array),
+            'min': np.min(values_array),
+            'max': np.max(values_array)
+        }
+    
+    # Aplica normalização Z-score
+    normalized_features = []
+    for path_feat in paths_features:
+        norm_feat = {}
+        for key in all_keys:
+            value = path_feat.get(key, 0.0)
+            
+            # Usa Z-score exceto quando std é zero
+            if stats[key]['std'] > 0:
+                norm_feat[key] = (value - stats[key]['mean']) / stats[key]['std']
+            else:
+                norm_feat[key] = 0.0
+        
+        normalized_features.append(norm_feat)
+    
+    return normalized_features, stats
+5.3.4 Implementação do GraphSAGE para Rotas Críticas
+Implementamos o modelo GraphSAGE especificamente adaptado para a análise de rotas críticas em redes viárias.
+5.3.4.1 Construção do Grafo de Rotas
+Primeiramente, construímos um grafo onde cada nó representa uma rota candidata:
+pythondef build_route_graph(candidate_paths, G, similarity_threshold=0.3):
+    """
+    Constrói um grafo onde cada nó é uma rota candidata.
+    
+    Args:
+        candidate_paths: Lista de caminhos candidatos
+        G: Grafo NetworkX original da rede viária
+        similarity_threshold: Limiar para criar arestas entre rotas
+        
+    Returns:
+        NetworkX Graph: Grafo de rotas
+    """
+    # Cria grafo vazio
+    route_graph = nx.Graph()
+    
+    # Adiciona cada rota como um nó
+    for i, path in enumerate(candidate_paths):
+        path_id = f"path_{i}"
+        route_graph.add_node(path_id, path=path)
+    
+    # Cria arestas baseadas em similaridade entre rotas
+    for i, path1 in enumerate(candidate_paths):
+        path1_id = f"path_{i}"
+        path1_set = set(path1)
+        
+        for j in range(i+1, len(candidate_paths)):
+            path2 = candidate_paths[j]
+            path2_id = f"path_{j}"
+            path2_set = set(path2)
+            
+            # Calcula similaridade de Jaccard
+            intersection = len(path1_set.intersection(path2_set))
+            union = len(path1_set.union(path2_set))
+            
+            if union > 0:
+                similarity = intersection / union
+                
+                # Cria aresta se similaridade supera limiar
+                if similarity >= similarity_threshold:
+                    route_graph.add_edge(path1_id, path2_id, weight=similarity)
+    
+    return route_graph
+5.3.4.2 Arquitetura do Modelo GraphSAGE
+Implementamos o modelo GraphSAGE com uma arquitetura específica para rotas críticas:
+pythonclass RouteGraphSAGE(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, aggr='mean'):
+        """
+        Implementação de GraphSAGE para análise de rotas críticas.
+        
+        Args:
+            in_channels: Dimensão de features de entrada
+            hidden_channels: Dimensão do espaço latente
+            out_channels: Dimensão de saída (1 para regressão de criticidade)
+            aggr: Método de agregação ('mean', 'max', ou 'lstm')
+        """
+        super(RouteGraphSAGE, self).__init__()
+        
+        # Escolha da função de agregação
+        self.aggr = aggr
+        
+        # Primeira camada de convolução com agregação especificada
+        if aggr == 'mean':
+            self.conv1 = SAGEConv(in_channels, hidden_channels, aggr='mean')
+        elif aggr == 'max':
+            self.conv1 = SAGEConv(in_channels, hidden_channels, aggr='max')
+        elif aggr == 'lstm':
+            self.conv1 = SAGEConv(in_channels, hidden_channels, aggr='lstm')
+        else:
+            raise ValueError(f"Agregação não suportada: {aggr}")
+        
+        # Segunda camada com mesma agregação
+        self.conv2 = SAGEConv(hidden_channels, hidden_channels, aggr=aggr)
+        
+        # Camada de saída para produzir pontuação de criticidade
+        self.lin = torch.nn.Linear(hidden_channels, out_channels)
+        
+        # Normalização em lotes para treinamento estável
+        self.bn1 = torch.nn.BatchNorm1d(hidden_channels)
+        self.bn2 = torch.nn.BatchNorm1d(hidden_channels)
+        
+        # Dropout para regularização
+        self.dropout = torch.nn.Dropout(0.3)
+        
+    def forward(self, x, edge_index):
+        # Primeira camada
+        x = self.conv1(x, edge_index)
+        x = self.bn1(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        # Segunda camada
+        x = self.conv2(x, edge_index)
+        x = self.bn2(x)
+        x = F.relu(x)
+        
+        # Camada final para score de criticidade
+        x = self.lin(x)
+        
+        return x
+5.3.4.3 Estratégia de Amostragem para Treinamento
+Implementamos a estratégia de amostragem de vizinhança característica do GraphSAGE:
+pythondef sample_neighbors(edge_index, num_nodes, num_samples):
+    """
+    Implementa amostragem de vizinhança para GraphSAGE.
+    
+    Args:
+        edge_index: Tensor de índices de arestas (2 x num_edges)
+        num_nodes: Número total de nós no grafo
+        num_samples: Número de vizinhos a amostrar por nó
+        
+    Returns:
+        Tensor com vizinhos amostrados por nó
+    """
+    # Converte para formato COO
+    row, col = edge_index
+    
+    # Inicializa tensor de saída com -1 (indicando ausência de vizinho)
+    sampled_neighbors = torch.full((num_nodes, num_samples), -1, dtype=torch.long)
+    
+    # Para cada nó
+    for node_idx in range(num_nodes):
+        # Encontra todos os vizinhos do nó atual
+        neighbors = col[row == node_idx].tolist()
+        
+        # Se não há vizinhos suficientes, repete os existentes ou mantém -1
+        if len(neighbors) > 0:
+            # Amostra com substituição se necessário
+            if len(neighbors) >= num_samples:
+                sampled = random.sample(neighbors, num_samples)
+            else:
+                # Repete vizinhos para completar amostra
+                sampled = neighbors + [random.choice(neighbors) for _ in range(num_samples - len(neighbors))]
+            
+            sampled_neighbors[node_idx] = torch.tensor(sampled, dtype=torch.long)
+    
+    return sampled_neighbors
+5.3.4.4 Processo de Inferência
+O processo de inferência utiliza o modelo treinado para identificar as rotas mais críticas:
+pythondef predict_critical_routes(model, data, top_k=10):
+    """
+    Usa modelo treinado para identificar as rotas mais críticas.
+    
+    Args:
+        model: Modelo GraphSAGE treinado
+        data: Objeto PyTorch Geometric Data
+        top_k: Número de rotas críticas a retornar
+        
+    Returns:
+        Lista das top-k rotas críticas com scores
+    """
+    model.eval()
+    
+    with torch.no_grad():
+        # Obtém scores para todas as rotas
+        scores = model(data.x, data.edge_index).squeeze()
+        
+        # Obtém índices das rotas com maiores scores
+        _, indices = torch.topk(scores, k=min(top_k, len(scores)))
+        
+        # Converte para lista
+        top_indices = indices.cpu().numpy()
+        
+        # Cria lista de resultados
+        critical_routes = []
+        for idx in top_indices:
+            route_id = data.path_ids[idx]
+            score = scores[idx].item()
+            critical_routes.append({
+                'route_id': route_id,
+                'criticality_score': score,
+                'path': data.raw_paths[idx]
+            })
+    
+    return critical_routes
+5.3.5 Treinamento e Validação
+O processo de treinamento do modelo GraphSAGE para rotas críticas requer uma abordagem especializada baseada em exemplares sintéticos e conhecimento de domínio.
+5.3.5.1 Geração de Labels Sintéticos
+Na ausência de ground truth sobre a criticidade das rotas, geramos labels sintéticos baseados em conhecimento de domínio:
+pythondef generate_synthetic_criticality_labels(G, paths, features, census_gdf, emergency_facilities):
+    """
+    Gera labels sintéticos para treinamento baseados em heurísticas.
+    
+    Args:
+        G: Grafo NetworkX original
+        paths: Lista de caminhos candidatos
+        features: Dict com features por caminho
+        census_gdf: GeoDataFrame com dados censitários
+        emergency_facilities: GeoDataFrame com instalações de emergência
+        
+    Returns:
+        Lista de scores de criticidade
+    """
+    # Pesos para diferentes aspectos de criticidade
+    weights = {
+        # Características estruturais
+        'mean_edge_betweenness': 0.15,
+        'redundancy_mean': -0.10,  # Valor maior (menos alternativas) = mais crítico
+        'pct_segments_no_alternative': 0.12,
+        
+        # Características funcionais
+        'population_served': 0.08,
+        'population_per_km': 0.05,
+        'distinct_area_types': 0.07,
+        'emergency_facilities_count': 0.08,
+        'emergency_route_overlap_ratio': 0.10,
+        'estimated_flow': 0.10,
+        
+        # Características de centros de atividade
+        'healthcare_importance': 0.06,
+        'education_importance': 0.04,
+        'commercial_importance': 0.03,
+        'transportation_importance': 0.05,
+        'government_importance': 0.04,
+        
+        # Características de vulnerabilidade
+        'critical_points_count': 0.08,
+        'risk_area_ratio': 0.06,
+        'mean_age': 0.04,
+        'mean_condition': -0.05  # Valor menor (pior condição) = mais crítico
+    }
+    
+    # Normaliza pesos para somar 1.0
+    weight_sum = sum(abs(w) for w in weights.values())
+    weights = {k: v/weight_sum for k, v in weights.items()}
+    
+    # Calcula scores para cada caminho
+    criticality_scores = []
+    
+    for path_idx, path in enumerate(paths):
+        path_id = f"path_{path_idx}"
+        path_features = features.get(path_id, {})
+        
+        # Inicializa score
+        score = 0.0
+        
+        # Aplica pesos a cada feature disponível
+        for feature_name, weight in weights.items():
+            if feature_name in path_features:
+                # Valores normalizados já estão na mesma escala
+                score += weight * path_features[feature_name]
+        
+        # Caso especial: rotas para instalações críticas recebem bônus
+        if emergency_facilities is not None:
+            path_geom = create_path_geometry(G, path)
+            buffer_geom = path_geom.buffer(200)  # 200m de buffer
+            
+            # Verifica proximidade com instalações críticas
+            critical_nearby = emergency_facilities[emergency_facilities.intersects(buffer_geom)]
+            if not critical_nearby.empty:
+                for _, facility in critical_nearby.iterrows():
+                    facility_type = facility.get('type', '')
+                    
+                    # Bônus baseado no tipo de instalação
+                    if facility_type == 'hospital':
+                        score += 0.15
+                    elif facility_type == 'fire_station':
+                        score += 0.12
+                    elif facility_type == 'police':
+                        score += 0.10
+                    else:
+                        score += 0.08
+        
+        criticality_scores.append(score)
+    
+    # Normaliza scores para [0, 1]
+    min_score = min(criticality_scores)
+    max_score = max(criticality_scores)
+    
+    if max_score > min_score:
+        normalized_scores = [(s - min_score) / (max_score - min_score) for s in criticality_scores]
+    else:
+        normalized_scores = [0.5 for _ in criticality_scores]
+    
+    return normalized_scores
+5.3.5.2 Treinamento com Validação Cruzada
+Implementamos um processo de treinamento robusto com validação cruzada:
+pythondef train_critical_routes_model(route_graph, features_dict, criticality_scores, 
+                               n_folds=5, epochs=200, lr=0.001):
+    """
+    Treina modelo GraphSAGE com validação cruzada.
+    
+    Args:
+        route_graph: Grafo NetworkX de rotas
+        features_dict: Dicionário com features por rota
+        criticality_scores: Lista de scores para cada rota
+        n_folds: Número de folds para validação cruzada
+        epochs: Número máximo de épocas
+        lr: Taxa de aprendizado
+        
+    Returns:
+        Modelo treinado e métricas de avaliação
+    """
+    # Prepare data
+    num_features = len(list(features_dict.values())[0])
+    num_nodes = len(route_graph.nodes())
+    
+    # Organizing data for PyTorch Geometric
+    x = torch.zeros((num_nodes, num_features))
+    y = torch.zeros(num_nodes)
+    
+    # Node mapping: route_id -> index
+    route_id_to_idx = {}
+    raw_paths = []
+    path_ids = []
+    
+    for idx, (route_id, attrs) in enumerate(route_graph.nodes(data=True)):
+        # Store mapping
+        route_id_to_idx[route_id] = idx
+        
+        # Extract features
+        if route_id in features_dict:
+            feature_values = list(features_dict[route_id].values())
+            x[idx] = torch.tensor(feature_values, dtype=torch.float)
+        
+        # Store label
+        route_idx = int(route_id.split('_')[1])
+        y[idx] = criticality_scores[route_idx]
+        
+        # Store raw path
+        raw_paths.append(attrs['path'])
+        path_ids.append(route_id)
+    
+    # Create edge index
+    edge_index = []
+    for u, v in route_graph.edges():
+        edge_index.append([route_id_to_idx[u], route_id_to_idx[v]])
+        edge_index.append([route_id_to_idx[v], route_id_to_idx[u]])  # Undirected
+    
+    edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
+    
+    # Create PyG Data object
+    data = Data(x=x, edge_index=edge_index, y=y)
+    data.raw_paths = raw_paths
+    data.path_ids = path_ids
+    
+    # Cross validation
+    kf = KFold(n_splits=n_folds, shuffle=True, random_state=42)
+    fold_indices = list(kf.split(range(num_nodes)))
+    
+    # Metrics across folds
+    results = {
+        'mae': [],
+        'rmse': [],
+        'r2': []
+    }
+    
+    best_model = None
+    best_r2 = -float('inf')
+    
+    for fold, (train_idx, test_idx) in enumerate(fold_indices):
+        print(f"Training fold {fold+1}/{n_folds}")
+        
+        # Create masks
+        train_mask = torch.zeros(num_nodes, dtype=torch.bool)
+        test_mask = torch.zeros(num_nodes, dtype=torch.bool)
+        
+        train_mask[train_idx] = True
+        test_mask[test_idx] = True
+        
+        data.train_mask = train_mask
+        data.test_mask = test_mask
+        
+        # Initialize model for this fold
+        model = RouteGraphSAGE(
+            in_channels=num_features,
+            hidden_channels=64,
+            out_channels=1,
+            aggr='mean'
+        )
+        
+        # Move to device
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model = model.to(device)
+        data = data.to(device)
+        
+        # Optimizer
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=5e-4)
+        
+        # Training loop
+        best_fold_loss = float('inf')
+        patience = 20
+        patience_count = 0
+        
+        for epoch in range(epochs):
+            # Train
+            model.train()
+            optimizer.zero_grad()
+            
+            # Forward pass
+            out = model(data.x, data.edge_index).squeeze()
+            
+            # Loss on training nodes
+            loss = F.mse_loss(out[data.train_mask], data.y[data.train_mask])
+            
+            # Backward pass
+            loss.backward()
+            optimizer.step()
+            
+            # Validation
+            model.eval()
+            with torch.no_grad():
+                val_loss = F.mse_loss(out[data.test_mask], data.y[data.test_mask]).item()
+            
+            # Early stopping
+            if val_loss < best_fold_loss:
+                best_fold_loss = val_loss
+                patience_count = 0
+            else:
+                patience_count += 1
+                if patience_count >= patience:
+                    print(f"Early stopping at epoch {epoch}")
+                    break
+        
+        # Evaluate final model
+        model.eval()
+        with torch.no_grad():
+            pred = model(data.x, data.edge_index).squeeze()
+            
+            # Test predictions
+            y_true = data.y[data.test_mask].cpu().numpy()
+            y_pred = pred[data.test_mask].cpu().numpy()
+            
+            # Calculate metrics
+            mae = mean_absolute_error(y_true, y_pred)
+            rmse = mean_squared_error(y_true, y_pred, squared=False)
+            r2 = r2_score(y_true, y_pred)
+            
+            results['mae'].append(mae)
+            results['rmse'].append(rmse)
+            results['r2'].append(r2)
+            
+            print(f"Fold {fold+1} - MAE: {mae:.4f}, RMSE: {rmse:.4f}, R²: {r2:.4f}")
+            
+            # Track best model
+            if r2 > best_r2:
+                best_r2 = r2
+                best_model = copy.deepcopy(model)
+    
+    # Overall results
+    avg_results = {
+        'mae': np.mean(results['mae']),
+        'rmse': np.mean(results['rmse']),
+        'r2': np.mean(results['r2']),
+        'mae_std': np.std(results['mae']),
+        'rmse_std': np.std(results['rmse']),
+        'r2_std': np.std(results['r2'])
+    }
+    
+    print(f"\nAverage Results - MAE: {avg_results['mae']:.4f}±{avg_results['mae_std']:.4f}, "
+          f"RMSE: {avg_results['rmse']:.4f}±{avg_results['rmse_std']:.4f}, "
+          f"R²: {avg_results['r2']:.4f}±{avg_results['r2_std']:.4f}")
+    
+    # Final training on all data
+    if best_model is None:
+        # Train one more time on all data
+        print("Training final model on all data...")
+        final_model = RouteGraphSAGE(
+            in_channels=num_features,
+            hidden_channels=64,
+            out_channels=1,
+            aggr='mean'
+        ).to(device)
+        
+        optimizer = torch.optim.Adam(final_model.parameters(), lr=lr, weight_decay=5e-4)
+        
+        for epoch in range(epochs):
+            final_model.train()
+            optimizer.zero_grad()
+            
+            out = final_model(data.x, data.edge_index).squeeze()
+            loss = F.mse_loss(out, data.y)
+            
+            loss.backward()
+            optimizer.step()
+            
+            if (epoch + 1) % 20 == 0:
+                print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item():.6f}")
+        
+        best_model = final_model
+    
+    # Make sure best model is in evaluation mode
+    best_model.eval()
+    
+    return best_model, data, avg_results
+5.3.6 Interpretação de Resultados
+Uma das grandes vantagens do GraphSAGE é a possibilidade de interpretação dos resultados, permitindo compreender as razões que tornam determinadas rotas especialmente críticas.
+5.3.6.1 Visualização Geográfica de Rotas Críticas
+Implementamos uma visualização que destaca as rotas críticas identificadas pelo modelo:
+pythondef visualize_critical_routes(G, critical_routes, basemap=True, output_path=None):
+    """
+    Visualiza as rotas críticas identificadas pelo modelo.
+    
+    Args:
+        G: Grafo NetworkX da rede viária
+        critical_routes: Lista de rotas críticas com scores
+        basemap: Se deve incluir mapa base
+        output_path: Caminho para salvar visualização
+        
+    Returns:
+        Figura matplotlib
+    """
+    # Prepara figura
+    fig, ax = plt.subplots(figsize=(15, 15))
+    
+    # Normaliza scores para visualização
+    scores = [route['criticality_score'] for route in critical_routes]
+    min_score, max_score = min(scores), max(scores)
+    normalized_scores = [(s - min_score) / (max_score - min_score) for s in scores]
+    
+    # Define colormap para rotas críticas (vermelho = mais crítico)
+    cmap = plt.cm.YlOrRd
+    
+    # Plota todas as vias como fundo em cinza claro
+    for u, v, data in G.edges(data=True):
+        if 'geometry' in data:
+            geom = data['geometry']
+            x, y = geom.xy
+            ax.plot(x, y, color='#d3d3d3', linewidth=0.5, alpha=0.5)
+    
+    # Plota rotas críticas com espessura e cor indicando criticidade
+    for i, route in enumerate(critical_routes):
+        path = route['path']
+        score = normalized_scores[i]
+        
+        # Cor baseada na criticidade
+        color = cmap(score)
+        
+        # Espessura baseada na criticidade (1-5)
+        linewidth = 1 + 4 * score
+        
+        # Plota cada segmento da rota
+        for j in range(len(path) - 1):
+            u, v = path[j], path[j+1]
+            if G.has_edge(u, v) and 'geometry' in G.edges[u, v]:
+                geom = G.edges[u, v]['geometry']
+                x, y = geom.xy
+                ax.plot(x, y, color=color, linewidth=linewidth, alpha=0.9, solid_capstyle='round')
+    
+    # Adiciona mapa base se solicitado
+    if basemap:
+        try:
+            import contextily as ctx
+            ctx.add_basemap(ax, crs=G.graph.get('crs', 'EPSG:31983'))
+        except Exception as e:
+            print(f"Não foi possível adicionar mapa base: {e}")
+    
+    # Configurações do gráfico
+    ax.set_aspect('equal')
+    ax.set_title('Rotas Críticas Identificadas', fontsize=16)
+    
+    # Adiciona colorbar
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0, 1))
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax)
+    cbar.set_label('Nível de Criticidade')
+    
+    # Salva ou mostra
+    if output_path:
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    
+    return fig, ax
+5.3.6.2 Análise de Explicabilidade
+Implementamos técnicas de explicabilidade para compreender os fatores que contribuem para a criticidade de cada rota:
+pythondef analyze_route_criticality(model, data, route_idx, features_dict, feature_names):
+    """
+    Analisa fatores que contribuem para a criticidade de uma rota específica.
+    
+    Args:
+        model: Modelo GraphSAGE treinado
+        data: Objeto PyTorch Geometric Data
+        route_idx: Índice da rota a analisar
+        features_dict: Dicionário com features normalizados 
+        feature_names: Lista com nomes das features
+        
+    Returns:
+        Dict: Contribuições de cada feature para criticidade
+    """
+    # Certifica que o modelo está em modo de avaliação
+    model.eval()
+    
+    # Obtém score original
+    with torch.no_grad():
+        original_score = model(data.x, data.edge_index).squeeze()[route_idx].item()
+    
+    # Análise de sensibilidade: remove uma feature por vez
+    feature_contributions = {}
+    x_modified = data.x.clone()
+    
+    for i, feature_name in enumerate(feature_names):
+        # Salva valor original
+        original_value = x_modified[route_idx, i].item()
+        
+        # Substitui por zero (neutraliza feature)
+        x_modified[route_idx, i] = 0.0
+        
+        # Obtém novo score
+        with torch.no_grad():
+            new_score = model(x_modified, data.edge_index).squeeze()[route_idx].item()
+        
+        # Restaura valor original
+        x_modified[route_idx, i] = original_value
+        
+        # Calcula contribuição (quanto o score diminui sem esta feature)
+        5.3.6.2 Análise de Explicabilidade (continuação)
+pythondef analyze_route_criticality(model, data, route_idx, features_dict, feature_names):
+    """
+    Analisa fatores que contribuem para a criticidade de uma rota específica.
+    
+    Args:
+        model: Modelo GraphSAGE treinado
+        data: Objeto PyTorch Geometric Data
+        route_idx: Índice da rota a analisar
+        features_dict: Dicionário com features normalizados 
+        feature_names: Lista com nomes das features
+        
+    Returns:
+        Dict: Contribuições de cada feature para criticidade
+    """
+    # Certifica que o modelo está em modo de avaliação
+    model.eval()
+    
+    # Obtém score original
+    with torch.no_grad():
+        original_score = model(data.x, data.edge_index).squeeze()[route_idx].item()
+    
+    # Análise de sensibilidade: remove uma feature por vez
+    feature_contributions = {}
+    x_modified = data.x.clone()
+    
+    for i, feature_name in enumerate(feature_names):
+        # Salva valor original
+        original_value = x_modified[route_idx, i].item()
+        
+        # Substitui por zero (neutraliza feature)
+        x_modified[route_idx, i] = 0.0
+        
+        # Obtém novo score
+        with torch.no_grad():
+            new_score = model(x_modified, data.edge_index).squeeze()[route_idx].item()
+        
+        # Restaura valor original
+        x_modified[route_idx, i] = original_value
+        
+        # Calcula contribuição (quanto o score diminui sem esta feature)
+        contribution = original_score - new_score
+        feature_contributions[feature_name] = contribution
+    
+    # Normaliza contribuições para percentuais
+    total_contribution = sum(abs(c) for c in feature_contributions.values())
+    if total_contribution > 0:
+        normalized_contributions = {f: (c / total_contribution * 100) 
+                                  for f, c in feature_contributions.items()}
+    else:
+        normalized_contributions = {f: 0 for f in feature_names}
+    
+    # Ordena por contribuição absoluta
+    sorted_contributions = dict(sorted(normalized_contributions.items(), 
+                                     key=lambda x: abs(x[1]), reverse=True))
+    
+    return {
+        'original_score': original_score,
+        'feature_contributions': sorted_contributions
+    }
+5.3.6.3 Visualização de Contribuições de Features
+Implementamos uma visualização que destaca os fatores principais que contribuem para a criticidade de cada rota:
+pythondef visualize_feature_contributions(contributions, top_n=10, output_path=None):
+    """
+    Visualiza as principais contribuições para a criticidade de uma rota.
+    
+    Args:
+        contributions: Dict com contribuições por feature
+        top_n: Número de features mais importantes a mostrar
+        output_path: Caminho para salvar visualização
+        
+    Returns:
+        Figura matplotlib
+    """
+    # Extrai contribuições
+    feature_contrib = contributions['feature_contributions']
+    
+    # Seleciona top-n features por contribuição absoluta
+    top_features = dict(sorted(feature_contrib.items(), 
+                             key=lambda x: abs(x[1]), reverse=True)[:top_n])
+    
+    # Separa nomes e valores
+    features = list(top_features.keys())
+    values = list(top_features.values())
+    
+    # Prepara cores: vermelho para contribuições positivas, azul para negativas
+    colors = ['#d7191c' if v > 0 else '#2c7bb6' for v in values]
+    
+    # Cria figura
+    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    # Plota barras horizontais
+    bars = ax.barh(features, values, color=colors)
+    
+    # Adiciona rótulos e título
+    ax.set_xlabel('Contribuição para Criticidade (%)')
+    ax.set_title(f'Fatores que Contribuem para Criticidade (Score: {contributions["original_score"]:.4f})')
+    
+    # Adiciona valor de cada barra
+    for bar in bars:
+        width = bar.get_width()
+        label_x_pos = width if width > 0 else width - 2
+        ax.text(label_x_pos, bar.get_y() + bar.get_height()/2, 
+               f'{width:.1f}%', va='center', ha='left' if width > 0 else 'right')
+    
+    # Ajusta layout
+    plt.tight_layout()
+    
+    # Adiciona legenda para cores
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor='#d7191c', label='Aumenta Criticidade'),
+        Patch(facecolor='#2c7bb6', label='Reduz Criticidade')
+    ]
+    ax.legend(handles=legend_elements, loc='lower right')
+    
+    # Salva ou mostra
+    if output_path:
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    
+    return fig, ax
+5.3.6.4 Análise de Contexto Urbano
+Complementamos a análise com uma visualização que coloca as rotas críticas no contexto urbano:
+pythondef visualize_critical_routes_context(G, critical_routes, census_gdf, landuse_gdf, 
+                                     buildings_gdf, output_path=None):
+    """
+    Visualiza rotas críticas no contexto urbano com camadas informativas.
+    
+    Args:
+        G: Grafo NetworkX da rede viária
+        critical_routes: Lista de rotas críticas identificadas
+        census_gdf: GeoDataFrame com setores censitários
+        landuse_gdf: GeoDataFrame com uso do solo
+        buildings_gdf: GeoDataFrame com edificações
+        output_path: Caminho para salvar visualização
+        
+    Returns:
+        Figura matplotlib
+    """
+    # Prepara figura
+    fig, ax = plt.subplots(figsize=(20, 20))
+    
+    # 1. Plota uso do solo como camada base
+    if landuse_gdf is not None:
+        # Simplifica categorias
+        land_colors = {
+            'residential': '#ffffd4',
+            'commercial': '#fed98e',
+            'industrial': '#fe9929',
+            'green': '#91cf60',
+            'institutional': '#ffffcc',
+            'other': '#f7f7f7'
+        }
+        
+        # Mapeia categorias para cores
+        for category, color in land_colors.items():
+            mask = landuse_gdf['land_category'] == category
+            if mask.any():
+                landuse_gdf[mask].plot(ax=ax, color=color, alpha=0.4, linewidth=0)
+    
+    # 2. Plota setores censitários com transparência
+    if census_gdf is not None:
+        # Se tiver densidade populacional, usa como cor
+        if 'densidade_pop' in census_gdf.columns:
+            census_gdf.plot(ax=ax, column='densidade_pop', cmap='Blues', 
+                           alpha=0.3, linewidth=0.5, edgecolor='#aaaaaa')
+        else:
+            census_gdf.plot(ax=ax, color='none', alpha=0.1, linewidth=0.5, edgecolor='#aaaaaa')
+    
+    # 3. Plota todas as vias como fundo em cinza
+    for u, v, data in G.edges(data=True):
+        if 'geometry' in data:
+            geom = data['geometry']
+            x, y = geom.xy
+            ax.plot(x, y, color='#a0a0a0', linewidth=0.3, alpha=0.7)
+    
+    # 4. Plota rotas críticas com gradiente de cores
+    cmap = plt.cm.YlOrRd
+    
+    # Normaliza scores para visualização
+    scores = [route['criticality_score'] for route in critical_routes]
+    min_score, max_score = min(scores), max(scores)
+    score_range = max_score - min_score
+    
+    for i, route in enumerate(critical_routes):
+        path = route['path']
+        
+        # Normaliza score para [0,1]
+        norm_score = (route['criticality_score'] - min_score) / score_range if score_range > 0 else 0.5
+        
+        # Cor e espessura baseadas na criticidade
+        color = cmap(norm_score)
+        linewidth = 1.5 + 3.5 * norm_score
+        
+        # Plota rota
+        for j in range(len(path) - 1):
+            u, v = path[j], path[j+1]
+            if G.has_edge(u, v) and 'geometry' in G.edges[u, v]:
+                geom = G.edges[u, v]['geometry']
+                x, y = geom.xy
+                ax.plot(x, y, color=color, linewidth=linewidth, alpha=0.9, 
+                       solid_capstyle='round', zorder=10)
+        
+        # Adiciona rótulo com ranking
+        if len(path) > 0:
+            mid_idx = len(path) // 2
+            if G.has_node(path[mid_idx]):
+                node = path[mid_idx]
+                x, y = G.nodes[node]['x'], G.nodes[node]['y']
+                ax.text(x, y, f"#{i+1}", fontsize=14, fontweight='bold', 
+                       ha='center', va='center', color='white',
+                       bbox=dict(facecolor='black', alpha=0.7, boxstyle='round,pad=0.5'),
+                       zorder=20)
+    
+    # 5. Plota pontos de interesse importantes
+    # Aqui poderia destacar hospitais, escolas, etc. se disponíveis no dataset
+    
+    # Adiciona mapa base
+    try:
+        import contextily as ctx
+        ctx.add_basemap(ax, crs=G.graph.get('crs', 'EPSG:31983'))
+    except Exception as e:
+        print(f"Não foi possível adicionar mapa base: {e}")
+    
+    # Configurações do gráfico
+    ax.set_title('Rotas Críticas em Contexto Urbano', fontsize=18)
+    ax.set_axis_off()
+    
+    # Adiciona colorbar
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0, 1))
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax)
+    cbar.set_label('Nível de Criticidade')
+    
+    # Adiciona legenda para uso do solo
+    from matplotlib.patches import Patch
+    legend_elements = [Patch(facecolor=color, alpha=0.6, label=category.capitalize())
+                      for category, color in land_colors.items()]
+    
+    ax.legend(handles=legend_elements, loc='lower right', 
+             title='Uso do Solo', title_fontsize=12)
+    
+    # Salva ou mostra
+    if output_path:
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    
+    return fig, ax
+5.3.7 Integração com Sistemas de Gestão de Tráfego
+O módulo de análise de rotas críticas pode ser integrado a sistemas de gestão de tráfego e planejamento urbano.
+5.3.7.1 Exportação para Sistemas GIS
+Implementamos funções para exportar os resultados em formatos compatíveis com sistemas GIS:
+pythondef export_critical_routes_to_gis(G, critical_routes, output_path):
+    """
+    Exporta rotas críticas para formato GIS (GeoPackage).
+    
+    Args:
+        G: Grafo NetworkX da rede viária
+        critical_routes: Lista de rotas críticas com scores
+        output_path: Caminho para arquivo de saída
+        
+    Returns:
+        Caminho do arquivo criado
+    """
+    # Prepara GeoDataFrame para exportação
+    geometries = []
+    attributes = []
+    
+    for i, route in enumerate(critical_routes):
+        path = route['path']
+        
+        # Cria geometria da rota completa
+        route_geom = create_path_geometry(G, path)
+        
+        # Prepara atributos
+        attrs = {
+            'route_id': route['route_id'],
+            'rank': i + 1,
+            'criticality': route['criticality_score'],
+            'length_km': route_geom.length / 1000 if hasattr(route_geom, 'length') else 0,
+            'num_segments': len(path) - 1 if len(path) > 0 else 0
+        }
+        
+        geometries.append(route_geom)
+        attributes.append(attrs)
+    
+    # Cria GeoDataFrame
+    gdf = gpd.GeoDataFrame(attributes, geometry=geometries, crs=G.graph.get('crs', 'EPSG:31983'))
+    
+    # Exporta para GeoPackage
+    gdf.to_file(output_path, driver='GPKG', layer='critical_routes')
+    
+    print(f"Rotas críticas exportadas para: {output_path}")
+    return output_path
+5.3.7.2 Geração de Relatórios de Vulnerabilidade
+Implementamos a geração de relatórios detalhados sobre a vulnerabilidade da rede viária:
+pythondef generate_vulnerability_report(G, critical_routes, features_by_route, output_path):
+    """
+    Gera relatório de vulnerabilidade com detalhes sobre rotas críticas.
+    
+    Args:
+        G: Grafo NetworkX da rede viária
+        critical_routes: Lista de rotas críticas identificadas
+        features_by_route: Dicionário com features por rota
+        output_path: Caminho para salvar relatório
+        
+    Returns:
+        Caminho do relatório gerado
+    """
+    # Prepara dados para o relatório
+    report_data = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "summary": {
+            "total_routes_analyzed": len(features_by_route),
+            "critical_routes_identified": len(critical_routes),
+            "network_stats": {
+                "total_nodes": G.number_of_nodes(),
+                "total_edges": G.number_of_edges(),
+                "total_length_km": sum(data.get('length', 0) for _, _, data in G.edges(data=True)) / 1000
+            }
+        },
+        "critical_routes": []
+    }
+    
+    # Adiciona detalhes de cada rota crítica
+    for i, route in enumerate(critical_routes):
+        route_id = route['route_id']
+        path = route['path']
+        
+        # Calcula comprimento total
+        total_length = 0
+        for j in range(len(path) - 1):
+            u, v = path[j], path[j+1]
+            if G.has_edge(u, v) and 'length' in G.edges[u, v]:
+                total_length += G.edges[u, v]['length']
+        
+        # Prepara dados da rota
+        route_data = {
+            "rank": i + 1,
+            "route_id": route_id,
+            "criticality_score": route['criticality_score'],
+            "length_km": total_length / 1000,
+            "num_segments": len(path) - 1,
+            "key_features": {}
+        }
+        
+        # Adiciona características relevantes
+        if route_id in features_by_route:
+            features = features_by_route[route_id]
+            
+            # Características estruturais
+            if 'mean_edge_betweenness' in features:
+                route_data["key_features"]["betweenness"] = features['mean_edge_betweenness']
+            
+            if 'redundancy_mean' in features:
+                route_data["key_features"]["redundancy"] = features['redundancy_mean']
+                
+            if 'pct_segments_no_alternative' in features:
+                route_data["key_features"]["segments_without_alternative"] = features['pct_segments_no_alternative']
+            
+            # Características funcionais
+            if 'population_served' in features:
+                route_data["key_features"]["population_served"] = features['population_served']
+                
+            if 'emergency_facilities_count' in features:
+                route_data["key_features"]["emergency_facilities"] = features['emergency_facilities_count']
+            
+            if 'emergency_route_overlap_ratio' in features:
+                route_data["key_features"]["emergency_route_importance"] = features['emergency_route_overlap_ratio']
+            
+            # Características de vulnerabilidade
+            if 'critical_points_count' in features:
+                route_data["key_features"]["critical_infrastructure_points"] = features['critical_points_count']
+                
+            if 'risk_area_ratio' in features:
+                route_data["key_features"]["risk_exposure"] = features['risk_area_ratio']
+        
+        # Identificar pontos de vulnerabilidade especiais
+        vulnerable_points = []
+        
+        for j in range(len(path) - 1):
+            u, v = path[j], path[j+1]
+            if G.has_edge(u, v):
+                edge_data = G.edges[u, v]
+                
+                # Verifica atributos que indicam vulnerabilidade
+                if edge_data.get('bridge', 'no') != 'no':
+                    vulnerable_points.append({
+                        "type": "bridge",
+                        "location": f"Segment {j} (nodes {u}-{v})",
+                        "coords": [G.nodes[u]['x'], G.nodes[u]['y']]
+                    })
+                    
+                if edge_data.get('tunnel', 'no') != 'no':
+                    vulnerable_points.append({
+                        "type": "tunnel",
+                        "location": f"Segment {j} (nodes {u}-{v})",
+                        "coords": [G.nodes[u]['x'], G.nodes[u]['y']]
+                    })
+                
+                # Verifica declividade (risco em áreas íngremes)
+                if 'slope' in edge_data and edge_data['slope'] > 0.12:  # > 12%
+                    vulnerable_points.append({
+                        "type": "steep_slope",
+                        "value": f"{edge_data['slope']*100:.1f}%",
+                        "location": f"Segment {j} (nodes {u}-{v})",
+                        "coords": [G.nodes[u]['x'], G.nodes[u]['y']]
+                    })
+        
+        route_data["vulnerable_points"] = vulnerable_points
+        report_data["critical_routes"].append(route_data)
+    
+    # Adiciona recomendações gerais
+    report_data["recommendations"] = [
+        "Priorizar manutenção e reforço de infraestrutura em rotas críticas",
+        "Desenvolver rotas alternativas para segmentos com baixa redundância",
+        "Implementar planos de contingência para o caso de falha em pontos críticos",
+        "Considerar expansão da rede em áreas com alta dependência de rotas críticas"
+    ]
+    
+    # Salva relatório em JSON
+    with open(output_path, 'w') as f:
+        json.dump(report_data, f, indent=2)
+    
+    print(f"Relatório de vulnerabilidade gerado em: {output_path}")
+    return output_path
+5.3.8 Aplicações e Casos de Uso
+O módulo de análise de rotas críticas com GraphSAGE viabiliza diversas aplicações práticas para planejamento urbano e gestão de infraestrutura:
+
+Planejamento de Resiliência Urbana: Identificação preventiva de vulnerabilidades na rede viária para desenvolvimento de redundâncias estratégicas
+Gestão de Emergências: Priorização de rotas para manutenção de acessibilidade em cenários de desastres ou eventos extremos
+Priorização de Investimentos: Direcionamento eficiente de recursos limitados para os segmentos com maior impacto sistêmico
+Planejamento de Manutenção: Desenvolvimento de cronogramas estratégicos de manutenção considerando a criticidade das vias
+Análise de Impacto de Intervenções: Avaliação de como obras e modificações na rede afetam a vulnerabilidade sistêmica
+Modelagem de Evacuação: Identificação de corredores prioritários para planos de evacuação em emergências
+Avaliação de Novos Empreendimentos: Análise de como novos desenvolvimentos urbanos impactam a criticidade da rede viária
+Integração Multimodal: Identificação de pontos críticos para integração entre diferentes modos de transporte
+
+A implementação deste módulo, integrada ao pipeline existente, complementa a análise morfológica e a previsão de congestionamento, formando um sistema abrangente de análise viária que combina perspectivas estruturais, funcionais e de vulnerabilidade.
+
+5.3.9 Referências Científicas
+Hamilton, W. L., Ying, R., & Leskovec, J. (2017). Inductive representation learning on large graphs. Advances in Neural Information Processing Systems (NIPS).
+Ying, Z., You, J., Morris, C., Ren, X., Hamilton, W., & Leskovec, J. (2018). Hierarchical graph representation learning with differentiable pooling. Advances in Neural Information Processing Systems (NeurIPS).
+Chen, M., Wei, X., Yang, Z., Wu, H., Li, Y., & Yang, Q. (2020). GraphSAGE-based traffic speed forecasting for segment network with sparse data. IEEE Transactions on Intelligent Transportation Systems, 22(10), 6022-6033.
+Capponi, A., Fiandrino, C., Kantarci, B., Foschini, L., Kliazovich, D., & Bouvry, P. (2019). A survey on mobile crowdsensing systems: Challenges, solutions, and opportunities. IEEE Communications Surveys & Tutorials, 21(3), 2419-2465.
+Wang, D., Fu, B., Lu, J., Chen, B., Zhang, L., & Lu, G. (2019). Understanding road network vulnerability for critical facilities accessibility: An urban case study. Sustainability, 11(18), 5026.
+Nyimbili, P. H., & Erden, T. (2020). GIS-based road transportation network accessibility vulnerability assessment to seismic hazard. ISPRS International Journal of Geo-Information, 9(5), 273.
+Moosavi, V., Ryngier, P., & Townsend, A. (2022). Urban road networks as signatures of structured flow of information in cities. Scientific Reports, 12(1), 3372.
+Kancharla, S., & Ramachandra, T. V. (2020). Critical infrastructure as complex networks: Critical review of the vulnerability assessment methodologies. Computer Science Review, 38, 100311.
+Kazerani, A., & Winter, S. (2009). Can betweenness centrality explain traffic flow? Proceedings of the 12th AGILE International Conference on Geographic Information Science, 2–5.

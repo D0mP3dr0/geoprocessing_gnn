@@ -584,74 +584,74 @@ def generate_quality_report(original_gdf, enriched_gdf, output_file, visualizati
             if not file_exists:
                 logger.warning(f"Arquivo de dados enriquecidos não encontrado em: {output_file}")
         
-        # Criar relatório
-        report = {
-            "report_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "original_features": len(original_gdf),
-            "enriched_features": len(enriched_gdf),
-            "new_attributes": list(set(enriched_gdf.columns) - set(original_gdf.columns)),
+    # Criar relatório
+    report = {
+        "report_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "original_features": len(original_gdf),
+        "enriched_features": len(enriched_gdf),
+        "new_attributes": list(set(enriched_gdf.columns) - set(original_gdf.columns)),
             "enriched_data_path": actual_path,
             "visualizations": visualization_paths or {},
-            "statistics": {
-                "area_km2": {
-                    "mean": float(enriched_gdf['area_km2'].mean()),
-                    "median": float(enriched_gdf['area_km2'].median()),
-                    "min": float(enriched_gdf['area_km2'].min()),
-                    "max": float(enriched_gdf['area_km2'].max()),
-                    "total": float(enriched_gdf['area_km2'].sum())
-                },
-                "est_populacao": {
-                    "mean": float(enriched_gdf['est_populacao'].mean()),
-                    "median": float(enriched_gdf['est_populacao'].median()),
-                    "min": float(enriched_gdf['est_populacao'].min()),
-                    "max": float(enriched_gdf['est_populacao'].max()),
-                    "total": float(enriched_gdf['est_populacao'].sum())
-                },
-                "densidade_pop": {
-                    "mean": float(enriched_gdf['densidade_pop'].mean()),
-                    "median": float(enriched_gdf['densidade_pop'].median()),
-                    "min": float(enriched_gdf['densidade_pop'].min()),
-                    "max": float(enriched_gdf['densidade_pop'].max())
-                },
-                "elevation_range": {
-                    "mean": float(enriched_gdf['elevation_range'].mean()),
-                    "median": float(enriched_gdf['elevation_range'].median()),
-                    "min": float(enriched_gdf['elevation_range'].min()),
-                    "max": float(enriched_gdf['elevation_range'].max())
-                },
-                "indice_vulnerabilidade": {
-                    "mean": float(enriched_gdf['indice_vulnerabilidade'].mean()),
-                    "median": float(enriched_gdf['indice_vulnerabilidade'].median()),
-                    "min": float(enriched_gdf['indice_vulnerabilidade'].min()),
-                    "max": float(enriched_gdf['indice_vulnerabilidade'].max())
-                },
-                "categoria_vulnerabilidade": {
-                    "distribution": {str(k): int(v) for k, v in enriched_gdf['categoria_vulnerabilidade'].value_counts().to_dict().items()}
-                },
-                "indice_prioridade_evacuacao": {
-                    "mean": float(enriched_gdf['indice_prioridade_evacuacao'].mean()),
-                    "median": float(enriched_gdf['indice_prioridade_evacuacao'].median()),
-                    "min": float(enriched_gdf['indice_prioridade_evacuacao'].min()),
-                    "max": float(enriched_gdf['indice_prioridade_evacuacao'].max())
-                },
-                "categoria_prioridade": {
-                    "distribution": {str(k): int(v) for k, v in enriched_gdf['categoria_prioridade'].value_counts().to_dict().items()}
-                },
-                "top_prioridade": {
-                    "count": int(enriched_gdf['top_prioridade'].sum()),
-                    "percentage": float((enriched_gdf['top_prioridade'].sum() / len(enriched_gdf)) * 100)
-                }
+        "statistics": {
+            "area_km2": {
+                "mean": float(enriched_gdf['area_km2'].mean()),
+                "median": float(enriched_gdf['area_km2'].median()),
+                "min": float(enriched_gdf['area_km2'].min()),
+                "max": float(enriched_gdf['area_km2'].max()),
+                "total": float(enriched_gdf['area_km2'].sum())
             },
-            "tipo_area": {
-                "distribution": {str(k): int(v) for k, v in enriched_gdf['tipo_area'].value_counts().to_dict().items()}
+            "est_populacao": {
+                "mean": float(enriched_gdf['est_populacao'].mean()),
+                "median": float(enriched_gdf['est_populacao'].median()),
+                "min": float(enriched_gdf['est_populacao'].min()),
+                "max": float(enriched_gdf['est_populacao'].max()),
+                "total": float(enriched_gdf['est_populacao'].sum())
+            },
+            "densidade_pop": {
+                "mean": float(enriched_gdf['densidade_pop'].mean()),
+                "median": float(enriched_gdf['densidade_pop'].median()),
+                "min": float(enriched_gdf['densidade_pop'].min()),
+                "max": float(enriched_gdf['densidade_pop'].max())
+            },
+            "elevation_range": {
+                "mean": float(enriched_gdf['elevation_range'].mean()),
+                "median": float(enriched_gdf['elevation_range'].median()),
+                "min": float(enriched_gdf['elevation_range'].min()),
+                "max": float(enriched_gdf['elevation_range'].max())
+            },
+            "indice_vulnerabilidade": {
+                "mean": float(enriched_gdf['indice_vulnerabilidade'].mean()),
+                "median": float(enriched_gdf['indice_vulnerabilidade'].median()),
+                "min": float(enriched_gdf['indice_vulnerabilidade'].min()),
+                "max": float(enriched_gdf['indice_vulnerabilidade'].max())
+            },
+            "categoria_vulnerabilidade": {
+                "distribution": {str(k): int(v) for k, v in enriched_gdf['categoria_vulnerabilidade'].value_counts().to_dict().items()}
+            },
+            "indice_prioridade_evacuacao": {
+                "mean": float(enriched_gdf['indice_prioridade_evacuacao'].mean()),
+                "median": float(enriched_gdf['indice_prioridade_evacuacao'].median()),
+                "min": float(enriched_gdf['indice_prioridade_evacuacao'].min()),
+                "max": float(enriched_gdf['indice_prioridade_evacuacao'].max())
+            },
+            "categoria_prioridade": {
+                "distribution": {str(k): int(v) for k, v in enriched_gdf['categoria_prioridade'].value_counts().to_dict().items()}
+            },
+            "top_prioridade": {
+                "count": int(enriched_gdf['top_prioridade'].sum()),
+                "percentage": float((enriched_gdf['top_prioridade'].sum() / len(enriched_gdf)) * 100)
             }
+        },
+        "tipo_area": {
+            "distribution": {str(k): int(v) for k, v in enriched_gdf['tipo_area'].value_counts().to_dict().items()}
         }
-        
-        # Salvar relatório como JSON
+    }
+    
+    # Salvar relatório como JSON
         report_file = os.path.join(REPORT_DIR, f'setores_censitarios_enrichment_report_{timestamp}.json')
         os.makedirs(os.path.dirname(report_file), exist_ok=True)
         
-        with open(report_file, 'w', encoding='utf-8') as f:
+    with open(report_file, 'w', encoding='utf-8') as f:
             json.dump(report, f, indent=4, ensure_ascii=False, cls=NpEncoder)
         
         logger.info(f"Relatório de qualidade salvo em {report_file}")
@@ -923,293 +923,293 @@ def generate_visualizations(gdf, timestamp=None):
     viz_paths = {}
     
     try:
-        # Criar paletas de cores consistentes
-        colors_vulnerabilidade = {
-            'Muito baixa': '#1a9850', 
-            'Baixa': '#91cf60', 
-            'Média': '#ffffbf', 
-            'Alta': '#fc8d59', 
-            'Muito alta': '#d73027'
-        }
-        
-        colors_prioridade = {
-            'Muito baixa': '#edf8fb',
-            'Baixa': '#b2e2e2',
-            'Média': '#66c2a4',
-            'Alta': '#2ca25f',
-            'Muito alta': '#006d2c'
-        }
-        
-        # 1. Mapa de densidade populacional
+    # Criar paletas de cores consistentes
+    colors_vulnerabilidade = {
+        'Muito baixa': '#1a9850', 
+        'Baixa': '#91cf60', 
+        'Média': '#ffffbf', 
+        'Alta': '#fc8d59', 
+        'Muito alta': '#d73027'
+    }
+    
+    colors_prioridade = {
+        'Muito baixa': '#edf8fb',
+        'Baixa': '#b2e2e2',
+        'Média': '#66c2a4',
+        'Alta': '#2ca25f',
+        'Muito alta': '#006d2c'
+    }
+    
+    # 1. Mapa de densidade populacional
         logger.info("Gerando mapa de densidade populacional...")
-        plt.figure(figsize=(15, 12))
-        ax = plt.subplot(111)
-        
-        # Plotar setores coloridos por densidade populacional
-        gdf.plot(column='densidade_pop', cmap='viridis', legend=True,
-                ax=ax, alpha=0.7, edgecolor='white', linewidth=0.2,
-                legend_kwds={'label': 'Densidade Populacional (hab/km²)'})
-        
-        # Adicionar mapa base
-        ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
-        
-        # Adicionar título
-        plt.title('Densidade Populacional por Setor Censitário', fontsize=16)
-        
-        # Adicionar escala
-        scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
-                                pad=0.5, color='black', frameon=True, size_vertical=0.01)
-        ax.add_artist(scale_bar)
-        
-        # Salvar figura
+    plt.figure(figsize=(15, 12))
+    ax = plt.subplot(111)
+    
+    # Plotar setores coloridos por densidade populacional
+    gdf.plot(column='densidade_pop', cmap='viridis', legend=True,
+             ax=ax, alpha=0.7, edgecolor='white', linewidth=0.2,
+             legend_kwds={'label': 'Densidade Populacional (hab/km²)'})
+    
+    # Adicionar mapa base
+    ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
+    
+    # Adicionar título
+    plt.title('Densidade Populacional por Setor Censitário', fontsize=16)
+    
+    # Adicionar escala
+    scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
+                              pad=0.5, color='black', frameon=True, size_vertical=0.01)
+    ax.add_artist(scale_bar)
+    
+    # Salvar figura
         density_path = os.path.join(viz_dir, 'densidade_populacional.png')
         plt.savefig(density_path, dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
         viz_paths['densidade_populacional'] = density_path
-        
-        # 2. Mapa de vulnerabilidade
+    
+    # 2. Mapa de vulnerabilidade
         logger.info("Gerando mapa de vulnerabilidade...")
-        plt.figure(figsize=(15, 12))
-        ax = plt.subplot(111)
-        
-        # Criar uma colormap personalizada
-        cmap_vulnerabilidade = LinearSegmentedColormap.from_list(
-            'vulnerabilidade',
-            [colors_vulnerabilidade[cat] for cat in ['Muito baixa', 'Baixa', 'Média', 'Alta', 'Muito alta']],
-            N=256
-        )
-        
-        # Plotar setores coloridos por índice de vulnerabilidade
-        gdf.plot(column='indice_vulnerabilidade', cmap=cmap_vulnerabilidade, legend=True,
-                ax=ax, alpha=0.7, edgecolor='white', linewidth=0.2,
-                legend_kwds={'label': 'Índice de Vulnerabilidade'})
-        
-        # Destacar os setores de alta vulnerabilidade
-        gdf_alta_vuln = gdf[gdf['categoria_vulnerabilidade'].isin(['Alta', 'Muito alta'])]
-        gdf_alta_vuln.plot(ax=ax, facecolor='none', edgecolor='black', linewidth=0.8)
-        
-        # Adicionar mapa base
-        ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
-        
-        # Adicionar título
-        plt.title('Vulnerabilidade por Setor Censitário', fontsize=16)
-        
-        # Adicionar escala
-        scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
-                                pad=0.5, color='black', frameon=True, size_vertical=0.01)
-        ax.add_artist(scale_bar)
-        
-        # Salvar figura
+    plt.figure(figsize=(15, 12))
+    ax = plt.subplot(111)
+    
+    # Criar uma colormap personalizada
+    cmap_vulnerabilidade = LinearSegmentedColormap.from_list(
+        'vulnerabilidade',
+        [colors_vulnerabilidade[cat] for cat in ['Muito baixa', 'Baixa', 'Média', 'Alta', 'Muito alta']],
+        N=256
+    )
+    
+    # Plotar setores coloridos por índice de vulnerabilidade
+    gdf.plot(column='indice_vulnerabilidade', cmap=cmap_vulnerabilidade, legend=True,
+             ax=ax, alpha=0.7, edgecolor='white', linewidth=0.2,
+             legend_kwds={'label': 'Índice de Vulnerabilidade'})
+    
+    # Destacar os setores de alta vulnerabilidade
+    gdf_alta_vuln = gdf[gdf['categoria_vulnerabilidade'].isin(['Alta', 'Muito alta'])]
+    gdf_alta_vuln.plot(ax=ax, facecolor='none', edgecolor='black', linewidth=0.8)
+    
+    # Adicionar mapa base
+    ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
+    
+    # Adicionar título
+    plt.title('Vulnerabilidade por Setor Censitário', fontsize=16)
+    
+    # Adicionar escala
+    scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
+                              pad=0.5, color='black', frameon=True, size_vertical=0.01)
+    ax.add_artist(scale_bar)
+    
+    # Salvar figura
         vuln_path = os.path.join(viz_dir, 'vulnerabilidade.png')
         plt.savefig(vuln_path, dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
         viz_paths['vulnerabilidade'] = vuln_path
-        
-        # 3. Mapa de prioridade para evacuação
+    
+    # 3. Mapa de prioridade para evacuação
         logger.info("Gerando mapa de prioridade para evacuação...")
-        plt.figure(figsize=(15, 12))
-        ax = plt.subplot(111)
-        
-        # Criar uma colormap personalizada para prioridade
-        cmap_prioridade = LinearSegmentedColormap.from_list(
-            'prioridade',
-            [colors_prioridade[cat] for cat in ['Muito baixa', 'Baixa', 'Média', 'Alta', 'Muito alta']],
-            N=256
-        )
-        
-        # Plotar setores coloridos por índice de prioridade
-        gdf.plot(column='indice_prioridade_evacuacao', cmap=cmap_prioridade, legend=True,
-                ax=ax, alpha=0.7, edgecolor='white', linewidth=0.2,
-                legend_kwds={'label': 'Prioridade para Evacuação'})
-        
-        # Destacar os setores de alta prioridade
-        gdf_alta_prioridade = gdf[gdf['top_prioridade']]
-        gdf_alta_prioridade.plot(ax=ax, facecolor='none', edgecolor='red', linewidth=1.5,
-                            hatch='///', alpha=0.7, label='Top 10% Prioridade')
-        
-        # Adicionar mapa base
-        ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
-        
-        # Adicionar título e legenda
-        plt.title('Prioridade para Evacuação por Setor Censitário', fontsize=16)
-        plt.legend(loc='upper right')
-        
-        # Adicionar escala
-        scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
-                                pad=0.5, color='black', frameon=True, size_vertical=0.01)
-        ax.add_artist(scale_bar)
-        
-        # Salvar figura
+    plt.figure(figsize=(15, 12))
+    ax = plt.subplot(111)
+    
+    # Criar uma colormap personalizada para prioridade
+    cmap_prioridade = LinearSegmentedColormap.from_list(
+        'prioridade',
+        [colors_prioridade[cat] for cat in ['Muito baixa', 'Baixa', 'Média', 'Alta', 'Muito alta']],
+        N=256
+    )
+    
+    # Plotar setores coloridos por índice de prioridade
+    gdf.plot(column='indice_prioridade_evacuacao', cmap=cmap_prioridade, legend=True,
+             ax=ax, alpha=0.7, edgecolor='white', linewidth=0.2,
+             legend_kwds={'label': 'Prioridade para Evacuação'})
+    
+    # Destacar os setores de alta prioridade
+    gdf_alta_prioridade = gdf[gdf['top_prioridade']]
+    gdf_alta_prioridade.plot(ax=ax, facecolor='none', edgecolor='red', linewidth=1.5,
+                           hatch='///', alpha=0.7, label='Top 10% Prioridade')
+    
+    # Adicionar mapa base
+    ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
+    
+    # Adicionar título e legenda
+    plt.title('Prioridade para Evacuação por Setor Censitário', fontsize=16)
+    plt.legend(loc='upper right')
+    
+    # Adicionar escala
+    scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
+                              pad=0.5, color='black', frameon=True, size_vertical=0.01)
+    ax.add_artist(scale_bar)
+    
+    # Salvar figura
         prio_path = os.path.join(viz_dir, 'prioridade_evacuacao.png')
         plt.savefig(prio_path, dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
         viz_paths['prioridade_evacuacao'] = prio_path
-        
-        # 4. Mapa de elevação
+    
+    # 4. Mapa de elevação
         logger.info("Gerando mapa de elevação...")
-        plt.figure(figsize=(15, 12))
-        ax = plt.subplot(111)
-        
-        # Plotar setores coloridos por elevação média
-        gdf.plot(column='elevation_mean', cmap='terrain', legend=True,
-                ax=ax, alpha=0.7, edgecolor='white', linewidth=0.2,
-                legend_kwds={'label': 'Elevação Média (m)'})
-        
-        # Adicionar mapa base
-        ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
-        
-        # Adicionar título
-        plt.title('Elevação Média por Setor Censitário', fontsize=16)
-        
-        # Adicionar escala
-        scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
-                                pad=0.5, color='black', frameon=True, size_vertical=0.01)
-        ax.add_artist(scale_bar)
-        
-        # Salvar figura
+    plt.figure(figsize=(15, 12))
+    ax = plt.subplot(111)
+    
+    # Plotar setores coloridos por elevação média
+    gdf.plot(column='elevation_mean', cmap='terrain', legend=True,
+             ax=ax, alpha=0.7, edgecolor='white', linewidth=0.2,
+             legend_kwds={'label': 'Elevação Média (m)'})
+    
+    # Adicionar mapa base
+    ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
+    
+    # Adicionar título
+    plt.title('Elevação Média por Setor Censitário', fontsize=16)
+    
+    # Adicionar escala
+    scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
+                              pad=0.5, color='black', frameon=True, size_vertical=0.01)
+    ax.add_artist(scale_bar)
+    
+    # Salvar figura
         elev_path = os.path.join(viz_dir, 'elevacao_media.png')
         plt.savefig(elev_path, dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
         viz_paths['elevacao_media'] = elev_path
-        
-        # 5. Mapa de variação temporal da população
+    
+    # 5. Mapa de variação temporal da população
         logger.info("Gerando mapa de variação populacional...")
-        plt.figure(figsize=(15, 12))
-        ax = plt.subplot(111)
-        
-        # Plotar setores coloridos por variação populacional
-        gdf.plot(column='pop_variacao_rel', cmap='plasma', legend=True,
-                ax=ax, alpha=0.7, edgecolor='white', linewidth=0.2,
-                legend_kwds={'label': 'Variação Populacional (%)'})
-        
-        # Adicionar mapa base
-        ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
-        
-        # Adicionar título
-        plt.title('Variação Populacional Diária por Setor Censitário', fontsize=16)
-        
-        # Adicionar escala
-        scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
-                                pad=0.5, color='black', frameon=True, size_vertical=0.01)
-        ax.add_artist(scale_bar)
-        
-        # Salvar figura
+    plt.figure(figsize=(15, 12))
+    ax = plt.subplot(111)
+    
+    # Plotar setores coloridos por variação populacional
+    gdf.plot(column='pop_variacao_rel', cmap='plasma', legend=True,
+             ax=ax, alpha=0.7, edgecolor='white', linewidth=0.2,
+             legend_kwds={'label': 'Variação Populacional (%)'})
+    
+    # Adicionar mapa base
+    ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
+    
+    # Adicionar título
+    plt.title('Variação Populacional Diária por Setor Censitário', fontsize=16)
+    
+    # Adicionar escala
+    scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
+                              pad=0.5, color='black', frameon=True, size_vertical=0.01)
+    ax.add_artist(scale_bar)
+    
+    # Salvar figura
         var_pop_path = os.path.join(viz_dir, 'variacao_populacional.png')
         plt.savefig(var_pop_path, dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
         viz_paths['variacao_populacional'] = var_pop_path
-        
-        # 6. Distribuição dos tipos de área
+    
+    # 6. Distribuição dos tipos de área
         logger.info("Gerando gráfico de distribuição de tipos de área...")
-        plt.figure(figsize=(12, 8))
-        tipo_area_counts = gdf['tipo_area'].value_counts()
-        tipo_area_counts.plot(kind='bar', color=sns.color_palette("Set3"))
-        plt.title('Distribuição de Tipos de Área', fontsize=16)
-        plt.xlabel('Tipo de Área')
-        plt.ylabel('Número de Setores')
-        plt.xticks(rotation=45)
-        plt.grid(axis='y', alpha=0.3)
-        
-        # Adicionar valores nas barras
-        for i, v in enumerate(tipo_area_counts):
-            plt.text(i, v + 0.5, str(v), ha='center')
-        
-        plt.tight_layout()
+    plt.figure(figsize=(12, 8))
+    tipo_area_counts = gdf['tipo_area'].value_counts()
+    tipo_area_counts.plot(kind='bar', color=sns.color_palette("Set3"))
+    plt.title('Distribuição de Tipos de Área', fontsize=16)
+    plt.xlabel('Tipo de Área')
+    plt.ylabel('Número de Setores')
+    plt.xticks(rotation=45)
+    plt.grid(axis='y', alpha=0.3)
+    
+    # Adicionar valores nas barras
+    for i, v in enumerate(tipo_area_counts):
+        plt.text(i, v + 0.5, str(v), ha='center')
+    
+    plt.tight_layout()
         dist_path = os.path.join(viz_dir, 'distribuicao_tipos_area.png')
         plt.savefig(dist_path, dpi=300)
-        plt.close()
+    plt.close()
         viz_paths['distribuicao_tipos_area'] = dist_path
-        
-        # 7. Relação entre densidade populacional e índice de vulnerabilidade
+    
+    # 7. Relação entre densidade populacional e índice de vulnerabilidade
         logger.info("Gerando gráfico de relação densidade/vulnerabilidade...")
-        plt.figure(figsize=(10, 8))
-        
-        # Criar scatter plot com densidade de pontos
-        plt.scatter(gdf['densidade_pop'], gdf['indice_vulnerabilidade'], 
-                    alpha=0.5, c=gdf['indice_prioridade_evacuacao'], cmap='viridis', 
-                    s=20, edgecolor='none')
-        
-        plt.colorbar(label='Índice de Prioridade para Evacuação')
-        plt.title('Relação entre Densidade Populacional e Vulnerabilidade', fontsize=16)
-        plt.xlabel('Densidade Populacional (hab/km²)')
-        plt.ylabel('Índice de Vulnerabilidade')
-        plt.grid(alpha=0.3)
-        
-        # Adicionar linha de tendência
-        z = np.polyfit(gdf['densidade_pop'], gdf['indice_vulnerabilidade'], 1)
-        p = np.poly1d(z)
-        plt.plot(sorted(gdf['densidade_pop']), p(sorted(gdf['densidade_pop'])), 
-                "r--", alpha=0.8, label=f'Tendência: y={z[0]:.5f}x+{z[1]:.5f}')
-        
-        plt.legend()
-        plt.tight_layout()
+    plt.figure(figsize=(10, 8))
+    
+    # Criar scatter plot com densidade de pontos
+    plt.scatter(gdf['densidade_pop'], gdf['indice_vulnerabilidade'], 
+                alpha=0.5, c=gdf['indice_prioridade_evacuacao'], cmap='viridis', 
+                s=20, edgecolor='none')
+    
+    plt.colorbar(label='Índice de Prioridade para Evacuação')
+    plt.title('Relação entre Densidade Populacional e Vulnerabilidade', fontsize=16)
+    plt.xlabel('Densidade Populacional (hab/km²)')
+    plt.ylabel('Índice de Vulnerabilidade')
+    plt.grid(alpha=0.3)
+    
+    # Adicionar linha de tendência
+    z = np.polyfit(gdf['densidade_pop'], gdf['indice_vulnerabilidade'], 1)
+    p = np.poly1d(z)
+    plt.plot(sorted(gdf['densidade_pop']), p(sorted(gdf['densidade_pop'])), 
+             "r--", alpha=0.8, label=f'Tendência: y={z[0]:.5f}x+{z[1]:.5f}')
+    
+    plt.legend()
+    plt.tight_layout()
         dens_vuln_path = os.path.join(viz_dir, 'densidade_vs_vulnerabilidade.png')
         plt.savefig(dens_vuln_path, dpi=300)
-        plt.close()
+    plt.close()
         viz_paths['densidade_vs_vulnerabilidade'] = dens_vuln_path
-        
-        # 8. Mapa comparativo de horários de ocupação (manhã vs. noite)
+    
+    # 8. Mapa comparativo de horários de ocupação (manhã vs. noite)
         logger.info("Gerando mapa comparativo de ocupação por horário...")
-        fig, axes = plt.subplots(1, 2, figsize=(20, 10))
-        
-        # Mapa de população pela manhã
-        gdf.plot(column='pop_atual_0800', cmap='YlOrRd', legend=True,
-                ax=axes[0], alpha=0.7, edgecolor='white', linewidth=0.2,
+    fig, axes = plt.subplots(1, 2, figsize=(20, 10))
+    
+    # Mapa de população pela manhã
+    gdf.plot(column='pop_atual_0800', cmap='YlOrRd', legend=True,
+             ax=axes[0], alpha=0.7, edgecolor='white', linewidth=0.2,
                 legend_kwds={'label': 'População Estimada - 8h'})
-        ctx.add_basemap(axes[0], source=ctx.providers.CartoDB.Positron)
-        axes[0].set_title('População Estimada - 8h', fontsize=14)
-        
-        # Mapa de população à noite
-        gdf.plot(column='pop_atual_2300', cmap='YlOrRd', legend=True,
-                ax=axes[1], alpha=0.7, edgecolor='white', linewidth=0.2,
+    ctx.add_basemap(axes[0], source=ctx.providers.CartoDB.Positron)
+    axes[0].set_title('População Estimada - 8h', fontsize=14)
+    
+    # Mapa de população à noite
+    gdf.plot(column='pop_atual_2300', cmap='YlOrRd', legend=True,
+             ax=axes[1], alpha=0.7, edgecolor='white', linewidth=0.2,
                 legend_kwds={'label': 'População Estimada - 23h'})
-        ctx.add_basemap(axes[1], source=ctx.providers.CartoDB.Positron)
-        axes[1].set_title('População Estimada - 23h', fontsize=14)
-        
-        # Adicionar escala em ambos os mapas
-        for ax in axes:
-            scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
-                                    pad=0.5, color='black', frameon=True, size_vertical=0.01)
-            ax.add_artist(scale_bar)
-        
-        plt.tight_layout()
+    ctx.add_basemap(axes[1], source=ctx.providers.CartoDB.Positron)
+    axes[1].set_title('População Estimada - 23h', fontsize=14)
+    
+    # Adicionar escala em ambos os mapas
+    for ax in axes:
+        scale_bar = AnchoredSizeBar(ax.transData, 0.05, '5 km', 'lower right', 
+                                  pad=0.5, color='black', frameon=True, size_vertical=0.01)
+        ax.add_artist(scale_bar)
+    
+    plt.tight_layout()
         pop_horario_path = os.path.join(viz_dir, 'populacao_manhã_vs_noite.png')
         plt.savefig(pop_horario_path, dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
         viz_paths['populacao_manhã_vs_noite'] = pop_horario_path
-        
-        # 9. Dashboard das categorias de vulnerabilidade e prioridade
+    
+    # 9. Dashboard das categorias de vulnerabilidade e prioridade
         logger.info("Gerando dashboard de categorias...")
-        fig, axes = plt.subplots(2, 1, figsize=(12, 16))
-        
-        # Gráfico de barras para categorias de vulnerabilidade
-        vuln_counts = gdf['categoria_vulnerabilidade'].value_counts().reindex(['Muito baixa', 'Baixa', 'Média', 'Alta', 'Muito alta'])
-        vuln_colors = [colors_vulnerabilidade[cat] for cat in vuln_counts.index]
-        vuln_counts.plot(kind='barh', ax=axes[0], color=vuln_colors)
-        axes[0].set_title('Distribuição das Categorias de Vulnerabilidade', fontsize=14)
-        axes[0].set_xlabel('Número de Setores')
-        axes[0].grid(axis='x', alpha=0.3)
-        
-        # Adicionar valores nas barras
-        for i, v in enumerate(vuln_counts):
-            axes[0].text(v + 0.5, i, str(v), va='center')
-        
-        # Gráfico de barras para categorias de prioridade
-        prior_counts = gdf['categoria_prioridade'].value_counts().reindex(['Muito baixa', 'Baixa', 'Média', 'Alta', 'Muito alta'])
-        prior_colors = [colors_prioridade[cat] for cat in prior_counts.index]
-        prior_counts.plot(kind='barh', ax=axes[1], color=prior_colors)
-        axes[1].set_title('Distribuição das Categorias de Prioridade para Evacuação', fontsize=14)
-        axes[1].set_xlabel('Número de Setores')
-        axes[1].grid(axis='x', alpha=0.3)
-        
-        # Adicionar valores nas barras
-        for i, v in enumerate(prior_counts):
-            axes[1].text(v + 0.5, i, str(v), va='center')
-        
-        plt.tight_layout()
+    fig, axes = plt.subplots(2, 1, figsize=(12, 16))
+    
+    # Gráfico de barras para categorias de vulnerabilidade
+    vuln_counts = gdf['categoria_vulnerabilidade'].value_counts().reindex(['Muito baixa', 'Baixa', 'Média', 'Alta', 'Muito alta'])
+    vuln_colors = [colors_vulnerabilidade[cat] for cat in vuln_counts.index]
+    vuln_counts.plot(kind='barh', ax=axes[0], color=vuln_colors)
+    axes[0].set_title('Distribuição das Categorias de Vulnerabilidade', fontsize=14)
+    axes[0].set_xlabel('Número de Setores')
+    axes[0].grid(axis='x', alpha=0.3)
+    
+    # Adicionar valores nas barras
+    for i, v in enumerate(vuln_counts):
+        axes[0].text(v + 0.5, i, str(v), va='center')
+    
+    # Gráfico de barras para categorias de prioridade
+    prior_counts = gdf['categoria_prioridade'].value_counts().reindex(['Muito baixa', 'Baixa', 'Média', 'Alta', 'Muito alta'])
+    prior_colors = [colors_prioridade[cat] for cat in prior_counts.index]
+    prior_counts.plot(kind='barh', ax=axes[1], color=prior_colors)
+    axes[1].set_title('Distribuição das Categorias de Prioridade para Evacuação', fontsize=14)
+    axes[1].set_xlabel('Número de Setores')
+    axes[1].grid(axis='x', alpha=0.3)
+    
+    # Adicionar valores nas barras
+    for i, v in enumerate(prior_counts):
+        axes[1].text(v + 0.5, i, str(v), va='center')
+    
+    plt.tight_layout()
         dashboard_path = os.path.join(viz_dir, 'dashboard_categorias.png')
         plt.savefig(dashboard_path, dpi=300)
-        plt.close()
+    plt.close()
         viz_paths['dashboard_categorias'] = dashboard_path
         
         # Gerar mapa interativo com camadas de população e altimetria
@@ -1314,7 +1314,7 @@ def main():
     try:
         # 1. Carregar dados processados
         logger.info("Carregando dados dos setores censitários...")
-        original_gdf = load_data()
+    original_gdf = load_data()
         if original_gdf is None:
             logger.error("Não foi possível carregar os dados dos setores censitários")
             return None
@@ -1324,7 +1324,7 @@ def main():
         dem = None
         try:
             if os.path.exists(DEM_FILE):
-                dem = load_dem()
+    dem = load_dem()
                 logger.info("DEM carregado com sucesso")
             else:
                 logger.warning(f"Arquivo DEM não encontrado: {DEM_FILE}")
@@ -1337,25 +1337,25 @@ def main():
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         try:
-            # Aplicar etapas de enriquecimento
+    # Aplicar etapas de enriquecimento
             logger.info("Calculando métricas de área...")
-            enriched_gdf = calculate_area_metrics(original_gdf)
-            
+    enriched_gdf = calculate_area_metrics(original_gdf)
+    
             logger.info("Extraindo dados de elevação...")
             if dem is not None:
-                enriched_gdf = extract_elevation_data(enriched_gdf, dem)
+    enriched_gdf = extract_elevation_data(enriched_gdf, dem)
             else:
                 logger.warning("Pulando extração de dados de elevação pois o DEM não está disponível")
-            
+    
             logger.info("Calculando distribuição populacional...")
-            enriched_gdf = calculate_population_distribution(enriched_gdf)
-            
+    enriched_gdf = calculate_population_distribution(enriched_gdf)
+    
             logger.info("Calculando vulnerabilidade populacional...")
-            enriched_gdf = calculate_population_vulnerability(enriched_gdf)
-            
+    enriched_gdf = calculate_population_vulnerability(enriched_gdf)
+    
             logger.info("Gerando índice de prioridade para evacuação...")
-            enriched_gdf = generate_evacuation_priority(enriched_gdf)
-            
+    enriched_gdf = generate_evacuation_priority(enriched_gdf)
+    
             logger.info("Enriquecimento de dados concluído com sucesso")
         except Exception as e:
             logger.error(f"Erro no processo de enriquecimento: {str(e)}")

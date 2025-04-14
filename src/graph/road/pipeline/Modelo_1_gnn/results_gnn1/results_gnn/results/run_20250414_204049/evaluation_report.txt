@@ -1,0 +1,48 @@
+=== RELATÓRIO DE AVALIAÇÃO DO MODELO ===
+Timestamp: 2025-04-14 20:41:06
+Device Utilizado: cuda
+
+--- Métricas Gerais (Conjunto de Teste) ---
+Acurácia: 0.5972
+F1 Score (Macro): 0.2343
+F1 Score (Ponderado): 0.5197
+
+--- Métricas por Classe ---
+Classe          Precision  Recall     F1-Score  
+--------------------------------------------------
+Classe 0        0.0000     0.0000     0.0000    
+Classe 1        0.0000     0.0000     0.0000    
+Classe 2        0.4000     0.0851     0.1404    
+Classe 3        0.4810     0.2857     0.3585    
+Classe 4        0.4286     0.0923     0.1519    
+Classe 5        0.6261     0.9513     0.7552    
+
+--- Relatório de Classificação Detalhado ---
+              precision    recall  f1-score   support
+
+    Classe 0       0.00      0.00      0.00         9
+    Classe 1       0.00      0.00      0.00         9
+    Classe 2       0.40      0.09      0.14        47
+    Classe 3       0.48      0.29      0.36       133
+    Classe 4       0.43      0.09      0.15        65
+    Classe 5       0.63      0.95      0.76       308
+
+    accuracy                           0.60       571
+   macro avg       0.32      0.24      0.23       571
+weighted avg       0.53      0.60      0.52       571
+
+
+--- Distribuição das Classes ---
+  Train: [31, 72, 207, 656, 295, 1397]
+  Val: [8, 14, 40, 148, 47, 312]
+  Test: [9, 9, 47, 133, 65, 308]
+
+--- Matriz de Confusão (Contagens) ---
+Prev -> | Classe 0 | Classe 1 | Classe 2 | Classe 3 | Classe 4 | Classe 5 |
+---------------------------------------------------------------------------
+Verd Classe 0 | 0        | 0        | 6        | 0        | 0        | 3        |
+Verd Classe 1 | 0        | 0        | 0        | 1        | 0        | 8        |
+Verd Classe 2 | 0        | 0        | 4        | 18       | 0        | 25       |
+Verd Classe 3 | 0        | 0        | 0        | 38       | 6        | 89       |
+Verd Classe 4 | 0        | 0        | 0        | 9        | 6        | 50       |
+Verd Classe 5 | 0        | 0        | 0        | 13       | 2        | 293      |

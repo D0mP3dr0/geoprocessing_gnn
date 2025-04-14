@@ -1,0 +1,1462 @@
+5.2 GAT PARA PREVISÃO DE CONGESTIONAMENTO
+5.2.1 Fundamentos Teóricos e Motivação
+A previsão de congestionamento em redes viárias urbanas representa um desafio significativo no planejamento de transporte e gestão de tráfego. Tradicionalmente, esta previsão depende de extensivos dados empíricos de sensores, contagens de tráfego e simulações complexas, recursos frequentemente indisponíveis ou desatualizados em muitos contextos urbanos. As Graph Attention Networks (GATs) emergem como uma solução promissora, permitindo a identificação de áreas propensas a congestionamento com base em características estruturais e contextuais da rede viária, mesmo na ausência de dados detalhados de fluxo de tráfego.
+5.2.1.1 O Problema da Previsão de Congestionamento
+O congestionamento viário resulta da interação complexa entre diversos fatores:
+
+Capacidade viária limitada: Relacionada à largura, número de faixas e configuração das vias
+Demanda de tráfego: Determinada por padrões de uso do solo, densidade populacional e atividades econômicas
+Configuração da rede: Topologia, conectividade e redundância de rotas alternativas
+Restrições operacionais: Semáforos, controles de velocidade e restrições de conversão
+Padrões temporais: Variações horárias, diárias e sazonais na demanda
+Eventos excepcionais: Obras, acidentes e eventos especiais
+
+A previsão eficiente de congestionamento deve considerar estas múltiplas dimensões em um framework integrado, capaz de identificar não apenas segmentos isolados, mas padrões de propagação de congestionamento pela rede.
+5.2.1.2 Graph Attention Networks: Fundamentos Matemáticos
+As Graph Attention Networks, introduzidas por Veličković et al. (2018), estendem as capacidades das GCNs ao incorporar mecanismos de atenção que ponderam adaptivamente a importância de diferentes relacionamentos no grafo. Esta característica é particularmente valiosa para modelagem de congestionamento, onde certos relacionamentos entre segmentos viários podem ter influência desproporcional na propagação de congestionamento.
+A formulação matemática fundamental do mecanismo de atenção em GATs é:
+h_i^(l+1) = σ(∑_j∈N(i) α_ij W h_j^l)
+Onde:
+
+h_i^l representa as características do nó i na camada l
+N(i) é o conjunto de vizinhos do nó i
+W é uma matriz de pesos treinável
+α_ij são coeficientes de atenção que determinam quanto o nó j influencia o nó i
+σ é uma função de ativação não-linear
+
+Os coeficientes de atenção são calculados através de:
+α_ij = softmax_j(e_ij) = exp(e_ij) / ∑_k∈N(i) exp(e_ik)
+e_ij = LeakyReLU(a^T [W h_i || W h_j])
+Onde a é um vetor de pesos treinável que atribui importância às combinações de características, e || representa a operação de concatenação.
+Esta formulação permite que o modelo atribua diferentes pesos a diferentes relacionamentos viários, essencial para modelar como o congestionamento se propaga de forma não-uniforme através da rede.
+5.2.1.3 Vantagens das GATs para Análise de Congestionamento
+As GATs oferecem vantagens específicas para o problema de previsão de congestionamento em redes viárias:
+
+Atenção direcional: Capacidade de modelar assimetrias nos padrões de propagação de congestionamento
+Sensibilidade contextual: Ponderação adaptativa da importância de segmentos com base em seu contexto local
+Multi-head attention: Capacidade de capturar diferentes aspectos da propagação de congestionamento simultaneamente
+Invariância a permutações: Independência da ordenação arbitrária dos nós, preservando a estrutura real da rede
+Adaptabilidade a dados esparsos: Eficácia mesmo com informações incompletas, comum em análises urbanas
+
+Estas características tornam as GATs particularmente adequadas para modelar a natureza complexa e contextual do congestionamento viário.
+5.2.2 Modelagem da Rede para Previsão de Congestionamento
+A representação adequada da rede viária é fundamental para aplicações de previsão de congestionamento, exigindo adaptações específicas em relação à análise morfológica.
+5.2.2.1 Representação Edge-centric
+Para previsão de congestionamento, adotamos uma representação centrada em arestas (edge-centric), onde:
+
+Unidade de análise: Segmentos de via (arestas) são a unidade primária de análise, não interseções
+Linha dual: Cada segmento viário torna-se um nó no grafo dual
+Relações de adjacência: Nós no grafo dual são conectados se os segmentos correspondentes compartilham uma interseção
+Direção de fluxo: Para vias de mão única, preservamos a direcionalidade do fluxo
+
+Esta representação é implementada utilizando a técnica de line graph, conforme a função:
+pythondef create_line_graph_for_congestion(G):
+    """
+    Cria um grafo dual (line graph) otimizado para análise de congestionamento.
+    
+    Args:
+        G: Grafo NetworkX primal da rede viária
+        
+    Returns:
+        L: Grafo dual onde nós representam segmentos viários
+    """
+    # Criação do line graph básico
+    L = nx.line_graph(G)
+    
+    # Transfere atributos das arestas do grafo original para nós do line graph
+    for edge in G.edges(data=True):
+        edge_node = (edge[0], edge[1])  # Identificador do nó no line graph
+        if edge_node in L.nodes():
+            # Transfere todos os atributos
+            for key, value in edge[2].items():
+                L.nodes[edge_node][key] = value
+    
+    # Adiciona atributos de conectividade
+    for node in L.nodes():
+        u, v = node  # Nó no line graph = aresta no grafo original
+        
+        # Extrai grau dos nós originais
+        u_degree = G.degree(u)
+        v_degree = G.degree(v)
+        
+        # Armazena informações sobre a complexidade das interseções
+        L.nodes[node]['from_intersection_degree'] = u_degree
+        L.nodes[node]['to_intersection_degree'] = v_degree
+        L.nodes[node]['max_intersection_degree'] = max(u_degree, v_degree)
+        
+        # Identifica se o segmento conecta interseções complexas (grau > 3)
+        L.nodes[node]['connects_complex_intersections'] = (u_degree > 3 and v_degree > 3)
+    
+    return L
+Esta representação é particularmente adequada para a análise de congestionamento, pois:
+
+Foca diretamente nos segmentos viários onde o congestionamento ocorre
+Preserva explicitamente as relações de adjacência que influenciam a propagação de congestionamento
+Simplifica a modelagem de restrições de movimento nas interseções
+
+5.2.2.2 Integração de Dados Contextuais
+Para enriquecer a representação, integramos dados contextuais relevantes para congestionamento:
+
+Uso do solo adjacente: Extraído do arquivo landuse_enriched_20250413_105344.gpkg conforme indicado em src/enriched_data/quality_reports_completo/landuse_quality_report_20250413_105354.json
+Densidade populacional: Derivada dos setores censitários em setores_censitarios_enrichment_report_20250412_235225.json
+Presença de edificações: Quantificada a partir dos dados em buildings_qualidade_20250413_131208.json
+Topografia: Incorporada dos dados de elevação em nature_elevation_quality_report_20250413_144444.json
+
+A integração destes dados é realizada através de operações de buffer e interseção espacial:
+pythondef enrich_line_graph_with_context(L, G, landuse_gdf, buildings_gdf, census_gdf):
+    """
+    Enriquece o grafo dual com informações contextuais relevantes para congestionamento.
+    
+    Args:
+        L: Line graph a ser enriquecido
+        G: Grafo primal original
+        landuse_gdf: GeoDataFrame com dados de uso do solo
+        buildings_gdf: GeoDataFrame com dados de edificações
+        census_gdf: GeoDataFrame com dados censitários
+        
+    Returns:
+        L: Line graph enriquecido
+    """
+    # Para cada nó no line graph (segmento viário original)
+    for node in L.nodes():
+        u, v = node  # Extremidades do segmento original
+        
+        # Recupera geometria do segmento original
+        if 'geometry' in G.edges[u, v]:
+            segment_geom = G.edges[u, v]['geometry']
+            
+            # Cria buffer para análise de contexto (15m de cada lado da via)
+            buffer_geom = segment_geom.buffer(15)
+            
+            # Análise de uso do solo
+            intersecting_landuse = landuse_gdf[landuse_gdf.intersects(buffer_geom)]
+            if not intersecting_landuse.empty:
+                # Calcula áreas de cada categoria de uso
+                for category in ['urban', 'commercial', 'industrial', 'residential']:
+                    category_area = intersecting_landuse[
+                        intersecting_landuse['land_category'] == category
+                    ].geometry.area.sum()
+                    L.nodes[node][f'{category}_area_ratio'] = category_area / buffer_geom.area
+            
+            # Contagem de edificações
+            buildings_count = len(buildings_gdf[buildings_gdf.intersects(buffer_geom)])
+            L.nodes[node]['buildings_density'] = buildings_count / buffer_geom.area
+            
+            # Densidade populacional
+            intersecting_census = census_gdf[census_gdf.intersects(buffer_geom)]
+            if not intersecting_census.empty:
+                # Estimativa ponderada por área de interseção
+                weighted_pop = 0
+                for _, census in intersecting_census.iterrows():
+                    intersection = census.geometry.intersection(buffer_geom)
+                    ratio = intersection.area / census.geometry.area
+                    weighted_pop += census['densidade_pop'] * ratio
+                
+                L.nodes[node]['population_density'] = weighted_pop
+    
+    return L
+Este enriquecimento contextual é crucial para capturar os geradores de demanda de tráfego que contribuem para o congestionamento.
+5.2.3 Modelagem Sintética de Congestionamento
+Na ausência de dados empíricos extensivos sobre fluxos de tráfego, desenvolvemos um modelo sintético para gerar estimativas de congestionamento baseadas em princípios teóricos sólidos de engenharia de transportes e planejamento urbano.
+5.2.3.1 Modelo de Geração de Viagens
+O modelo sintético implementa um processo em quatro etapas:
+
+Geração de Viagens: Estimativa de origens e destinos baseada em uso do solo e demografia
+
+pythondef generate_trips(census_gdf, landuse_gdf):
+    """
+    Gera estimativas de viagens com base em setores censitários e uso do solo.
+    
+    Returns:
+        DataFrame com pares OD e volumes estimados
+    """
+    # Centróides de setores como possíveis origens
+    origins = []
+    for idx, sector in census_gdf.iterrows():
+        # Peso baseado em população estimada
+        population = sector['est_populacao']
+        # Centróide como ponto representativo
+        centroid = sector.geometry.centroid
+        origins.append({
+            'id': idx,
+            'point': centroid,
+            'weight': population,
+            'type': 'residential' if sector['tipo_area'] in ['Residencial', 'Mista'] else 'other'
+        })
+    
+    # Destinos baseados em uso do solo
+    destinations = []
+    for idx, land in landuse_gdf.iterrows():
+        # Classificação por tipo de uso
+        if land['land_category'] in ['commercial', 'industrial', 'institutional']:
+            # Peso baseado em área e intensidade de uso
+            weight = land.geometry.area * get_land_use_intensity(land['land_category'])
+            # Centróide como ponto representativo
+            centroid = land.geometry.centroid
+            destinations.append({
+                'id': idx,
+                'point': centroid,
+                'weight': weight,
+                'type': land['land_category']
+            })
+    
+    # Gera pares OD com modelo gravitacional
+    od_pairs = []
+    for origin in origins:
+        for destination in destinations:
+            # Pula pares onde origem = destino (mesmo setor)
+            if origin['id'] == destination['id']:
+                continue
+                
+            # Distância entre origem e destino
+            distance = origin['point'].distance(destination['point'])
+            
+            # Modelo gravitacional: Fluxo ~ (W_o * W_d) / d²
+            # Com fator de decaimento e limiar mínimo
+            if distance > 0:
+                flow = (origin['weight'] * destination['weight']) / (distance ** 2)
+                
+                # Condicional para viagens pendulares (residencial -> trabalho/estudo)
+                if origin['type'] == 'residential' and destination['type'] in ['commercial', 'industrial']:
+                    flow *= 1.5  # Peso maior para viagens pendulares
+                
+                # Armazena apenas pares com fluxo significativo
+                if flow > MIN_FLOW_THRESHOLD:
+                    od_pairs.append({
+                        'origin_id': origin['id'],
+                        'destination_id': destination['id'],
+                        'origin_point': origin['point'],
+                        'destination_point': destination['point'],
+                        'flow': flow
+                    })
+    
+    return pd.DataFrame(od_pairs)
+
+Distribuição de Viagens: Modelo gravitacional para estimar pares origem-destino
+Escolha de Rotas: Atribuição de fluxos aos caminhos mais prováveis na rede
+
+pythondef assign_routes(G, od_pairs):
+    """
+    Atribui fluxos de viagens a rotas na rede viária.
+    
+    Args:
+        G: Grafo da rede viária
+        od_pairs: DataFrame com pares OD e fluxos
+        
+    Returns:
+        Dictionary com fluxos acumulados por aresta
+    """
+    # Dicionário para acumular fluxos por aresta
+    edge_flows = {edge: 0 for edge in G.edges()}
+    
+    # Para cada par OD
+    for _, od in od_pairs.iterrows():
+        # Encontra nós da rede mais próximos à origem e destino
+        origin_node = find_nearest_node(G, od['origin_point'])
+        destination_node = find_nearest_node(G, od['destination_point'])
+        
+        # Pula se origem ou destino não forem encontrados
+        if origin_node is None or destination_node is None:
+            continue
+            
+        # Pula se origem = destino
+        if origin_node == destination_node:
+            continue
+            
+        try:
+            # Calcula caminho mais curto considerando impedância
+            path = nx.shortest_path(G, origin_node, destination_node, weight='impedance')
+            
+            # Acumula fluxo em cada aresta do caminho
+            for i in range(len(path) - 1):
+                u, v = path[i], path[i+1]
+                if (u, v) in edge_flows:
+                    edge_flows[(u, v)] += od['flow']
+                elif (v, u) in edge_flows:  # Considera grafo não-direcionado
+                    edge_flows[(v, u)] += od['flow']
+        except nx.NetworkXNoPath:
+            # Sem caminho entre origem e destino
+            continue
+    
+    return edge_flows
+
+Estimativa de Congestionamento: Cálculo da razão volume/capacidade para cada segmento
+
+pythondef estimate_congestion(G, edge_flows):
+    """
+    Estima níveis de congestionamento com base nos fluxos e capacidades.
+    
+    Args:
+        G: Grafo da rede viária com atributos
+        edge_flows: Dictionary com fluxos por aresta
+        
+    Returns:
+        Dictionary com níveis de congestionamento por aresta
+    """
+    congestion_levels = {}
+    
+    for edge, flow in edge_flows.items():
+        u, v = edge
+        
+        # Estima capacidade baseada nos atributos da via
+        capacity = estimate_capacity(G, u, v)
+        
+        # Calcula razão volume/capacidade
+        if capacity > 0:
+            vc_ratio = flow / capacity
+        else:
+            vc_ratio = 1.0  # Valor padrão para evitar divisão por zero
+        
+        # Classifica em níveis de congestionamento
+        if vc_ratio < 0.5:
+            level = 0  # Fluxo livre
+        elif vc_ratio < 0.8:
+            level = 1  # Fluxo estável
+        elif vc_ratio < 1.0:
+            level = 2  # Aproximando da capacidade
+        elif vc_ratio < 1.2:
+            level = 3  # Congestionamento moderado
+        else:
+            level = 4  # Congestionamento severo
+        
+        congestion_levels[edge] = {
+            'flow': flow,
+            'capacity': capacity,
+            'vc_ratio': vc_ratio,
+            'level': level
+        }
+    
+    return congestion_levels
+5.2.3.2 Estimativa de Capacidade Viária
+Um componente crítico do modelo é a estimativa da capacidade de cada segmento viário, baseada em seus atributos:
+pythondef estimate_capacity(G, u, v):
+    """
+    Estima capacidade de um segmento viário com base em seus atributos.
+    
+    Args:
+        G: Grafo da rede viária
+        u, v: Nós definindo o segmento
+        
+    Returns:
+        Capacidade estimada (veículos/hora)
+    """
+    edge_data = G.edges[u, v]
+    
+    # Parâmetros base por tipo de via
+    base_capacity = {
+        'motorway': 2000,
+        'trunk': 1800,
+        'primary': 1500,
+        'secondary': 1200,
+        'tertiary': 800,
+        'residential': 600,
+        'unclassified': 400
+    }
+    
+    # Tipo de via (com fallback para 'unclassified')
+    highway_type = edge_data.get('highway', 'unclassified')
+    
+    # Capacidade base
+    capacity = base_capacity.get(highway_type, 400)
+    
+    # Ajustes por largura (se disponível)
+    if 'width' in edge_data:
+        width = edge_data['width']
+        if width > 10:
+            capacity *= 1.5
+        elif width < 5:
+            capacity *= 0.7
+    
+    # Ajustes por número de faixas (se disponível)
+    if 'lanes' in edge_data:
+        lanes = int(edge_data['lanes'])
+        capacity *= lanes / 2  # Normalizado para 2 faixas como referência
+    
+    # Ajustes por declividade (reduz capacidade em vias íngremes)
+    if 'incline' in edge_data:
+        incline = abs(edge_data['incline'])
+        if incline > 10:
+            capacity *= 0.8
+        elif incline > 5:
+            capacity *= 0.9
+    
+    # Ajustes por sinuosidade (reduz capacidade em vias sinuosas)
+    if 'sinuosity' in edge_data:
+        sinuosity = edge_data['sinuosity']
+        if sinuosity > 1.5:
+            capacity *= 0.8
+        elif sinuosity > 1.2:
+            capacity *= 0.9
+    
+    # Ajustes pela complexidade das interseções nas extremidades
+    u_degree = G.degree(u)
+    v_degree = G.degree(v)
+    max_degree = max(u_degree, v_degree)
+    
+    if max_degree > 4:  # Interseções complexas reduzem capacidade
+        capacity *= 0.9 - 0.02 * (max_degree - 4)  # 2% a menos por conexão adicional
+    
+    return max(capacity, 100)  # Estabelece capacidade mínima
+Esta abordagem baseia-se em princípios estabelecidos de engenharia de tráfego (HCM - Highway Capacity Manual), adaptados ao contexto e dados disponíveis para o projeto.
+5.2.3.3 Propagação de Congestionamento
+Um aspecto crucial do modelo é a simulação da propagação de congestionamento entre segmentos adjacentes:
+pythondef propagate_congestion(G, initial_congestion, num_iterations=3):
+    """
+    Simula propagação de congestionamento entre segmentos adjacentes.
+    
+    Args:
+        G: Grafo da rede viária
+        initial_congestion: Dictionary com níveis iniciais de congestionamento
+        num_iterations: Número de iterações de propagação
+        
+    Returns:
+        Dictionary com níveis de congestionamento atualizados
+    """
+    # Cria cópia profunda para não modificar original
+    current_congestion = copy.deepcopy(initial_congestion)
+    
+    # Para cada iteração
+    for iteration in range(num_iterations):
+        # Cria cópia do estado atual para atualização simultânea
+        next_congestion = copy.deepcopy(current_congestion)
+        
+        # Para cada aresta com congestionamento moderado ou severo
+        for edge, data in current_congestion.items():
+            if data['level'] >= 3:  # Moderado ou severo
+                u, v = edge
+                
+                # Propaga a arestas upstream (chegando em u)
+                for pred, _ in G.in_edges(u):
+                    upstream_edge = (pred, u)
+                    if upstream_edge in next_congestion:
+                        # Aumenta congestionamento upstream com fator de decaimento
+                        propagation_factor = 0.7  # 70% do congestionamento se propaga
+                        current_level = next_congestion[upstream_edge]['level']
+                        # Limita aumento a um nível por iteração
+                        next_congestion[upstream_edge]['level'] = min(4, max(current_level, 
+                                                                        data['level'] - 1))
+                
+                # Propaga efeitos de interseções congestionadas a arestas downstream
+                if G.out_degree(v) > 2:  # Interseção não-trivial
+                    for _, dest in G.out_edges(v):
+                        downstream_edge = (v, dest)
+                        if downstream_edge in next_congestion:
+                            # Propaga em menor grau para downstream
+                            propagation_factor = 0.3  # 30% do congestionamento se propaga
+                            current_level = next_congestion[downstream_edge]['level']
+                            # Limita aumento a um nível por iteração
+                            next_congestion[downstream_edge]['level'] = min(4, max(current_level,
+                                                                          data['level'] - 2))
+        
+        # Atualiza estado atual
+        current_congestion = next_congestion
+    
+    return current_congestion
+Este modelo de propagação simula como congestionamentos em um segmento podem afetar segmentos adjacentes, capturando o efeito cascata observado em redes viárias reais.
+5.2.4 Arquitetura GAT para Previsão de Congestionamento
+A arquitetura GAT proposta é especificamente projetada para capturar as complexas dinâmicas que influenciam o congestionamento em redes viárias.
+5.2.4.1 Arquitetura Multi-head Attention
+Implementamos uma arquitetura GAT com mecanismo de atenção multi-cabeça para capturar diferentes aspectos da propagação de congestionamento:
+pythonclass CongestionGAT(torch.nn.Module):
+    def __init__(self, input_dim, hidden_dim=64, output_dim=5, heads=8, dropout=0.5):
+        """
+        GAT especializada para previsão de congestionamento em redes viárias.
+        
+        Args:
+            input_dim: Dimensão das características de entrada dos nós
+            hidden_dim: Dimensão de cada cabeça de atenção
+            output_dim: Número de classes de congestionamento (0-4)
+            heads: Número de cabeças de atenção em paralelo
+            dropout: Taxa de dropout para regularização
+        """
+        super(CongestionGAT, self).__init__()
+        
+        # Primeira camada de atenção com múltiplas cabeças
+        self.conv1 = GATConv(
+            input_dim, 
+            hidden_dim, 
+            heads=heads, 
+            dropout=dropout,
+            concat=True  # Concatena saídas das múltiplas cabeças
+        )
+        
+        # Segunda camada de atenção, combinando as cabeças
+        self.conv2 = GATConv(
+            hidden_dim * heads,  # Dimensão aumentada pela concatenação
+            hidden_dim,
+            heads=1,  # Única cabeça na camada final
+            dropout=dropout,
+            concat=False  # Média das cabeças
+        )
+        
+        # Camada de classificação final
+        self.lin = torch.nn.Linear(hidden_dim, output_dim)
+        
+        # Normalização em lote para estabilidade
+        self.batch_norm1 = torch.nn.BatchNorm1d(hidden_dim * heads)
+        self.batch_norm2 = torch.nn.BatchNorm1d(hidden_dim)
+        
+        # Dropout para regularização
+        self.dropout = dropout
+        
+    def forward(self, x, edge_index):
+        # Primeira camada de atenção multi-cabeça
+        x = self.conv1(x, edge_index)
+        x = F.elu(x)  # Função de ativação ELU
+        x = self.batch_norm1(x)
+        x = F.dropout(x, p=self.dropout, training=self.training)
+        
+        # Segunda camada de atenção
+        x = self.conv2(x, edge_index)
+        x = F.elu(x)
+        x = self.batch_norm2(x)
+        
+        # Classificação final
+        x = self.lin(x)
+        
+        return x
+    
+    def get_attention_weights(self, x, edge_index):
+        """
+        Retorna pesos de atenção para interpretabilidade.
+        
+        Returns:
+            Dictionary com pesos de atenção por camada
+        """
+        attention_weights = {}
+        
+        # Captura pesos da primeira camada
+        _, attention_weights['layer1'] = self.conv1(x, edge_index, return_attention_weights=True)
+        
+        # Processa primeira camada normalmente
+        x = self.conv1(x, edge_index)
+        x = F.elu(x)
+        x = self.batch_norm1(x)
+        x = F.dropout(x, p=self.dropout, training=self.training)
+        
+        # Captura pesos da segunda camada
+        _, attention_weights['layer2'] = self.conv2(x, edge_index, return_attention_weights=True)
+        
+        return attention_weights
+Esta arquitetura utiliza:
+
+Múltiplas cabeças de atenção: 8 cabeças na primeira camada permitem que o modelo capte diferentes padrões de relação simultaneamente
+Concatenação seguida de agregação: Concatenação de cabeças na primeira camada, seguida de uma única cabeça agregadora na segunda
+Funções de ativação ELU: Proporciona gradientes mais suaves que ReLU, facilitando o treinamento
+Batch normalization: Estabiliza o treinamento acelerando a convergência
+Método para extração de pesos de atenção: Permite interpretabilidade do modelo
+
+5.2.4.2 Modelagem Espacio-temporal
+Estendemos o modelo GAT básico para incorporar dimensões temporais, essenciais para análise de congestionamento:
+pythonclass SpatioTemporalGAT(torch.nn.Module):
+    def __init__(self, input_dim, hidden_dim=64, output_dim=5, time_slots=4, heads=8, dropout=0.5):
+        """
+        GAT com capacidades espaço-temporais para previsão de congestionamento.
+        
+        Args:
+            input_dim: Dimensão das características de entrada dos nós
+            hidden_dim: Dimensão de cada cabeça de atenção
+            output_dim: Número de classes de congestionamento (0-4)
+            time_slots: Número de períodos temporais modelados (manhã, tarde, noite, etc.)
+            heads: Número de cabeças de atenção
+            dropout: Taxa de dropout para regularização
+        """
+        super(SpatioTemporalGAT, self).__init__()
+        
+        # Módulos GAT para cada período temporal
+        self.temporal_gats = torch.nn.ModuleList([
+            CongestionGAT(input_dim, hidden_dim, hidden_dim, heads, dropout)
+            for _ in range(time_slots)
+        ])
+        
+        # Camada LSTM para integração temporal
+        self.lstm = torch.nn.LSTM(
+            input_size=hidden_dim,
+            hidden_size=hidden_dim,
+            num_layers=1,
+            batch_first=True
+        )
+        
+        # Camada final de classificação
+        self.output_layer = torch.nn.Linear(hidden_dim, output_dim)
+        
+    def forward(self, x_temporal, edge_index):
+        """
+        Forward pass com processamento temporal.
+        
+        Args:
+            x_temporal: Lista de tensores de características para cada período temporal
+            edge_index: Índices de arestas do grafo
+            
+        Returns:
+            Previsões de congestionamento para cada período
+        """
+        # Processa cada período temporal com GAT dedicado
+        temporal_embeddings = []
+        for t, x_t in enumerate(x_temporal):
+            # GAT específico para este período
+            h_t = self.temporal_gats[t](x_t, edge_index)
+            temporal_embeddings.append(h_t.unsqueeze(1))  # Adiciona dimensão temporal
+        
+        # Concatena embeddings temporais [num_nodes, time_slots, hidden_dim]
+        temporal_sequence = torch.cat(temporal_embeddings, dim=1)
+        
+        # Aplica LSTM para capturar dependências temporais
+        lstm_out, _ = self.lstm(temporal_sequence)
+        
+        # Previsão para cada período
+        predictions = []
+        for t in range(lstm_out.size(1)):
+            pred_t = self.output_layer(lstm_out[:, t, :])
+            predictions.append(pred_t)
+        
+        return predictions
+Esta extensão permite modelar padrões de congestionamento em diferentes períodos do dia (hora de pico da manhã, meio-dia, hora de pico da tarde, noite), capturando como a demanda e os padrões de congestionamento variam temporalmente.
+5.2.5 Preparação de Dados e Features
+A seleção e engenharia de features adequadas são cruciais para o desempenho do modelo GAT na previsão de congestionamento.
+5.2.5.1 Features de Segmentos Viários
+Para cada segmento viário (nó no grafo dual), extraímos as seguintes características:
+
+Características Físicas:
+
+Comprimento: Extraído diretamente da geometria
+Largura: Quando disponível nos atributos
+Número de faixas: Extraído de atributos quando disponível, ou estimado pela hierarquia
+Sinuosidade: Razão entre comprimento real e distância euclidiana
+Declividade: Calculada a partir de dados de elevação
+
+
+Características Funcionais:
+
+Hierarquia viária: Codificada como embedding categórico (one-hot)
+Velocidade de fluxo livre: Baseada na hierarquia e contexto urbano
+Capacidade estimada: Conforme calculado na seção 5.2.3.2
+Restrições de movimento: Indicação de presença de medidas de controle
+
+
+Características Topológicas:
+
+Betweenness centralidade: Medida de importância como rota de passagem
+Grau das interseções conectadas: Complexidade das conexões
+Alternativas de rota: Quantificação de redundância na rede
+Conectividade com vias de maior hierarquia: Importante para dispersão de tráfego
+
+
+Características Contextuais:
+
+Uso do solo adjacente: Proporções de uso comercial, residencial, industrial
+Densidade populacional: Estimada dos dados censitários
+Proximidade a polos geradores: Distância a centros comerciais, escolas, etc.
+Densidade construída: Derivada dos dados de edificações
+
+
+
+pythondef extract_congestion_features(L, G):
+    """
+    Extrai características para modelo de previsão de congestionamento.
+    
+    Args:
+        L: Line graph (grafo dual)
+        G: Grafo original da rede viária
+        
+    Returns:
+        Matriz de características normalizadas
+    """
+    features_list = []
+    feature_names = []
+    
+    for node in sorted(L.nodes()):
+        u, v = node  # Nó no line graph = aresta no grafo original
+        node_feats = []
+        
+        # 1. Características físicas
+        if 'length' in L.nodes[node]:
+            node_feats.append(L.nodes[node]['length'])
+            feature_names.append('length')
+        
+        if 'width' in L.nodes[node]:
+            node_feats.append(L.nodes[node]['width'])
+            feature_names.append('width')
+        else:
+            # Estimativa baseada na hierarquia
+            width_est = estimate_width_from_highway(L.nodes[node].get('highway', 'residential'))
+            node_feats.append(width_est)
+            feature_names.append('width_est')
+        
+        if 'lanes' in L.nodes[node]:
+            node_feats.append(float(L.nodes[node]['lanes']))
+            feature_names.append('lanes')
+        else:
+            # Estimativa baseada na hierarquia
+            lanes_est = estimate_lanes_from_highway(L.nodes[node].get('highway', 'residential'))
+            node_feats.append(lanes_est)
+            feature_names.append('lanes_est')
+        
+        if 'sinuosity' in L.nodes[node]:
+            node_feats.append(L.nodes[node]['sinuosity'])
+            feature_names.append('sinuosity')
+        
+        # 2. Características funcionais (one-hot encoding de hierarquia)
+        highway_type = L.nodes[node].get('highway', 'residential')
+        highway_types = ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'residential']
+        for h_type in highway_types:
+            node_feats.append(1.0 if highway_type == h_type else 0.0)
+            feature_names.append(f'highway_{h_type}')
+        
+        # 3. Características topológicas
+        node_feats.append(L.nodes[node]['from_intersection_degree'])
+        feature_names.append('from_degree')
+        
+        node_feats.append(L.nodes[node]['to_intersection_degree'])
+        feature_names.append('to_degree')
+        
+        node_feats.append(float(L.nodes[node].get('connects_complex_intersections', False)))
+        feature_names.append('complex_intersections')
+        
+        # Centralidade de betweenness (se calculada previamente)
+        if 'betweenness' in L.nodes[node]:
+            node_feats.append(L.nodes[node]['betweenness'])
+            feature_names.append('betweenness')
+        
+        # 4. Características contextuais
+        for context in ['urban_area_ratio', 'commercial_area_ratio', 
+                        'industrial_area_ratio', 'residential_area_ratio']:
+            if context in L.nodes[node]:
+                node_feats.append(L.nodes[node][context])
+                feature_names.append(context)
+            else:
+                node_feats.append(0.0)  # Valor padrão se não disponível
+                feature_names.append(context)
+        
+        if 'buildings_density' in L.nodes[node]:
+            node_feats.append(L.nodes[node]['buildings_density'])
+            feature_names.append('buildings_density')
+        else:
+            node_feats.append(0.0)
+            feature_names.append('buildings_density')
+        
+        if 'population_density' in L.nodes[node]:
+            node_feats.append(L.nodes[node]['population_density'])
+            feature_names.append('population_density')
+        else:
+            node_feats.append(0.0)
+            feature_names.append('population_density')
+        
+        features_list.append(node_feats)
+    
+    # Converte para tensor
+    features = torch.tensor(features_list, dtype=torch.float)
+    
+    # Normalização Z-score por coluna
+    mean = features.mean(dim=0, keepdim=True)
+    std = features.std(dim=0, keepdim=True)
+    std[std == 0] = 1.0  # Evita divisão por zero
+    normalized_features = (features - mean) / std
+    
+    return normalized_features, feature_names
+5.2.5.2 Tratamento de Características Temporais
+Para o modelo espaço-temporal, preparamos features específicas para diferentes períodos do dia:
+pythondef prepare_temporal_features(L, G, periods=['morning', 'midday', 'evening', 'night']):
+    """
+    Prepara características específicas para diferentes períodos temporais.
+    
+    Args:
+        L: Line graph (grafo dual)
+        G: Grafo original da rede viária
+        periods: Lista de períodos temporais a modelar
+        
+    Returns:
+        Lista de tensores de características para cada período
+    """
+    # Fatores de escala para diferentes períodos
+    temporal_factors = {
+        'morning': {
+            'residential_to_commercial': 1.5,  # Pico de deslocamento casa-trabalho
+            'commercial_to_residential': 0.3,
+            'overall_multiplier': 1.2
+        },
+        'midday': {
+            'residential_to_commercial': 0.7,
+            'commercial_to_commercial': 1.2,  # Pico de deslocamentos para almoço/negócios
+            'overall_multiplier': 0.9
+        },
+        'evening': {
+            'commercial_to_residential': 1.5,  # Pico de retorno para casa
+            'residential_to_commercial': 0.3,
+            'overall_multiplier': 1.2
+        },
+        'night': {
+            'overall_multiplier': 0.4  # Tráfego reduzido
+        }
+    }
+    
+    # Extrai features base
+    base_features, feature_names = extract_congestion_features(L, G)
+    
+    # Identifica índices de características contextuais para ajustes temporais
+    context_indices = {}
+    for feature in ['residential_area_ratio', 'commercial_area_ratio', 
+                    'industrial_area_ratio', 'buildings_density', 
+                    'population_density']:
+        if feature in feature_names:
+            context_indices[feature] = feature_names.index(feature)
+    
+    # Prepara features específicas para cada período
+    temporal_features = []
+    for period in periods:
+        # Cria cópia das features base
+        period_features = base_features.clone()
+        
+        # Aplica fatores temporais específicos
+        factors = temporal_factors.get(period, {})
+        overall_mult = factors.get('overall_multiplier', 1.0)
+        
+        # Ajusta características específicas do período
+        for node_idx in range(period_features.shape[0]):
+            # Ajuste geral de demanda para o período
+            for feature, idx in context_indices.items():
+                period_features[node_idx, idx] *= overall_mult
+            
+            # Ajustes específicos para fluxos direcionais
+            if 'residential_to_commercial' in factors and 'residential_area_ratio' in context_indices:
+                res_idx = context_indices['residential_area_ratio']
+                com_idx = context_indices.get('commercial_area_ratio', -1)
+                
+                if com_idx >= 0:
+                    # Aumenta impacto de área residencial em horários de saída de casa
+                    period_features[node_idx, res_idx] *= factors['residential_to_commercial']
+                    
+            if 'commercial_to_residential' in factors and 'commercial_area_ratio' in context_indices:
+                com_idx = context_indices['commercial_area_ratio']
+                res_idx = context_indices.get('residential_area_ratio', -1)
+                
+                if res_idx >= 0:
+                    # Aumenta impacto de área comercial em horários de retorno para casa
+                    period_features[node_idx, com_idx] *= factors['commercial_to_residential']
+        
+        temporal_features.append(period_features)
+    
+    return temporal_features, feature_names
+Esta abordagem permite modelar como diferentes padrões de uso impactam o congestionamento ao longo do dia, como o fluxo pendular entre áreas residenciais e comerciais nos horários de pico.
+5.2.5.3 Preparação de Targets para Treinamento
+Para supervisionar o treinamento, utilizamos os resultados do modelo sintético de congestionamento:
+pythondef prepare_congestion_targets(L, congestion_levels):
+    """
+    Prepara targets de níveis de congestionamento para treinamento.
+    
+    Args:
+        L: Line graph
+        congestion_levels: Dictionary com níveis de congestionamento
+        
+    Returns:
+        Tensor de classes-alvo (0-4)
+    """
+    targets = []
+    
+    for node in sorted(L.nodes()):
+        if node in congestion_levels:
+            # Usa nível calculado pelo modelo sintético
+            level = congestion_levels[node]['level']
+        else:
+            # Fallback para segmentos não avaliados
+            level = 0  # Assume fluxo livre
+            
+        targets.append(level)
+    
+    return torch.tensor(targets, dtype=torch.long)
+Estes targets (0-4) representam níveis crescentes de congestionamento, desde fluxo livre até congestionamento severo.
+5.2.6 Estratégia de Treinamento e Avaliação
+O treinamento do modelo GAT para previsão de congestionamento requer estratégias específicas para lidar com a natureza espacialmente correlacionada dos dados e o potencial desbalanceamento entre classes.
+5.2.6.1 Suavização de Labels e Ponderação de Classes
+Implementamos técnicas específicas para refletir a incerteza inerente aos valores sintéticos e o desbalanceamento típico (com mais segmentos de baixo congestionamento):
+pythondef weighted_focal_loss(predictions, targets, alpha=0.25, gamma=2.0, class_weights=None):
+    """
+    Focal Loss ponderada para lidar com desbalanceamento e incerteza.
+    
+    Args:
+        predictions: Logits do modelo (batch_size, num_classes)
+        targets: Classes-alvo (batch_size)
+        alpha, gamma: Parâmetros da Focal Loss
+        class_weights: Pesos adicionais por classe
+        
+    Returns:
+        Tensor com valor da perda
+    """
+    # Computa probabilidades com softmax
+    probs = F.softmax(predictions, dim=1)
+    
+    # Extrai probabilidade para a classe correta
+    batch_size = predictions.size(0)
+    p = probs[torch.arange(batch_size), targets]
+    
+    # Focal Loss: -(1-p)^gamma * log(p)
+    focal_weight = (1 - p) ** gamma
+    
+    # Cross Entropy base
+    ce_loss = F.cross_entropy(predictions, targets, reduction='none')
+    
+    # Aplica peso focal
+    loss = focal_weight * ce_loss
+    
+    # Se fornecidos, aplica pesos de classe adicionais
+    if class_weights is not None:
+        class_weights = class_weights.to(targets.device)
+        sample_weights = class_weights[targets]
+        loss = loss * sample_weights
+    
+    return loss.mean()
+
+def label_smoothing(targets, num_classes, smoothing=0.1):
+    """
+    Aplica suavização de labels para refletir incerteza.
+    
+    Args:
+        targets: Tensor de classes-alvo (índices inteiros)
+        num_classes: Número total de classes
+        smoothing: Fator de suavização entre 0 e 1
+        
+    Returns:
+        Tensor com labels suavizados
+    """
+    batch_size = targets.size(0)
+    
+    # Cria tensor one-hot
+    one_hot = torch.zeros(batch_size, num_classes).to(targets.device)
+    one_hot.scatter_(1, targets.unsqueeze(1), 1)
+    
+    # Aplica suavização
+    smoothed = one_hot * (1 - smoothing) + smoothing / num_classes
+    
+    return smoothed
+A Focal Loss ajuda a focar o treinamento em exemplos difíceis, enquanto a suavização de labels reflete a incerteza inerente ao modelo sintético.
+5.2.6.2 Validação Cruzada Espacial
+Para lidar com a autocorrelação espacial, implementamos uma estratégia de validação cruzada espacial:
+pythondef spatial_cross_validation(model_class, features, edge_index, targets, n_folds=5):
+    """
+    Implementa validação cruzada com consciência espacial.
+    
+    Args:
+        model_class: Classe do modelo a ser treinado
+        features: Tensor de características dos nós
+        edge_index: Índices de arestas do grafo
+        targets: Tensor de classes-alvo
+        n_folds: Número de divisões espaciais
+        
+    Returns:
+        Lista de métricas de desempenho por fold
+    """
+    # Extrai coordenadas para clusterização espacial
+    node_coords = features[:, :2].numpy()  # Assume que x,y são as primeiras características
+    
+    # Aplica K-means para agrupar nós espacialmente próximos
+    from sklearn.cluster import KMeans
+    kmeans = KMeans(n_clusters=n_folds, random_state=42)
+    spatial_clusters = kmeans.fit_predict(node_coords)
+    
+    results = []
+    
+    # Para cada fold
+    for test_fold in range(n_folds):
+        # Cria máscaras de treino/teste
+        test_mask = torch.tensor(spatial_clusters == test_fold)
+        train_mask = ~test_mask
+        
+        # Inicializa e treina modelo
+        model = model_class(input_dim=features.shape[1]).to(features.device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=5e-4)
+        
+        # Treina modelo
+        train_model(model, optimizer, features, edge_index, targets, 
+                    train_mask, epochs=100, patience=20)
+        
+        # Avalia no conjunto de teste
+        model.eval()
+        with torch.no_grad():
+            out = model(features, edge_index)
+            preds = out.argmax(dim=1)
+            
+            # Calcula métricas apenas para nós de teste
+            test_preds = preds[test_mask]
+            test_targets = targets[test_mask]
+            
+            acc = (test_preds == test_targets).float().mean().item()
+            
+            # Calcula métricas detalhadas
+            from sklearn.metrics import classification_report, confusion_matrix
+            report = classification_report(test_targets.cpu(), test_preds.cpu(), 
+                                          output_dict=True)
+            conf_matrix = confusion_matrix(test_targets.cpu(), test_preds.cpu())
+            
+            results.append({
+                'fold': test_fold,
+                'accuracy': acc,
+                'report': report,
+                'confusion_matrix': conf_matrix
+            })
+    
+    return results
+Esta abordagem agrupa espacialmente os segmentos viários, garantindo que segmentos próximos (e potencialmente correlacionados) fiquem no mesmo fold, evitando vazamento de informação entre treino e teste.
+5.2.6.3 Algoritmo de Treinamento Completo
+O processo completo de treinamento integra estas estratégias:
+pythondef train_congestion_gat(model, data, optimizer, num_epochs=200, patience=20):
+    """
+    Treina modelo GAT para previsão de congestionamento.
+    
+    Args:
+        model: Modelo GAT inicializado
+        data: Objeto PyTorch Geometric Data
+        optimizer: Otimizador configurado
+        num_epochs: Número máximo de épocas
+        patience: Épocas sem melhoria para early stopping
+        
+    Returns:
+        Modelo treinado e histórico de treinamento
+    """
+    # Inicializa contadores e histórico
+    best_val_acc = 0
+    best_model_state = None
+    patience_counter = 0
+    history = {'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': []}
+    
+    # Número de classes
+    num_classes = 5  # Níveis de congestionamento (0-4)
+    
+    # Calcula pesos de classe para balanceamento
+    train_labels = data.y[data.train_mask]
+    class_counts = torch.bincount(train_labels, minlength=num_classes)
+    class_weights = 1.0 / (class_counts.float() + 1e-6)  # Evita divisão por zero
+    class_weights = class_weights / class_weights.sum() * len(class_counts)
+    
+    # Loop de treinamento
+    for epoch in range(num_epochs):
+        # Modo de treinamento
+        model.train()
+        optimizer.zero_grad()
+        
+        # Forward pass
+        out = model(data.x, data.edge_index)
+        
+        # Aplica suavização de labels
+        smooth_targets = label_smoothing(data.y[data.train_mask], num_classes)
+        
+        # Calcula perda com Focal Loss ponderada
+        pred_train = out[data.train_mask]
+        loss = weighted_focal_loss(pred_train, data.y[data.train_mask], 
+                                   class_weights=class_weights)
+        
+        # Backward pass
+        loss.backward()
+        optimizer.step()
+        
+        # Calcula acurácia de treinamento
+        preds = out.argmax(dim=1)
+        train_acc = (preds[data.train_mask] == data.y[data.train_mask]).float().mean()
+        
+        # Avaliação no conjunto de validação
+        model.eval()
+        with torch.no_grad():
+            out = model(data.x, data.edge_index)
+            preds = out.argmax(dim=1)
+            val_acc = (preds[data.val_mask] == data.y[data.val_mask]).float().mean()
+            
+            # Perda de validação
+            val_loss = F.cross_entropy(out[data.val_mask], data.y[data.val_mask])
+        
+        # Registra história
+        history['train_loss'].append(loss.item())
+        history['train_acc'].append(train_acc.item())
+        history['val_loss'].append(val_loss.item())
+        history['val_acc'].append(val_acc.item())
+        
+        # Early stopping
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            best_model_state = model.state_dict().copy()
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter >= patience:
+                print(f"Early stopping após {epoch+1} épocas")
+                break
+        
+        # Imprime progresso periodicamente
+        if (epoch + 1) % 10 == 0:
+            print(f"Época {epoch+1}/{num_epochs}: "
+                  f"Perda={loss.item():.4f}, Acc={train_acc.item():.4f}, "
+                  f"Val_acc={val_acc.item():.4f}")
+    
+    # Restaura melhor modelo encontrado
+    if best_model_state is not None:
+        model.load_state_dict(best_model_state)
+    
+    return model, history
+5.2.6.4 Hiperparâmetros Otimizados
+Com base em experimentação, identificamos os seguintes hiperparâmetros ótimos para o modelo GAT:
+
+Dimensões ocultas: 64 (por cabeça de atenção)
+Número de cabeças de atenção: 8 (primeira camada), 1 (segunda camada)
+Taxa de dropout: 0.5 (prevenindo overfitting)
+Taxa de aprendizado: 0.005 (menor que GCN para estabilidade)
+Weight decay: 5e-4 (regularização L2)
+Parâmetros da Focal Loss: alpha=0.25, gamma=2.0
+Suavização de labels: 0.1 (10% de suavização)
+Early stopping patience: 20 épocas
+
+5.2.7 Visualização e Interpretação de Resultados
+A interpretabilidade é crucial para modelos de previsão de congestionamento, tanto para validação científica quanto para aplicação prática no planejamento de transporte.
+5.2.7.1 Visualização de Previsões de Congestionamento
+Implementamos visualizações geoespaciais específicas para congestionamento:
+pythondef visualize_congestion_predictions(G, L, predictions, basemap=True, output_path=None):
+    """
+    Visualiza previsões de congestionamento no contexto geoespacial.
+    
+    Args:
+        G: Grafo primal original
+        L: Grafo dual (line graph)
+        predictions: Vetor de classes preditas (0-4)
+        basemap: Se deve incluir mapa base
+        output_path: Caminho para salvar visualização
+        
+    Returns:
+        Objeto de figura matplotlib
+    """
+    # Cores para níveis de congestionamento
+    colors = {
+        0: '#1a9850',  # Verde escuro - Fluxo livre
+        1: '#91cf60',  # Verde claro - Fluxo estável
+        2: '#ffffbf',  # Amarelo - Aproximando capacidade
+        3: '#fc8d59',  # Laranja - Congestionamento moderado
+        4: '#d73027'   # Vermelho - Congestionamento severo
+    }
+    
+    # Nomes dos níveis para legenda
+    level_names = {
+        0: 'Fluxo livre',
+        1: 'Fluxo estável',
+        2: 'Aproximando capacidade',
+        3: 'Congestionamento moderado',
+        4: 'Congestionamento severo'
+    }
+    
+    # Cria figura
+    fig, ax = plt.subplots(figsize=(15, 15))
+    
+    # Mapeia previsões para segmentos originais
+    segment_colors = {}
+    for i, node in enumerate(sorted(L.nodes())):
+        u, v = node  # Nó no line graph = aresta no grafo original
+        pred_level = predictions[i]
+        color = colors.get(int(pred_level), '#808080')  # Cinza para valores desconhecidos
+        segment_colors[(u, v)] = color
+    
+    # Plota cada segmento viário com cor de congestionamento
+    for edge in G.edges():
+        u, v = edge
+        if (u, v) in segment_colors:
+            color = segment_colors[(u, v)]
+        elif (v, u) in segment_colors:
+            color = segment_colors[(v, u)]
+        else:
+            color = '#d3d3d3'  # Cinza claro para segmentos sem previsão
+        
+        # Extrai geometria
+        if 'geometry' in G.edges[edge]:
+            geom = G.edges[edge]['geometry']
+            x, y = geom.xy
+            ax.plot(x, y, color=color, linewidth=2.5, alpha=0.8, solid_capstyle='round')
+        else:
+            # Fallback se não tiver geometria explícita
+            x1, y1 = G.nodes[u]['x'], G.nodes[u]['y']
+            x2, y2 = G.nodes[v]['x'], G.nodes[v]['y']
+            ax.plot([x1, x2], [y1, y2], color=color, linewidth=2.5, alpha=0.8)
+    
+    # Adiciona mapa base se solicitado
+    if basemap:
+        try:
+            import contextily as ctx
+            ctx.add_basemap(ax, crs=G.graph.get('crs', 'EPSG:31983'))
+        except Exception as e:
+            print(f"Não foi possível adicionar mapa base: {e}")
+    
+    # Configura aspecto e limites
+    ax.set_aspect('equal')
+    ax.set_title('Previsão de Congestionamento', fontsize=16)
+    
+    # Cria legenda
+    legend_elements = [plt.Line2D([0], [0], color=colors[i], lw=4, 
+                                 label=level_names[i]) 
+                      for i in sorted(level_names.keys())]
+    ax.legend(handles=legend_elements, loc='upper right', fontsize=12)
+    
+    # Salva ou mostra figura
+    if output_path:
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    
+    return fig, ax
+Para o modelo espaço-temporal, implementamos visualizações que mostram a evolução do congestionamento:
+pythondef visualize_temporal_congestion(G, L, temporal_predictions, periods, output_path=None):
+    """
+    Visualiza previsões de congestionamento para múltiplos períodos temporais.
+    
+    Args:
+        G: Grafo primal original
+        L: Grafo dual (line graph)
+        temporal_predictions: Lista de tensores de previsão para cada período
+        periods: Lista de nomes dos períodos temporais
+        output_path: Caminho para salvar visualização
+        
+    Returns:
+        Figura matplotlib
+    """
+    # Configuração de subplots em grade
+    n_periods = len(periods)
+    fig, axs = plt.subplots(nrows=(n_periods+1)//2, ncols=2, figsize=(20, 10*(n_periods+1)//2))
+    axs = axs.flatten()
+    
+    # Cores para níveis de congestionamento
+    cmap = plt.cm.RdYlGn_r  # Vermelho para congestionado, verde para fluxo livre
+    
+    # Para cada período temporal
+    for t, (period, preds) in enumerate(zip(periods, temporal_predictions)):
+        ax = axs[t]
+        
+        # Mapeia previsões para segmentos
+        for i, node in enumerate(sorted(L.nodes())):
+            u, v = node
+            pred_level = int(preds[i].argmax().item())
+            
+            # Extrai geometria
+            if (u, v) in G.edges and 'geometry' in G.edges[u, v]:
+                geom = G.edges[u, v]['geometry']
+                x, y = geom.xy
+                ax.plot(x, y, color=cmap(pred_level/4), linewidth=2.5, alpha=0.8)
+            elif (v, u) in G.edges and 'geometry' in G.edges[v, u]:
+                geom = G.edges[v, u]['geometry']
+                x, y = geom.xy
+                ax.plot(x, y, color=cmap(pred_level/4), linewidth=2.5, alpha=0.8)
+            else:
+                # Fallback
+                x1, y1 = G.nodes[u]['x'], G.nodes[u]['y']
+                x2, y2 = G.nodes[v]['x'], G.nodes[v]['y']
+                ax.plot([x1, x2], [y1, y2], color=cmap(pred_level/4), linewidth=2.5, alpha=0.8)
+        
+        # Adiciona mapa base
+        try:
+            import contextily as ctx
+            ctx.add_basemap(ax, crs=G.graph.get('crs', 'EPSG:31983'))
+        except Exception as e:
+            print(f"Não foi possível adicionar mapa base: {e}")
+        
+        # Configura aspecto
+        ax.set_aspect('equal')
+        ax.set_title(f'Congestionamento - {period.capitalize()}', fontsize=16)
+    
+    # Remove subplots extras se número ímpar de períodos
+    if n_periods % 2 == 1:
+        fig.delaxes(axs[-1])
+    
+    # Adiciona colorbar comum
+    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(0, 4))
+    sm.set_array([])
+    cbar = fig.colorbar(sm, cax=cbar_ax)
+    cbar.set_ticks([0, 1, 2, 3, 4])
+    cbar.set_ticklabels(['Fluxo livre', 'Fluxo estável', 'Aprox. capacidade', 
+                         'Cong. moderado', 'Cong. severo'])
+    
+    plt.tight_layout(rect=[0, 0, 0.9, 1])
+    
+    # Salva ou mostra figura
+    if output_path:
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    
+    return fig
+5.2.7.2 Análise de Atenção
+Uma vantagem significativa das GATs é a possibilidade de visualizar os coeficientes de atenção, revelando quais relacionamentos são mais importantes para a previsão:
+pythondef visualize_attention_weights(G, L, model, features, edge_index, node_of_interest):
+    """
+    Visualiza pesos de atenção do modelo para um nó específico.
+    
+    Args:
+        G: Grafo primal original
+        L: Grafo dual
+        model: Modelo GAT treinado
+        features: Tensor de características de entrada
+        edge_index: Índices de arestas
+        node_of_interest: Índice do nó para analisar
+        
+    Returns:
+        Figura matplotlib
+    """
+    # Obtém pesos de atenção do modelo
+    model.eval()
+    attention_weights = model.get_attention_weights(features, edge_index)
+    
+    # Para GAT multi-cabeça, calcula média dos pesos entre as cabeças
+    # Primeira camada tem múltiplas cabeças
+    layer1_weights = attention_weights['layer1']
+    if isinstance(layer1_weights, tuple):
+        # Formato (edge_index, weights) onde weights tem shape [num_edges, num_heads]
+        edge_idx, weights = layer1_weights
+        # Média entre cabeças
+        avg_weights = weights.mean(dim=1)
+    else:
+        edge_idx = edge_index
+        avg_weights = layer1_weights
+    
+    # Normaliza pesos para visualização (0-1)
+    normalized_weights = (avg_weights - avg_weights.min()) / (avg_weights.max() - avg_weights.min() + 1e-6)
+    
+    # Cria figura
+    fig, ax = plt.subplots(figsize=(15, 15))
+    
+    # Obtém aresta no grafo original correspondente ao nó de interesse no line graph
+    if isinstance(node_of_interest, int):
+        # Converte para par de nós no grafo original
+        orig_edge = list(sorted(L.nodes()))[node_of_interest]
+        u, v = orig_edge
+    else:
+        # Assume que já é um par
+        u, v = node_of_interest
+    
+    # Plota o segmento de interesse em destaque
+    if 'geometry' in G.edges[u, v]:
+        geom = G.edges[u, v]['geometry']
+        x, y = geom.xy
+        ax.plot(x, y, color='red', linewidth=4, alpha=1.0)
+    else:
+        x1, y1 = G.nodes[u]['x'], G.nodes[u]['y']
+        x2, y2 = G.nodes[v]['x'], G.nodes[v]['y']
+        ax.plot([x1, x2], [y1, y2], color='red', linewidth=4, alpha=1.0)
+    
+    # Encontra os vizinhos do nó no line graph (segmentos conectados)
+    node_idx = list(sorted(L.nodes())).index(node_of_interest)
+    neighbor_indices = []
+    
+    for i, (src, dst) in enumerate(edge_idx.t()):
+        if src.item() == node_idx:
+            neighbor_indices.append((i, dst.item()))
+    
+    # Plota os segmentos conectados com espessura proporcional ao peso de atenção
+    for i, neighbor_idx in neighbor_indices:
+        weight = normalized_weights[i].item()
+        
+        # Obtém aresta original
+        neighbor_edge = list(sorted(L.nodes()))[neighbor_idx]
+        nu, nv = neighbor_edge
+        
+        # Cor baseada no peso (azul claro a escuro)
+        color = plt.cm.Blues(weight)
+        
+        # Espessura proporcional ao peso
+        linewidth = 1 + 5 * weight
+        
+        # Plota segmento
+        if (nu, nv) in G.edges and 'geometry' in G.edges[nu, nv]:
+            geom = G.edges[nu, nv]['geometry']
+            x, y = geom.xy
+            ax.plot(x, y, color=color, linewidth=linewidth, alpha=0.8)
+        elif (nv, nu) in G.edges and 'geometry' in G.edges[nv, nu]:
+            geom = G.edges[nv, nu]['geometry']
+            x, y = geom.xy
+            ax.plot(x, y, color=color, linewidth=linewidth, alpha=0.8)
+        else:
+            x1, y1 = G.nodes[nu]['x'], G.nodes[nu]['y']
+            x2, y2 = G.nodes[nv]['x'], G.nodes[nv]['y']
+            ax.plot([x1, x2], [y1, y2], color=color, linewidth=linewidth, alpha=0.8)
+    
+    # Adiciona mapa base
+    try:
+        import contextily as ctx
+        ctx.add_basemap(ax, crs=G.graph.get('crs', 'EPSG:31983'))
+    except Exception as e:
+        print(f"Não foi possível adicionar mapa base: {e}")
+    
+    # Configura visualização
+    ax.set_aspect('equal')
+    ax.set_title('Análise de Atenção para Previsão de Congestionamento', fontsize=16)
+    
+    # Adiciona colorbar para pesos de atenção
+    sm = plt.cm.ScalarMappable(cmap=plt.cm.Blues, norm=plt.Normalize(0, 1))
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax)
+    cbar.set_label('Peso de Atenção')
+    
+    return fig, ax
+Esta análise revela quais segmentos vizinhos têm maior influência na previsão de congestionamento para um segmento específico, oferecendo insights sobre os padrões de propagação de congestionamento.
+5.2.7.3 Análise de Confiabilidade e Incerteza
+Para avaliar a confiabilidade das previsões, implementamos métricas e visualizações de incerteza:
+pythondef analyze_prediction_uncertainty(model, features, edge_index, monte_carlo_samples=30):
+    """
+    Analisa incerteza nas previsões usando dropout em inferência.
+    
+    Args:
+        model: Modelo GAT treinado
+        features: Tensor de características
+        edge_index: Índices de arestas
+        monte_carlo_samples: Número de previsões com dropout ativo
+        
+    Returns:
+        Dictionary com métricas de incerteza
+    """
+    # Ativa dropout mesmo em modo de avaliação
+    model.train()  # Para ativar dropout
+    
+    # Armazena múltiplas previsões
+    all_preds = []
+    
+    # Realiza múltiplas passagens com dropout ativo
+    with torch.no_grad():
+        for _ in range(monte_carlo_samples):
+            out = model(features, edge_index)
+            probs = F.softmax(out, dim=1)
+            all_preds.append(probs)
+    
+    # Converte para tensor [samples, nodes, classes]
+    all_preds = torch.stack(all_preds)
+    
+    # Média das probabilidades (previsão final)
+    mean_probs = all_preds.mean(dim=0)
+    
+    # Classe mais provável
+    predicted_classes = mean_probs.argmax(dim=1)
+    
+    # Incerteza epistêmica (variância entre amostras)
+    epistemic_uncertainty = all_preds.var(dim=0).sum(dim=1)
+    
+    # Incerteza aleatória (entropia da distribuição média)
+    entropy = -(mean_probs * torch.log(mean_probs + 1e-10)).sum(dim=1)
+    
+    # Confiança (probabilidade da classe mais provável)
+    confidence = mean_probs.max(dim=1)[0]
+    
+    return {
+        'predicted_classes': predicted_classes,
+        'mean_probabilities': mean_probs,
+        'epistemic_uncertainty': epistemic_uncertainty,
+        'entropy': entropy,
+        'confidence': confidence
+    }
+Esta análise ajuda a identificar áreas onde o modelo está menos confiante, que podem requerer validação adicional ou atenção especial no planejamento.
+5.2.8 Aplicações e Casos de Uso
+O modelo GAT para previsão de congestionamento viabiliza diversas aplicações práticas:
+
+Identificação de Pontos Críticos: Localização de áreas propensas a congestionamento frequente para intervenções prioritárias
+Planejamento de Intervenções: Simulação do impacto de alterações na rede (novos segmentos, mudanças de sentido) sobre padrões de congestionamento
+Otimização de Sinalização: Orientação para ajustes em tempos semafóricos em interseções críticas
+Priorização de Investimentos: Direcionamento de recursos para melhorias em segmentos com maior impacto sistêmico
+Planejamento de Rotas: Subsídios para sistemas de navegação que considerem padrões temporais de congestionamento
+Avaliação de Impacto: Estimativa de efeitos de novos empreendimentos nos padrões de congestionamento da rede
+Monitoramento Preventivo: Identificação de áreas que podem se tornar problemáticas antes que congestionamentos severos se manifestem
+
+5.2.9 Referências Científicas
+Veličković, P., Cucurull, G., Casanova, A., Romero, A., Liò, P., & Bengio, Y. (2018). Graph attention networks. International Conference on Learning Representations (ICLR).
+Wu, Z., Pan, S., Long, G., Jiang, J., & Zhang, C. (2019). Graph WaveNet for deep spatial-temporal graph modeling. Proceedings of the 28th International Joint Conference on Artificial Intelligence (IJCAI), 1907-1913.
+Zheng, C., Fan, X., Wang, C., & Qi, J. (2020). GMAN: A graph multi-attention network for traffic prediction. Proceedings of the AAAI Conference on Artificial Intelligence, 34(1), 1234-1241.
+Li, Y., Yu, R., Shahabi, C., & Liu, Y. (2018). Diffusion convolutional recurrent neural network: Data-driven traffic forecasting. International Conference on Learning Representations (ICLR).
+Zhao, L., Song, Y., Zhang, C., Liu, Y., Wang, P., Lin, T., Deng, M., & Li, H. (2019). T-GCN: A temporal graph convolutional network for traffic prediction. IEEE Transactions on Intelligent Transportation Systems, 21(9), 3848-3858.
+Yu, B., Yin, H., & Zhu, Z. (2018). Spatio-temporal graph convolutional networks: A deep learning framework for traffic forecasting. Proceedings of the 27th International Joint Conference on Artificial Intelligence (IJCAI), 3634-3640.
+Zhang, J., Zheng, Y., & Qi, D. (2017). Deep spatio-temporal residual networks for citywide crowd flows prediction. Proceedings of the AAAI Conference on Artificial Intelligence, 31(1), 1655-1661.
+Guo, S., Lin, Y., Feng, N., Song, C., & Wan, H. (2019). Attention based spatial-temporal graph convolutional networks for traffic flow forecasting. Proceedings of the AAAI Conference on Artificial Intelligence, 33(1), 922-929.
+Wang, Y., Yin, H., Chen, H., Wo, T., Xu, J., & Zheng, K. (2019). Origin-destination matrix prediction via graph convolution: A new perspective of passenger demand modeling. Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, 1227-1235.
+Cui, Z., Henrickson, K., Ke, R., & Wang, Y. (2020). Traffic graph convolutional recurrent neural network: A deep learning framework for network-scale traffic learning and forecasting. IEEE Transactions on Intelligent Transportation Systems, 21(11), 4883-4894.

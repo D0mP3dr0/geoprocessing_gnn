@@ -882,17 +882,17 @@ def generate_improved_visualizations(gdf):
                 'Íngreme': '#fc8d59',
                 'Muito íngreme': '#d73027'
             }
-            
-            # Criar gráfico de barras
+        
+        # Criar gráfico de barras
             bars = ax4.bar(slope_distribution.index, slope_distribution.values,
                           color=[slope_colors.get(cat, '#808080') for cat in slope_distribution.index])
-            
-            # Adicionar valores acima das barras
-            for i, bar in enumerate(bars):
+        
+        # Adicionar valores acima das barras
+        for i, bar in enumerate(bars):
                 ax4.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.5,
                         f'{slope_distribution.values[i]}',
-                        ha='center', va='bottom', fontsize=10)
-            
+                    ha='center', va='bottom', fontsize=10)
+        
             ax4.set_ylabel('Número de Polígonos', fontsize=12)
             ax4.set_title('Distribuição de Classes de Declividade', fontsize=16, fontweight='bold')
             ax4.set_xticklabels(slope_distribution.index, rotation=45, ha='right')
@@ -957,12 +957,12 @@ def generate_improved_visualizations(gdf):
                                   for cat, color in land_colors.items() if cat in gdf['land_category'].unique()]
                 
                 ax.legend(handles=legend_elements, title='Categoria', loc='upper right')
-                
-                # Salvar figura
+            
+            # Salvar figura
                 elevation_3d_path = os.path.join(VISUALIZATION_DIR, 'landuse_elevation_3d.png')
                 plt.savefig(elevation_3d_path, dpi=300, bbox_inches='tight')
-                plt.close()
-                
+            plt.close()
+            
                 viz_paths['elevation_3d'] = elevation_3d_path
                 
             except ImportError as e:
@@ -1005,7 +1005,7 @@ def generate_improved_visualizations(gdf):
             category_layer = folium.FeatureGroup(name=f"Uso do Solo: {category}")
             
             # Adicionar GeoJSON para a categoria
-            folium.GeoJson(
+        folium.GeoJson(
                 subset.__geo_interface__,
                 style_function=lambda x, cat=category: {
                     'fillColor': land_colors.get(cat, '#808080'),
@@ -1013,16 +1013,16 @@ def generate_improved_visualizations(gdf):
                     'weight': 1,
                     'fillOpacity': 0.7
                 },
-                tooltip=folium.GeoJsonTooltip(
-                    fields=['land_category', 'area_km2'],
-                    aliases=['Categoria', 'Área (km²)'],
-                    localize=True
-                ),
-                popup=folium.GeoJsonPopup(
-                    fields=['land_category', 'area_km2', 'elevation_mean', 'slope_mean'],
-                    aliases=['Categoria', 'Área (km²)', 'Elevação Média (m)', 'Declividade Média (°)'],
-                    localize=True
-                )
+            tooltip=folium.GeoJsonTooltip(
+                fields=['land_category', 'area_km2'],
+                aliases=['Categoria', 'Área (km²)'],
+                localize=True
+            ),
+            popup=folium.GeoJsonPopup(
+                fields=['land_category', 'area_km2', 'elevation_mean', 'slope_mean'],
+                aliases=['Categoria', 'Área (km²)', 'Elevação Média (m)', 'Declividade Média (°)'],
+                localize=True
+            )
             ).add_to(category_layer)
             
             category_layer.add_to(m)

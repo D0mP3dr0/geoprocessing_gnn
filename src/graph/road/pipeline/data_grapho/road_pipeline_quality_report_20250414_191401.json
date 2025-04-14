@@ -1,0 +1,212 @@
+{
+  "report_type": "road_preprocessing_graph_quality",
+  "report_date": "2025-04-14T19:18:01.026320",
+  "timestamp_run": "20250414_191401",
+  "input_file": "/content/drive/MyDrive/geoprocessamento_gnn/data/roads_enriched_20250412_230707.gpkg",
+  "output_geopackage": "/content/drive/MyDrive/geoprocessamento_gnn/data/roads_processed_20250414_191401.gpkg",
+  "output_pytorch_geometric_data": "/content/drive/MyDrive/geoprocessamento_gnn/data/road_graph_pyg_20250414_191401.pt",
+  "pipeline_duration_seconds": 239.36,
+  "environment": {
+    "in_colab": true,
+    "python_version": "3.11.12 (main, Apr  9 2025, 08:55:54) [GCC 11.4.0]",
+    "geopandas_version": "0.13.2",
+    "networkx_version": "3.1",
+    "torch_version": "2.0.1+cu118",
+    "torch_geometric_version": "2.3.1",
+    "fiona_available": true,
+    "numpy_version": "1.24.3",
+    "pandas_version": "2.2.2"
+  },
+  "geospatial_processing": {
+    "initial_feature_count": 13328,
+    "final_feature_count": 13347,
+    "feature_retention_ratio": 1.0014,
+    "initial_columns": [
+      "osm_id",
+      "name",
+      "highway",
+      "waterway",
+      "aerialway",
+      "barrier",
+      "man_made",
+      "railway",
+      "z_order",
+      "other_tags",
+      "length_km",
+      "sinuosity",
+      "road_class",
+      "connectivity",
+      "elevation_min",
+      "elevation_max",
+      "elevation_mean",
+      "elevation_range",
+      "slope_pct",
+      "slope_deg",
+      "slope_class",
+      "geometry"
+    ],
+    "final_columns": [
+      "osm_id",
+      "name",
+      "highway",
+      "waterway",
+      "aerialway",
+      "barrier",
+      "man_made",
+      "railway",
+      "z_order",
+      "other_tags",
+      "length_km",
+      "sinuosity",
+      "road_class",
+      "connectivity",
+      "elevation_min",
+      "elevation_max",
+      "elevation_mean",
+      "elevation_range",
+      "slope_pct",
+      "slope_deg",
+      "slope_class",
+      "geometry",
+      "road_category",
+      "length_m",
+      "edge_id",
+      "curvature",
+      "point_density",
+      "bearing",
+      "length_category",
+      "sinuosity_category",
+      "slope_category"
+    ],
+    "added_columns": [
+      "bearing",
+      "curvature",
+      "edge_id",
+      "length_category",
+      "length_m",
+      "point_density",
+      "road_category",
+      "sinuosity_category",
+      "slope_category"
+    ],
+    "removed_columns": [],
+    "initial_geom_types": {
+      "MultiLineString": 13328
+    },
+    "final_geom_types": {
+      "LineString": 13347
+    },
+    "final_crs": "EPSG:31983",
+    "final_total_bounds": [
+      237870.83597809135,
+      7389422.252439583,
+      264719.05099105916,
+      7415169.017662749
+    ],
+    "final_road_category_dist": {
+      "residential": 10217,
+      "secondary": 1579,
+      "tertiary": 776,
+      "primary": 485,
+      "trunk": 157,
+      "motorway": 133
+    },
+    "final_length_stats_m": {
+      "min": 1.6499344356815429,
+      "max": 8542.297703015276,
+      "mean": 195.47336463017237,
+      "median": 122.06592225315026,
+      "std": 305.3946324486729,
+      "count": 13347
+    },
+    "final_sinuosity_stats": {
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null,
+      "std": null,
+      "count": 0
+    },
+    "final_curvature_stats": {
+      "min": 0.0,
+      "max": 0.2233066228166621,
+      "mean": 0.004507171902515299,
+      "median": 9.873897953072871e-05,
+      "std": 0.014374696103534756,
+      "count": 13347
+    }
+  },
+  "graph_construction": {
+    "num_nodes": 3798,
+    "num_edges": 4535,
+    "is_connected": true,
+    "num_connected_components": 1,
+    "density": 0.0006289436395768783,
+    "node_degree_stats": {
+      "min": 1.0,
+      "max": 5.0,
+      "mean": 2.388098999473407,
+      "median": 3.0,
+      "std": 1.0978870600012642,
+      "count": 3798
+    },
+    "node_betweenness_stats": {
+      "min": 0.0,
+      "max": 0.15398249878360923,
+      "mean": 0.010147592224822324,
+      "median": 0.0016128214545047066,
+      "std": 0.019486649778760964,
+      "count": 3798
+    },
+    "node_closeness_stats": {
+      "min": 4.464860901446989e-05,
+      "max": 0.00020378947173243614,
+      "mean": 0.00014341144563167718,
+      "median": 0.00014310124455831742,
+      "std": 3.1590100701784735e-05,
+      "count": 3798
+    },
+    "node_class_distribution": {
+      "0": 48,
+      "1": 95,
+      "2": 294,
+      "3": 937,
+      "4": 407,
+      "5": 2017
+    },
+    "edge_length_stats": {
+      "min": 1.9785211734698398,
+      "max": 10189.39164606334,
+      "mean": 228.09449842897914,
+      "median": 127.9714783677245,
+      "std": 381.48607138438257,
+      "count": 4535
+    }
+  },
+  "pytorch_geometric_data": {
+    "data_object_created": true,
+    "num_nodes": 3798,
+    "num_edges": 9070,
+    "num_node_features": 5,
+    "num_edge_features": 3,
+    "has_isolated_nodes": false,
+    "is_undirected": false,
+    "node_feature_keys": [],
+    "edge_feature_keys": [],
+    "has_labels": true,
+    "num_classes": 6,
+    "label_distribution": {
+      "0": 48,
+      "1": 95,
+      "2": 294,
+      "3": 937,
+      "4": 407,
+      "5": 2017
+    },
+    "has_train_mask": true,
+    "train_nodes": 2658,
+    "val_nodes": 569,
+    "test_nodes": 571
+  },
+  "pipeline_status": "SUCCESS"
+}

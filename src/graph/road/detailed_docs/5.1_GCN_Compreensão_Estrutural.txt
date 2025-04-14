@@ -1,0 +1,1042 @@
+# 5.1 GCN PARA COMPREENSÃO ESTRUTURAL DE REDES VIÁRIAS
+
+## 5.1.1 Fundamentos Teóricos e Motivação
+
+A análise morfológica de redes viárias representa um desafio fundamental no planejamento urbano e na engenharia de transportes. Tradicionalmente, essa análise dependia de métricas isoladas e classificações manuais, limitando a capacidade de identificar padrões complexos e suas relações subjacentes. As Graph Convolutional Networks (GCNs) emergem como uma solução promissora para este desafio, permitindo a aprendizagem automática de representações que capturam a essência estrutural das redes viárias urbanas.
+
+### 5.1.1.1 O Problema da Caracterização Morfológica
+
+Redes viárias urbanas exibem uma extraordinária diversidade morfológica resultante de processos históricos, características geográficas, decisões de planejamento e evolução orgânica. Estas morfologias influenciam diretamente a eficiência da mobilidade, acessibilidade, resiliência a eventos disruptivos e qualidade de vida urbana (Boeing, 2019).
+
+Os padrões morfológicos fundamentais incluem:
+
+- **Malhas regulares (grid)**: Caracterizadas por vias retilíneas que se cruzam em ângulos próximos a 90°, típicas de áreas planejadas
+- **Padrões orgânicos**: Desenvolvidos incrementalmente sem planejamento centralizado, apresentando alta irregularidade e adaptação à topografia
+- **Estruturas radiais**: Organizadas a partir de pontos centrais com vias principais irradiando para a periferia
+- **Padrões hierárquicos**: Com clara diferenciação entre vias arteriais, coletoras e locais
+- **Configurações híbridas**: Combinando diferentes padrões em áreas distintas da cidade
+
+A classificação manual desses padrões apresenta limitações significativas:
+- Subjetividade na interpretação
+- Dificuldade em quantificar características intermediárias ou mistas
+- Incapacidade de processar grandes volumes de dados
+- Inconsistência entre diferentes analistas
+
+### 5.1.1.2 Graph Convolutional Networks: Fundamentação Matemática
+
+As GCNs representam uma extensão das redes neurais convolucionais tradicionais para o domínio dos grafos, permitindo operações de aprendizado em estruturas topológicas irregulares. A formulação matemática fundamental baseia-se na teoria espectral de grafos e foi proposta inicialmente por Kipf & Welling (2017).
+
+O operador de convolução em grafos pode ser definido como:
+
+```
+H^(l+1) = σ(D^(-1/2) Â D^(-1/2) H^(l) W^(l))
+```
+
+Onde:
+- H^(l) representa a matriz de características dos nós na camada l
+- Â = A + I é a matriz de adjacência com auto-conexões
+- D é a matriz diagonal de grau onde D_{ii} = Σ_j Â_{ij}
+- W^(l) é a matriz de pesos treinável para a camada l
+- σ é uma função de ativação não-linear (tipicamente ReLU)
+
+Esta formulação realiza uma operação de suavização local onde cada nó atualiza sua representação agregando informações de sua vizinhança imediata. Para redes viárias, isto significa que cada interseção ou segmento incorpora progressivamente características do seu entorno urbano, capturando padrões morfológicos em múltiplas escalas.
+
+Uma propriedade importante das GCNs é a invariância a isomorfismos, garantindo que padrões estruturalmente equivalentes sejam reconhecidos independentemente de sua orientação ou localização absoluta no espaço urbano.
+
+### 5.1.1.3 Avanços Recentes em GCNs para Análise Espacial
+
+Recentes avanços expandiram significativamente as capacidades das GCNs para análise espacial:
+
+- **Modelos sensíveis a geometria**: Incorporam distâncias euclidianas e ângulos entre arestas (Peng et al., 2020)
+- **Convoluções multi-escala**: Capturam padrões em diferentes raios de influência (Abu-El-Haija et al., 2020)
+- **Mecanismos de atenção espacial**: Ponderam adaptativamente a importância de diferentes relações viárias (Velickovic et al., 2018)
+- **Embedding posicionais**: Preservam informações de localização absoluta quando relevantes (You et al., 2019)
+
+Estes avanços tornam as GCNs particularmente adequadas para a análise morfológica de redes viárias, onde tanto a topologia quanto a geometria são essenciais para caracterizar padrões urbanos.
+
+## 5.1.2 Modelagem da Rede Viária como Grafo
+
+A representação adequada da rede viária como estrutura de grafo é fundamental para o sucesso da análise morfológica baseada em GCNs.
+
+### 5.1.2.1 Representação Primária: Primal vs. Dual
+
+Duas abordagens principais podem ser utilizadas para modelar redes viárias como grafos:
+
+1. **Representação Primal**: Interseções são nós e segmentos de via são arestas
+   - Vantagens: Preservação natural da geometria e distâncias reais
+   - Desvantagens: Menos eficiente para capturar continuidade de vias
+
+2. **Representação Dual**: Segmentos de via são nós e interseções são arestas
+   - Vantagens: Melhor para analisar continuidade e relações entre vias
+   - Desvantagens: Perda de algumas informações geométricas diretas
+
+Para nossa implementação de GCN para compreensão estrutural, adotamos uma **representação primal enriquecida**, consistente com a estrutura de dados presente no arquivo `/content/drive/MyDrive/TESE_MESTRADO/geoprocessing/data/processed/roads_processed.gpkg`. Esta escolha permite aproveitar as coordenadas espaciais das interseções como características iniciais, facilitando a incorporação de informações geométricas no modelo.
+
+### 5.1.2.2 Construção do Grafo a partir dos Dados Processados
+
+O processo de construção do grafo utiliza a estrutura de dados disponível no pipeline, conforme definido no arquivo `src/graph/road/pipeline/graph_construction.py`, adaptado para preservar informações morfológicas relevantes:
+
+```python
+def create_road_graph_for_morphological_analysis(gdf):
+    """
+    Cria um grafo da rede viária otimizado para análise morfológica.
+    
+    Args:
+        gdf: GeoDataFrame contendo segmentos de vias processados
+        
+    Returns:
+        G: Grafo NetworkX com atributos enriquecidos para análise morfológica
+    """
+    # Inicializa grafo vazio
+    G = nx.Graph()
+    
+    # Extrai nós das extremidades dos segmentos
+    nodes_coords = {}
+    edge_data = {}
+    node_counter = 0
+    
+    # Processa cada segmento no GeoDataFrame
+    for idx, row in gdf.iterrows():
+        geom = row.geometry
+        
+        # Garante que estamos trabalhando com LineString
+        if not isinstance(geom, LineString):
+            continue
+            
+        # Extrai pontos inicial e final
+        start_point = tuple(geom.coords[0])
+        end_point = tuple(geom.coords[-1])
+        
+        # Adiciona nós ao grafo (se não existirem)
+        for point in [start_point, end_point]:
+            if point not in nodes_coords:
+                # Atribui ID sequencial e armazena coordenadas
+                nodes_coords[point] = node_counter
+                # Adiciona nó com coordenadas como atributos
+                G.add_node(node_counter, x=point[0], y=point[1])
+                node_counter += 1
+        
+        # Adiciona aresta com atributos relevantes
+        start_idx = nodes_coords[start_point]
+        end_idx = nodes_coords[end_point]
+        
+        # Extrai atributos relevantes para análise morfológica
+        attributes = {
+            'length': geom.length,
+            'highway': row.get('highway', 'unclassified'),
+            'sinuosity': calculate_sinuosity(geom),
+            'orientation': calculate_orientation(geom),
+            'width': row.get('width', 0.0)
+        }
+        
+        # Adiciona aresta ao grafo
+        G.add_edge(start_idx, end_idx, **attributes)
+    
+    return G, nodes_coords
+```
+
+Esta implementação preserva a projeção UTM (EPSG:31983) utilizada nos dados processados, garantindo cálculos precisos de distâncias e ângulos, essenciais para análise morfológica.
+
+### 5.1.2.3 Enriquecimento com Atributos Morfológicos
+
+Além dos atributos básicos extraídos diretamente dos dados, o grafo é enriquecido com características morfológicas adicionais que potencializam a capacidade do GCN em detectar padrões urbanos:
+
+1. **Atributos de Nós:**
+   - **Grau**: Número de segmentos conectados, indicando complexidade de intersecções
+   - **Centralidade de closeness**: Medida de proximidade a todos os outros nós da rede
+   - **Centralidade de betweenness**: Frequência com que o nó está no caminho mínimo entre outros nós
+   - **Densidade local**: Número de nós em um raio predefinido
+   - **Entropia angular**: Variabilidade nos ângulos entre segmentos conectados
+
+2. **Atributos de Arestas:**
+   - **Sinuosidade**: Razão entre comprimento real e distância euclidiana
+   - **Orientação**: Ângulo em relação ao norte
+   - **Desvio da grade**: Quanto o segmento desvia do padrão ortogonal mais próximo
+   - **Índice de continuidade**: Medida de alinhamento com segmentos adjacentes
+   - **Classe hierárquica**: Baseada no tipo de via (arterial, coletora, local)
+
+3. **Atributos Derivados de Contexto:**
+   - **Regularidade de grade**: Medida da aderência ao padrão ortogonal na vizinhança
+   - **Entropia de orientação**: Variabilidade nas direções dos segmentos próximos
+   - **Homogeneidade hierárquica**: Consistência na classificação de vias na vizinhança
+   - **Compacidade da malha**: Densidade de segmentos por área
+   - **Índice de organicidade**: Combinação de sinuosidade e irregularidade de padrões
+
+O cálculo destes atributos é realizado através de funções específicas implementadas no módulo `src/graph/road/pipeline/morphological_features.py`:
+
+```python
+def calculate_node_morphological_features(G):
+    """
+    Calcula características morfológicas para nós do grafo viário.
+    
+    Args:
+        G: Grafo NetworkX da rede viária
+        
+    Returns:
+        G: Grafo com atributos morfológicos adicionados aos nós
+    """
+    # Calcula centralidades básicas
+    betweenness = nx.betweenness_centrality(G, weight='length')
+    closeness = nx.closeness_centrality(G, distance='length')
+    
+    # Para cada nó no grafo
+    for node in G.nodes():
+        # Atribui centralidades calculadas
+        G.nodes[node]['betweenness'] = betweenness[node]
+        G.nodes[node]['closeness'] = closeness[node]
+        
+        # Calcula entropia angular
+        G.nodes[node]['angular_entropy'] = calculate_angular_entropy(G, node)
+        
+        # Calcula densidade local
+        G.nodes[node]['local_density'] = calculate_local_density(G, node, radius=500)
+        
+        # Calcula índice de regularidade de grade
+        G.nodes[node]['grid_regularity'] = calculate_grid_regularity(G, node)
+    
+    return G
+```
+
+Estes atributos, disponíveis nos resultados de processamento armazenados em `src/enriched_data/quality_reports_completo/`, permitem ao GCN captar padrões morfológicos sutis que caracterizam diferentes tipologias urbanas.
+
+## 5.1.3 Arquitetura GCN para Análise Morfológica
+
+A arquitetura GCN proposta é cuidadosamente projetada para capturar eficientemente padrões morfológicos em redes viárias, adaptando princípios estabelecidos na literatura de aprendizado em grafos para o contexto específico da análise urbana.
+
+### 5.1.3.1 Modelo Matemático Adaptado
+
+Nosso modelo GCN adapta a formulação base de Kipf & Welling (2017) para incorporar características específicas de redes viárias:
+
+1. **Normalização adaptativa**: Modificamos a normalização simétrica para considerar a importância relativa das arestas:
+
+```
+H^(l+1) = σ(D^(-1/2) Â W_e D^(-1/2) H^(l) W^(l))
+```
+
+Onde W_e é uma matriz diagonal de pesos de arestas derivada de atributos como comprimento, hierarquia viária e continuidade.
+
+2. **Propagação multi-escala**: Incorporamos influências de vizinhanças em diferentes raios, essencial para identificar padrões morfológicos abrangentes:
+
+```
+H^(l+1) = σ(D_1^(-1/2) Â_1 D_1^(-1/2) H^(l) W_1^(l) + 
+            D_2^(-1/2) Â_2 D_2^(-1/2) H^(l) W_2^(l) + 
+            D_3^(-1/2) Â_3 D_3^(-1/2) H^(l) W_3^(l))
+```
+
+Onde Â_k representa a matriz de adjacência para k-saltos na rede viária.
+
+3. **Preservação de informação geométrica**: Modificamos a função de agregação para preservar explicitamente informações geométricas importantes:
+
+```
+AGGREGATE(N(v)) = CONCAT(SUM(features), VAR(features), MAX(features))
+```
+
+Esta formulação permite ao modelo capturar não apenas a presença, mas também a variabilidade e valores extremos em padrões locais.
+
+### 5.1.3.2 Implementação da Arquitetura
+
+A implementação do modelo GCN segue a estrutura definida no arquivo `src/graph/road/pipeline/gnn_models.py`, com adaptações específicas para análise morfológica:
+
+```python
+class MorphologicalGCN(torch.nn.Module):
+    def __init__(self, input_dim, hidden_dim=64, output_dim=5, num_layers=3, dropout=0.5):
+        """
+        GCN especializado para análise morfológica de redes viárias.
+        
+        Args:
+            input_dim: Dimensão das características de entrada dos nós
+            hidden_dim: Dimensão das camadas ocultas
+            output_dim: Número de classes morfológicas a serem preditas
+            num_layers: Número de camadas convolucionais
+            dropout: Taxa de dropout para regularização
+        """
+        super(MorphologicalGCN, self).__init__()
+        
+        # Camada de entrada
+        self.input_layer = GCNConv(input_dim, hidden_dim)
+        
+        # Camadas intermediárias
+        self.conv_layers = torch.nn.ModuleList()
+        for _ in range(num_layers - 2):
+            self.conv_layers.append(GCNConv(hidden_dim, hidden_dim))
+        
+        # Camada de saída
+        self.output_layer = GCNConv(hidden_dim, output_dim)
+        
+        # Reguladores
+        self.dropout = dropout
+        self.batch_norm = torch.nn.BatchNorm1d(hidden_dim)
+        
+    def forward(self, x, edge_index, edge_attr=None):
+        # Camada de entrada
+        x = self.input_layer(x, edge_index, edge_attr)
+        x = F.relu(x)
+        x = self.batch_norm(x)
+        x = F.dropout(x, p=self.dropout, training=self.training)
+        
+        # Camadas intermediárias
+        for conv in self.conv_layers:
+            x = conv(x, edge_index, edge_attr)
+            x = F.relu(x)
+            x = self.batch_norm(x)
+            x = F.dropout(x, p=self.dropout, training=self.training)
+        
+        # Camada de saída
+        x = self.output_layer(x, edge_index, edge_attr)
+        
+        return x
+```
+
+Esta implementação inclui elementos essenciais:
+- **Múltiplas camadas convolucionais**: Capturam padrões em diferentes níveis de abstração
+- **Batch normalization**: Estabiliza o treinamento e acelera a convergência
+- **Dropout adaptativo**: Evita overfitting aos padrões específicos da área de treinamento
+- **Suporte a atributos de arestas**: Incorpora características como comprimento e hierarquia viária
+
+### 5.1.3.3 Considerações sobre Receptive Field
+
+Um aspecto crucial para análise morfológica é o "campo receptivo" do modelo - a extensão espacial que influencia a representação de cada nó. Na arquitetura proposta:
+
+- Cada camada convolucional expande o campo receptivo em um salto na rede
+- Com 3 camadas, cada nó incorpora informações de sua vizinhança até 3 saltos de distância
+- Em áreas urbanas típicas, isto corresponde aproximadamente a um raio de 300-500 metros
+
+Esta configuração permite capturar padrões morfológicos locais e sua inserção em estruturas mais amplas, essencial para classificação precisa de tipologias urbanas.
+
+## 5.1.4 Preparação de Dados e Features
+
+A qualidade e estruturação dos dados de entrada são determinantes para o desempenho do modelo GCN em análise morfológica.
+
+### 5.1.4.1 Extração e Normalização de Features
+
+As características de nós e arestas são derivadas dos dados enriquecidos armazenados em `src/enriched_data/quality_reports_completo/`, segundo as estatísticas disponíveis nos relatórios. O processo de extração e normalização segue:
+
+```python
+def prepare_node_features(G):
+    """
+    Extrai e normaliza características dos nós para o modelo GCN.
+    
+    Args:
+        G: Grafo NetworkX enriquecido
+        
+    Returns:
+        node_features: Tensor de características dos nós
+        feature_names: Lista com nomes das características
+    """
+    # Inicializa listas para armazenar características
+    features_list = []
+    feature_names = []
+    
+    # Para cada nó no grafo
+    for node in sorted(G.nodes()):
+        node_feats = []
+        
+        # Coordenadas espaciais normalizadas
+        node_feats.append(G.nodes[node]['x'])
+        node_feats.append(G.nodes[node]['y'])
+        feature_names.extend(['x', 'y'])
+        
+        # Métricas topológicas básicas
+        node_feats.append(G.degree(node))
+        feature_names.append('degree')
+        
+        # Centralidades
+        if 'betweenness' in G.nodes[node]:
+            node_feats.append(G.nodes[node]['betweenness'])
+            feature_names.append('betweenness')
+        
+        if 'closeness' in G.nodes[node]:
+            node_feats.append(G.nodes[node]['closeness'])
+            feature_names.append('closeness')
+        
+        # Propriedades morfológicas
+        for prop in ['angular_entropy', 'local_density', 'grid_regularity']:
+            if prop in G.nodes[node]:
+                node_feats.append(G.nodes[node][prop])
+                feature_names.append(prop)
+        
+        features_list.append(node_feats)
+    
+    # Converte para tensor
+    features = torch.tensor(features_list, dtype=torch.float)
+    
+    # Normalização Z-score por coluna
+    mean = features.mean(dim=0, keepdim=True)
+    std = features.std(dim=0, keepdim=True)
+    std[std == 0] = 1.0  # Evita divisão por zero
+    normalized_features = (features - mean) / std
+    
+    return normalized_features, feature_names
+```
+
+A normalização Z-score é crucial para características numéricas que possuem escalas distintas, como evidenciado nos relatórios de qualidade (por exemplo, a diferença de escala entre o comprimento das vias, que varia de 0.211 a 8542.29 metros conforme `src/graph/road/data/quality_report_20250414_021132.txt`).
+
+### 5.1.4.2 Engenharia de Features Específicas para Morfologia
+
+Além das características básicas, implementamos features específicas para análise morfológica:
+
+1. **Índice de Orientação da Grade**: Calculado usando estatísticas de orientação de segmentos e seus desvios em relação aos eixos cardeais/ordinais:
+
+```python
+def calculate_grid_orientation_index(G, node, radius=300):
+    """
+    Calcula o índice de orientação de grade para um nó,
+    baseado na aderência dos segmentos próximos a padrões ortogonais.
+    
+    Returns:
+        float: Índice entre 0 (orgânico) e 1 (grade perfeita)
+    """
+    # Obtém nós na vizinhança
+    neighbors = get_neighbors_within_radius(G, node, radius)
+    
+    # Coleta orientações de todos os segmentos na vizinhança
+    orientations = []
+    for n1, n2 in G.edges(neighbors):
+        if 'orientation' in G.edges[n1, n2]:
+            orientations.append(G.edges[n1, n2]['orientation'])
+    
+    if not orientations:
+        return 0.5  # Valor neutro quando não há dados suficientes
+    
+    # Calcula histograma de orientações (bins de 10 graus)
+    hist, _ = np.histogram(orientations, bins=36, range=(0, 360))
+    
+    # Calcula pontuação de grade baseada em concentração em direções cardeais/ordinais
+    cardinal_bins = [0, 9, 18, 27]  # Corresponde a 0°, 90°, 180°, 270°
+    cardinal_sum = sum(hist[i] for i in cardinal_bins)
+    
+    # Normaliza pela soma total
+    total_segments = sum(hist)
+    grid_score = cardinal_sum / total_segments if total_segments > 0 else 0.5
+    
+    return grid_score
+```
+
+2. **Índice de Sinuosidade Local**: Agregação da sinuosidade dos segmentos conectados, indicando o caráter orgânico ou planejado da área:
+
+```python
+def calculate_local_sinuosity(G, node):
+    """
+    Calcula a sinuosidade média dos segmentos conectados ao nó.
+    
+    Returns:
+        float: Sinuosidade média
+    """
+    sinuosity_values = []
+    
+    for neighbor in G.neighbors(node):
+        edge_data = G.get_edge_data(node, neighbor)
+        if 'sinuosity' in edge_data:
+            sinuosity_values.append(edge_data['sinuosity'])
+    
+    # Retorna média ou valor neutro se não houver dados
+    return np.mean(sinuosity_values) if sinuosity_values else 1.0
+```
+
+3. **Entropia de Conectividade**: Medida da variabilidade no grau dos nós vizinhos, indicativa de hierarquia ou homogeneidade na rede:
+
+```python
+def calculate_connectivity_entropy(G, node, radius=300):
+    """
+    Calcula a entropia da distribuição de graus na vizinhança,
+    indicando heterogeneidade (alta entropia) vs. regularidade (baixa entropia).
+    
+    Returns:
+        float: Valor de entropia normalizado
+    """
+    # Obtém nós na vizinhança
+    neighbors = get_neighbors_within_radius(G, node, radius)
+    
+    # Coleta graus
+    degrees = [G.degree(n) for n in neighbors]
+    
+    if not degrees:
+        return 0.0  # Sem vizinhos = baixa entropia
+    
+    # Calcula histograma de graus
+    hist, _ = np.histogram(degrees, bins=min(10, len(set(degrees))))
+    
+    # Normaliza para obter probabilidades
+    probs = hist / sum(hist)
+    
+    # Remove probabilidades zero (log(0) é indefinido)
+    probs = probs[probs > 0]
+    
+    # Calcula entropia de Shannon
+    entropy = -sum(p * np.log2(p) for p in probs)
+    
+    # Normaliza pela entropia máxima possível
+    max_entropy = np.log2(len(hist)) if len(hist) > 0 else 1.0
+    normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
+    
+    return normalized_entropy
+```
+
+Estas features específicas permitem ao modelo GCN distinguir entre padrões sutis como malhas ortogonais imperfeitas, padrões radiais e estruturas orgânicas adaptadas à topografia.
+
+### 5.1.4.3 Codificação e Representação das Classes-Alvo
+
+Com base nos padrões morfológicos estabelecidos na literatura (Louf & Barthelemy, 2014; Boeing, 2019) e nas características observadas nos dados disponíveis em `/src/enriched_data/quality_reports_completo/`, definimos as seguintes classes-alvo:
+
+1. **Grade Regular (Orthogonal Grid)**: Padrão em xadrez com vias predominantemente ortogonais
+2. **Grade Irregular (Deformed Grid)**: Similar à grade, mas com deformações e adaptações
+3. **Radial**: Estrutura com vias principais partindo de pontos centrais
+4. **Orgânico Denso**: Padrão não-planejado com alta densidade e baixa regularidade
+5. **Orgânico Esparso**: Estrutura adaptada ao terreno com baixa densidade
+6. **Hierárquico Arbóreo**: Estrutura dendrítica com clara hierarquia e poucas conexões redundantes
+7. **Misto/Híbrido**: Combinação de múltiplos padrões em uma mesma área
+
+A codificação destas classes segue um schema one-hot, consistente com a abordagem de classificação multi-classe:
+
+```python
+def encode_morphological_classes(classes):
+    """
+    Codifica classes morfológicas como vetores one-hot.
+    
+    Args:
+        classes: Lista de classes morfológicas (índices inteiros)
+        
+    Returns:
+        Tensor com codificação one-hot
+    """
+    num_classes = 7  # Número de classes morfológicas definidas
+    num_samples = len(classes)
+    
+    # Inicializa tensor de zeros
+    one_hot = torch.zeros(num_samples, num_classes)
+    
+    # Preenche com 1 na posição correspondente à classe
+    for i, cls in enumerate(classes):
+        if 0 <= cls < num_classes:
+            one_hot[i, cls] = 1
+    
+    return one_hot
+```
+
+### 5.1.4.4 Divisão dos Dados para Treinamento
+
+A divisão dos dados para treinamento, validação e teste apresenta desafios específicos no contexto espacial devido à autocorrelação espacial, que pode levar à superestimação artificial do desempenho. Para mitigar este efeito, implementamos uma estratégia de divisão espacial estratificada:
+
+```python
+def spatial_stratified_split(G, test_ratio=0.2, val_ratio=0.1, random_seed=42):
+    """
+    Divisão espacialmente estratificada dos nós para treinamento/validação/teste.
+    
+    Args:
+        G: Grafo NetworkX
+        test_ratio: Proporção para conjunto de teste
+        val_ratio: Proporção para conjunto de validação
+        random_seed: Semente para reprodutibilidade
+        
+    Returns:
+        train_mask, val_mask, test_mask: Máscaras booleanas para os conjuntos
+    """
+    # Fixa a semente aleatória
+    np.random.seed(random_seed)
+    
+    # Extrai coordenadas x,y de todos os nós
+    node_coords = np.array([[G.nodes[n]['x'], G.nodes[n]['y']] for n in G.nodes()])
+    
+    # Aplica clustering espacial para criar áreas de teste coerentes
+    from sklearn.cluster import KMeans
+    num_clusters = 10  # Número ajustável de clusters espaciais
+    kmeans = KMeans(n_clusters=num_clusters, random_state=random_seed)
+    clusters = kmeans.fit_predict(node_coords)
+    
+    # Seleciona clusters inteiros para teste e validação
+    all_clusters = list(range(num_clusters))
+    np.random.shuffle(all_clusters)
+    
+    # Calcula número de clusters para teste e validação
+    num_test_clusters = max(1, int(test_ratio * num_clusters))
+    num_val_clusters = max(1, int(val_ratio * num_clusters))
+    
+    test_clusters = set(all_clusters[:num_test_clusters])
+    val_clusters = set(all_clusters[num_test_clusters:num_test_clusters+num_val_clusters])
+    train_clusters = set(all_clusters) - test_clusters - val_clusters
+    
+    # Cria máscaras
+    train_mask = torch.tensor([clusters[i] in train_clusters for i in range(len(G.nodes()))])
+    val_mask = torch.tensor([clusters[i] in val_clusters for i in range(len(G.nodes()))])
+    test_mask = torch.tensor([clusters[i] in test_clusters for i in range(len(G.nodes()))])
+    
+    return train_mask, val_mask, test_mask
+```
+
+Esta abordagem garante que nós espacialmente próximos sejam alocados ao mesmo conjunto, prevenindo vazamento de informações entre treino e teste devido à autocorrelação espacial.
+
+## 5.1.5 Estratégia de Treinamento e Avaliação
+
+O treinamento eficaz do modelo GCN para análise morfológica requer estratégias específicas para lidar com desafios como desbalanceamento de classes, autocorrelação espacial e variabilidade nos padrões urbanos.
+
+### 5.1.5.1 Função de Perda e Métricas
+
+Implementamos uma função de perda ponderada para mitigar o desbalanceamento entre classes morfológicas, frequente em contextos urbanos onde certos padrões (como malhas orgânicas) podem predominar:
+
+```python
+def weighted_cross_entropy_loss(predictions, targets, class_weights=None):
+    """
+    Entropia cruzada ponderada para lidar com desbalanceamento de classes.
+    
+    Args:
+        predictions: Logits do modelo (N, num_classes)
+        targets: Classes verdadeiras (N)
+        class_weights: Pesos para cada classe
+        
+    Returns:
+        Tensor representando a perda média ponderada
+    """
+    # Se pesos não fornecidos, calcula baseado na frequência inversa
+    if class_weights is None:
+        class_counts = torch.bincount(targets)
+        class_weights = 1.0 / class_counts.float()
+        class_weights = class_weights / class_weights.sum() * len(class_counts)
+    
+    # Assegura que pesos estejam no mesmo dispositivo que targets
+    class_weights = class_weights.to(targets.device)
+    
+    # Aplica log_softmax para estabilidade numérica
+    log_probs = F.log_softmax(predictions, dim=1)
+    
+    # Seleciona log probabilities para as classes verdadeiras
+    targets_one_hot = F.one_hot(targets, num_classes=predictions.size(1)).float()
+    per_sample_losses = -(targets_one_hot * log_probs).sum(dim=1)
+    
+    # Aplica pesos por classe
+    weights = class_weights[targets]
+    weighted_losses = weights * per_sample_losses
+    
+    return weighted_losses.mean()
+```
+
+Para avaliação, utilizamos métricas específicas para classificação multi-classe:
+
+1. **Acurácia global e por classe**: Proporção de nós classificados corretamente
+2. **F1-score macro e ponderado**: Média harmônica entre precisão e recall
+3. **Matriz de confusão normalizada**: Visualização de padrões de erro entre classes
+4. **Kappa de Cohen**: Concordância além do acaso, considerando desbalanceamento
+
+### 5.1.5.2 Algoritmo de Treinamento
+
+O treinamento segue o seguinte algoritmo, implementado em `pipeline/training.py` e adaptado para o contexto morfológico:
+
+```python
+def train_morphological_gcn(model, data, optimizer, num_epochs=200, patience=20):
+    """
+    Treina o modelo GCN para classificação morfológica.
+    
+    Args:
+        model: Modelo GCN definido
+        data: Objeto PyTorch Geometric Data
+        optimizer: Otimizador (tipicamente Adam)
+        num_epochs: Número máximo de épocas
+        patience: Épocas sem melhoria para early stopping
+        
+    Returns:
+        model treinado e histórico de treinamento
+    """
+    # Inicializa contadores e histórico
+    best_val_acc = 0
+    best_model_state = None
+    patience_counter = 0
+    history = {'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': []}
+    
+    # Calcula pesos de classe para balanceamento
+    train_labels = data.y[data.train_mask]
+    class_counts = torch.bincount(train_labels)
+    class_weights = 1.0 / class_counts.float()
+    class_weights = class_weights / class_weights.sum() * len(class_counts)
+    
+    # Loop de treinamento
+    for epoch in range(num_epochs):
+        # Modo de treinamento
+        model.train()
+        optimizer.zero_grad()
+        
+        # Forward pass
+        out = model(data.x, data.edge_index, data.edge_attr)
+        
+        # Calcula perda com pesos de classe
+        loss = weighted_cross_entropy_loss(out[data.train_mask], data.y[data.train_mask], class_weights)
+        
+        # Backward pass
+        loss.backward()
+        optimizer.step()
+        
+        # Calcula acurácia de treinamento
+        train_acc = accuracy(out[data.train_mask], data.y[data.train_mask])
+        
+        # Avaliação no conjunto de validação
+        model.eval()
+        with torch.no_grad():
+            out = model(data.x, data.edge_index, data.edge_attr)
+            val_loss = F.cross_entropy(out[data.val_mask], data.y[data.val_mask])
+            val_acc = accuracy(out[data.val_mask], data.y[data.val_mask])
+        
+        # Registra história
+        history['train_loss'].append(loss.item())
+        history['train_acc'].append(train_acc)
+        history['val_loss'].append(val_loss.item())
+        history['val_acc'].append(val_acc)
+        
+        # Early stopping
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            best_model_state = model.state_dict().copy()
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter >= patience:
+                print(f"Early stopping após {epoch+1} épocas")
+                break
+        
+        # Imprime progresso periodicamente
+        if (epoch + 1) % 10 == 0:
+            print(f"Época {epoch+1}/{num_epochs}: "
+                  f"Perda={loss.item():.4f}, Acc={train_acc:.4f}, "
+                  f"Val_perda={val_loss.item():.4f}, Val_acc={val_acc:.4f}")
+    
+    # Restaura melhor modelo encontrado
+    if best_model_state is not None:
+        model.load_state_dict(best_model_state)
+    
+    return model, history
+```
+
+### 5.1.5.3 Hiperparâmetros Otimizados
+
+Com base em experimentação e literatura, identificamos os seguintes hiperparâmetros ótimos para o modelo GCN aplicado à análise morfológica de redes viárias:
+
+- **Dimensões ocultas**: 64 (balanceando expressividade e risco de overfitting)
+- **Número de camadas**: 3 (cobrindo vizinhança de 3 saltos, ~300-500m em áreas urbanas)
+- **Taxa de dropout**: 0.5 (prevenindo overfitting em padrões locais)
+- **Taxa de aprendizado**: 0.01 (otimizado para convergência estável)
+- **Weight decay**: 5e-4 (regularização L2 para generalização)
+- **Batch size**: Full-batch (devido à natureza conectada do grafo)
+- **Early stopping patience**: 20 épocas (prevenindo overfitting sem interromper prematuramente)
+
+Estes parâmetros são consistentes com os utilizados em `src/graph/road/data/training_results_20250414_021132.json`, com adaptações específicas para o contexto morfológico.
+
+## 5.1.6 Interpretação e Visualização de Resultados
+
+A interpretabilidade dos resultados é crucial na análise morfológica de redes viárias, tanto para validação científica quanto para aplicação prática em planejamento urbano.
+
+### 5.1.6.1 Técnicas de Visualização Geoespacial
+
+Implementamos visualizações geoespaciais específicas para análise morfológica, conforme a estrutura em `pipeline/visualization.py`:
+
+```python
+def visualize_morphological_classification(G, predictions, basemap=True, output_path=None):
+    """
+    Visualiza classificação morfológica no contexto geoespacial.
+    
+    Args:
+        G: Grafo NetworkX com atributos espaciais
+        predictions: Vetor de classes preditas para cada nó
+        basemap: Se deve incluir mapa base
+        output_path: Caminho para salvar visualização
+        
+    Returns:
+        Objeto de figura matplotlib
+    """
+    # Cores para cada classe morfológica
+    colors = {
+        0: '#1f77b4',  # Grade Regular - Azul
+        1: '#aec7e8',  # Grade Irregular - Azul claro
+        2: '#ff7f0e',  # Radial - Laranja
+        3: '#2ca02c',  # Orgânico Denso - Verde
+        4: '#98df8a',  # Orgânico Esparso - Verde claro
+        5: '#d62728',  # Hierárquico Arbóreo - Vermelho
+        6: '#9467bd'   # Misto/Híbrido - Roxo
+    }
+    
+    # Nomes das classes para legenda
+    class_names = {
+        0: 'Grade Regular',
+        1: 'Grade Irregular',
+        2: 'Radial',
+        3: 'Orgânico Denso',
+        4: 'Orgânico Esparso',
+        5: 'Hierárquico Arbóreo',
+        6: 'Misto/Híbrido'
+    }
+    
+    # Prepara dados para plotagem
+    node_coords = {}
+    node_colors = []
+    
+    for i, node in enumerate(G.nodes()):
+        # Extrai coordenadas
+        x, y = G.nodes[node]['x'], G.nodes[node]['y']
+        node_coords[node] = (x, y)
+        
+        # Associa cor à classe predita
+        pred_class = predictions[i]
+        node_colors.append(colors.get(pred_class, '#7f7f7f'))
+    
+    # Cria figura
+    fig, ax = plt.subplots(figsize=(15, 15))
+    
+    # Plota arestas
+    for edge in G.edges():
+        n1, n2 = edge
+        if n1 in node_coords and n2 in node_coords:
+            x1, y1 = node_coords[n1]
+            x2, y2 = node_coords[n2]
+            ax.plot([x1, x2], [y1, y2], color='gray', linewidth=0.5, alpha=0.5)
+    
+    # Plota nós coloridos por classe
+    for node, (x, y) in node_coords.items():
+        ax.scatter(x, y, color=node_colors[node], s=10, alpha=0.8)
+    
+    # Adiciona mapa base se solicitado
+    if basemap:
+        try:
+            import contextily as ctx
+            ctx.add_basemap(ax, crs=G.graph.get('crs', 'EPSG:31983'))
+        except Exception as e:
+            print(f"Não foi possível adicionar mapa base: {e}")
+    
+    # Configura aspecto e limites
+    ax.set_aspect('equal')
+    ax.set_title('Classificação Morfológica da Rede Viária', fontsize=16)
+    
+    # Cria legenda
+    legend_elements = [plt.Line2D([0], [0], marker='o', color='w', 
+                                 markerfacecolor=colors[i], markersize=10, 
+                                 label=class_names[i]) 
+                      for i in sorted(class_names.keys())]
+    ax.legend(handles=legend_elements, loc='upper right', fontsize=12)
+    
+    # Salva ou mostra figura
+    if output_path:
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    
+    return fig, ax
+```
+
+Esta visualização geocontextualizada é complementada por análises específicas, como:
+
+1. **Mapas de clusters**: Visualização de áreas com padrões morfológicos similares
+2. **Mapas de transição**: Identificação de fronteiras entre diferentes tipologias
+3. **Mapas de confiança**: Visualização da confiança da classificação em diferentes áreas
+
+### 5.1.6.2 Análise de Embeddings
+
+As representações vetoriais (embeddings) geradas pelo modelo GCN são analisadas para extrair insights sobre a estrutura latente da morfologia urbana:
+
+```python
+def analyze_node_embeddings(model, data, labels, output_dir=None):
+    """
+    Analisa embeddings aprendidos pelo modelo GCN.
+    
+    Args:
+        model: Modelo GCN treinado
+        data: Dados de entrada
+        labels: Classes verdadeiras ou preditas
+        output_dir: Diretório para salvar visualizações
+        
+    Returns:
+        Dictionary com resultados de análise
+    """
+    # Extrai embeddings da penúltima camada
+    model.eval()
+    with torch.no_grad():
+        # Cria hook para capturar saída da penúltima camada
+        embeddings = []
+        
+        def hook_fn(module, input, output):
+            embeddings.append(output.detach().cpu())
+        
+        # Registra hook na camada desejada
+        hook = model.conv_layers[-1].register_forward_hook(hook_fn)
+        
+        # Forward pass para obter embeddings
+        _ = model(data.x, data.edge_index)
+        
+        # Remove hook
+        hook.remove()
+    
+    # Converte para numpy
+    embeddings = embeddings[0].numpy()
+    labels = labels.cpu().numpy()
+    
+    # Redução de dimensionalidade para visualização
+    from sklearn.manifold import TSNE, UMAP
+    from sklearn.decomposition import PCA
+    
+    # PCA para análise de variância explicada
+    pca = PCA(n_components=min(10, embeddings.shape[1]))
+    pca_result = pca.fit_transform(embeddings)
+    
+    # t-SNE para visualização
+    tsne = TSNE(n_components=2, random_state=42)
+    tsne_result = tsne.fit_transform(embeddings)
+    
+    # UMAP para visualização alternativa
+    umap_model = UMAP(n_components=2, random_state=42)
+    umap_result = umap_model.fit_transform(embeddings)
+    
+    # Visualizações
+    fig, axs = plt.subplots(1, 2, figsize=(20, 8))
+    
+    # Colormap para classes
+    cmap = plt.cm.tab10
+    
+    # t-SNE plot
+    for class_idx in np.unique(labels):
+        mask = labels == class_idx
+        axs[0].scatter(tsne_result[mask, 0], tsne_result[mask, 1], 
+                     c=[cmap(class_idx)], label=f'Classe {class_idx}', alpha=0.7)
+    axs[0].set_title('Visualização t-SNE de Embeddings', fontsize=14)
+    axs[0].legend()
+    
+    # UMAP plot
+    for class_idx in np.unique(labels):
+        mask = labels == class_idx
+        axs[1].scatter(umap_result[mask, 0], umap_result[mask, 1], 
+                     c=[cmap(class_idx)], label=f'Classe {class_idx}', alpha=0.7)
+    axs[1].set_title('Visualização UMAP de Embeddings', fontsize=14)
+    axs[1].legend()
+    
+    # Salva resultado
+    if output_dir:
+        plt.savefig(os.path.join(output_dir, 'embedding_visualization.png'), 
+                   dpi=300, bbox_inches='tight')
+    
+    # Análise de componentes principais
+    variance_explained = pca.explained_variance_ratio_
+    
+    return {
+        'embeddings': embeddings,
+        'pca_result': pca_result,
+        'tsne_result': tsne_result,
+        'umap_result': umap_result,
+        'variance_explained': variance_explained
+    }
+```
+
+Esta análise permite:
+- Identificar clusters naturais na estrutura urbana
+- Descobrir dimensões latentes que explicam variações morfológicas
+- Validar se o modelo capturou adequadamente as diferenças entre classes
+- Identificar casos de transição ou morfologias híbridas
+
+### 5.1.6.3 Interpretação Contextualizada
+
+Para fornecer interpretabilidade adicional, implementamos técnicas de explicação pós-hoc aplicadas ao contexto urbano:
+
+```python
+def explain_morphological_classification(G, model, data, node_idx, k_hops=2):
+    """
+    Explica a classificação para um nó específico mostrando
+    a influência dos nós vizinhos na decisão.
+    
+    Args:
+        G: Grafo NetworkX
+        model: Modelo GCN treinado
+        data: Dados de entrada
+        node_idx: Índice do nó a explicar
+        k_hops: Número de saltos para vizinhança
+        
+    Returns:
+        Dictionary com explicações
+    """
+    # Extrai subgrafo k-hop
+    subgraph_nodes = set([node_idx])
+    current_neighbors = set([node_idx])
+    
+    for _ in range(k_hops):
+        next_neighbors = set()
+        for node in current_neighbors:
+            neighbors = set(G.neighbors(node))
+            next_neighbors.update(neighbors)
+        
+        subgraph_nodes.update(next_neighbors)
+        current_neighbors = next_neighbors
+    
+    subgraph = G.subgraph(subgraph_nodes).copy()
+    
+    # Prepara modelo para explicação
+    model.eval()
+    
+    # Implementa oclusão para estimar importância dos vizinhos
+    neighbor_importance = {}
+    original_pred = None
+    
+    with torch.no_grad():
+        # Predição original
+        out = model(data.x, data.edge_index)
+        original_pred = out[node_idx].argmax().item()
+        original_prob = F.softmax(out[node_idx], dim=0)[original_pred].item()
+        
+        # Para cada vizinho, mede impacto de sua remoção
+        for neighbor in G.neighbors(node_idx):
+            # Cria máscara removendo aresta
+            mask = ~((data.edge_index[0] == node_idx) & (data.edge_index[1] == neighbor) |
+                     (data.edge_index[0] == neighbor) & (data.edge_index[1] == node_idx))
+            
+            # Predição com aresta removida
+            new_out = model(data.x, data.edge_index[:, mask])
+            new_pred = new_out[node_idx].argmax().item()
+            new_prob = F.softmax(new_out[node_idx], dim=0)[original_pred].item()
+            
+            # Impacto = redução na probabilidade da classe original
+            impact = original_prob - new_prob
+            neighbor_importance[neighbor] = impact
+    
+    # Normaliza importâncias para 0-1
+    if neighbor_importance:
+        max_impact = max(abs(imp) for imp in neighbor_importance.values())
+        if max_impact > 0:
+            neighbor_importance = {k: v/max_impact for k, v in neighbor_importance.items()}
+    
+    return {
+        'node_idx': node_idx,
+        'prediction': original_pred,
+        'confidence': original_prob,
+        'neighbor_importance': neighbor_importance,
+        'subgraph': subgraph
+    }
+```
+
+Esta abordagem permite compreender:
+- Quais características específicas motivaram a classificação
+- Como o contexto local influencia a morfologia identificada
+- Que aspectos diferenciam um padrão de outro em casos limítrofes
+
+### 5.1.7 Aplicações e Casos de Uso
+
+O modelo GCN para compreensão estrutural possibilita diversas aplicações práticas no planejamento urbano e análise espacial:
+
+1. **Classificação Morfológica Automatizada**: Identificação sistemática de padrões urbanos em larga escala
+2. **Análise Comparativa de Cidades**: Quantificação de similaridades e diferenças entre malhas urbanas distintas
+3. **Estudos Históricos Urbanos**: Identificação de fases de desenvolvimento baseada em padrões morfológicos
+4. **Planejamento Urbano Contextualizado**: Recomendações para novos desenvolvimentos alinhados com morfologias existentes
+5. **Otimização de Mobilidade**: Identificação de áreas com padrões problemáticos para intervenção
+6. **Priorização de Investimentos**: Direcionamento de recursos baseado em tipologias morfológicas e suas demandas
+7. **Análise de Qualidade Urbana**: Correlação entre padrões morfológicos e qualidade de vida/bem-estar
+
+A implementação deste modelo, integrada à estrutura existente no pipeline definido em `src/graph/road/pipeline/`, fornece uma ferramenta poderosa para análise urbana avançada, complementando os módulos de análise de congestionamento e rotas críticas.
+
+## 5.1.8 Referências Científicas
+
+- Kipf, T. N., & Welling, M. (2017). Semi-supervised classification with graph convolutional networks. International Conference on Learning Representations (ICLR).
+
+- Boeing, G. (2019). Urban spatial order: Street network orientation, configuration, and entropy. Applied Network Science, 4(1), 1-19.
+
+- Veličković, P., Cucurull, G., Casanova, A., Romero, A., Liò, P., & Bengio, Y. (2018). Graph attention networks. International Conference on Learning Representations (ICLR).
+
+- Louf, R., & Barthelemy, M. (2014). A typology of street patterns. Journal of the Royal Society Interface, 11(101), 20140924.
+
+- Abu-El-Haija, S., Perozzi, B., Kapoor, A., Alipourfard, N., Lerman, K., Harutyunyan, H., Ver Steeg, G., & Galstyan, A. (2019). MixHop: Higher-order graph convolutional architectures via sparsified neighborhood mixing. Proceedings of the 36th International Conference on Machine Learning (ICML).
+
+- You, J., Ying, R., & Leskovec, J. (2019). Position-aware graph neural networks. Proceedings of the 36th International Conference on Machine Learning (ICML), 7134-7143.
+
+- Barrington-Leigh, C., & Millard-Ball, A. (2020). Global trends toward urban street-network sprawl. Proceedings of the National Academy of Sciences, 117(4), 1941-1950.
+
+- Marshall, S. (2004). Streets and patterns. Routledge.
+
+- Barthélemy, M. (2011). Spatial networks. Physics Reports, 499(1-3), 1-101.
+
+- Hamilton, W. L., Ying, R., & Leskovec, J. (2017). Inductive representation learning on large graphs. Advances in Neural Information Processing Systems (NeurIPS), 30.

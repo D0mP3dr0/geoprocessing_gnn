@@ -53,8 +53,8 @@ def check_jupyter():
 if IS_COLAB:
     # Se estiver no Colab, monte o Google Drive
     try:
-        from google.colab import drive
-        drive.mount('/content/drive')
+from google.colab import drive
+drive.mount('/content/drive')
         
         # Caminhos de diretórios no Google Drive
         BASE_DIR = "/content/drive/MyDrive/geoprocessamento_gnn"
@@ -148,7 +148,7 @@ print("Variáveis de ambiente configuradas para otimização com GPU L4")
 
 # Configuração para visualização interativa
 try:
-    from IPython.display import display, HTML
+from IPython.display import display, HTML
     IS_NOTEBOOK = True
     # Usar tqdm notebook version
     from tqdm.notebook import tqdm
@@ -237,8 +237,8 @@ from shapely.geometry import box
 # Montar o Google Drive apenas se estiver no Colab
 if IS_COLAB:
     try:
-        from google.colab import drive
-        drive.mount('/content/drive')
+from google.colab import drive
+drive.mount('/content/drive')
     except ImportError:
         print("Não foi possível montar o Google Drive.")
 
@@ -364,8 +364,8 @@ print("\nCarregamento completo. Todos os datasets estão armazenados na variáve
 # Habilitar widgets apenas se estiver no Colab
 if IS_COLAB:
     try:
-        from google.colab import output
-        output.enable_custom_widget_manager()
+from google.colab import output
+output.enable_custom_widget_manager()
         print("Support for third party widgets will remain active for the duration of the session. To disable support:")
         print("from google.colab import output")
         print("output.disable_custom_widget_manager()")
@@ -377,8 +377,8 @@ if IS_COLAB:
 # Desabilitar widgets apenas se estiver no Colab
 if IS_COLAB:
     try:
-        from google.colab import output
-        output.disable_custom_widget_manager()
+from google.colab import output
+output.disable_custom_widget_manager()
     except ImportError:
         pass
 
@@ -506,8 +506,8 @@ import warnings
 # Montar o Google Drive apenas se estiver no Colab
 if IS_COLAB:
     try:
-        from google.colab import drive
-        drive.mount('/content/drive')
+from google.colab import drive
+drive.mount('/content/drive')
     except ImportError:
         print("Não foi possível montar o Google Drive.")
 
@@ -971,8 +971,8 @@ if isinstance(buildings_with_landuse, dict):
             buildings_gdf = buildings_with_landuse[key]
             print(f"Usando a camada '{key}' com {len(buildings_gdf)} feições")
             found_gdf = True
-            break
-    
+                    break
+
     # Se não encontrou, verificar cada valor para encontrar um GeoDataFrame
     if not found_gdf:
         for key, value in buildings_with_landuse.items():
@@ -985,7 +985,7 @@ if isinstance(buildings_with_landuse, dict):
                     buildings_gdf = value
                     print(f"Usando o GeoDataFrame '{key}' com {len(buildings_gdf)} feições")
                     found_gdf = True
-                    break
+                break
         
         # Se ainda não encontrou, usar o primeiro GeoDataFrame disponível
         if not found_gdf:
@@ -994,7 +994,7 @@ if isinstance(buildings_with_landuse, dict):
                     buildings_gdf = value
                     print(f"Usando o primeiro GeoDataFrame disponível '{key}' com {len(buildings_gdf)} feições")
                     found_gdf = True
-                    break
+                break
     
     if not found_gdf:
         print("Não foi possível encontrar dados de edifícios no dicionário")
@@ -1004,7 +1004,7 @@ if isinstance(buildings_with_landuse, dict):
 elif isinstance(buildings_with_landuse, gpd.GeoDataFrame):
     print(f"Dados carregados como GeoDataFrame com {len(buildings_with_landuse)} feições")
     buildings_gdf = buildings_with_landuse
-else:
+    else:
     print(f"Formato de dados desconhecido: {type(buildings_with_landuse)}")
     # Criar um GeoDataFrame vazio com as colunas esperadas
     buildings_gdf = gpd.GeoDataFrame(columns=['geometry', 'building', 'categoria_funcional', 'subcategoria_funcional'])
@@ -1323,7 +1323,7 @@ def categorize_buildings(gdf, categories_def):
 # Categorizando os edifícios
 if isinstance(buildings_gdf, gpd.GeoDataFrame) and not buildings_gdf.empty:
     categorized_buildings, cat_stats = categorize_buildings(buildings_gdf, functional_categories)
-    # Exibir amostra do resultado
+# Exibir amostra do resultado
     print("\nAmostra dos edifícios categorizados:")
     if isinstance(categorized_buildings, gpd.GeoDataFrame):
         display(categorized_buildings.head())
@@ -1429,7 +1429,7 @@ def analyze_categorization_results(gdf, cat_stats):
 def map_categorized_buildings(gdf, figsize=(15, 15), sample_size=1000):
     """
     Versão básica para criar um mapa dos edifícios categorizados.
-    
+
     Args:
         gdf: GeoDataFrame com edifícios categorizados
         figsize: Tamanho da figura
@@ -1446,38 +1446,38 @@ def map_categorized_buildings(gdf, figsize=(15, 15), sample_size=1000):
         
         # Verificar se temos dados para plotar
         if not gdf.empty and 'geometry' in gdf.columns and 'categoria_funcional' in gdf.columns:
-            # Filtrar apenas edifícios categorizados
-            categorized = gdf.dropna(subset=['categoria_funcional']).copy()
-            
-            # Se tiver muitos edifícios, amostrar para melhor visualização
-            if len(categorized) > sample_size:
-                categorized = categorized.sample(sample_size)
-            
-            # Preparar uma paleta de cores
-            n_categories = categorized['categoria_funcional'].nunique()
-            colors = plt.cm.tab20(np.linspace(0, 1, n_categories))
-            
-            # Plotar por categoria
-            for i, (category, group) in enumerate(categorized.groupby('categoria_funcional')):
-                color = colors[i % len(colors)]
-                group.plot(ax=ax, color=color, label=category, alpha=0.7, markersize=20)
-            
-            # Configurar gráfico
-            ax.set_title('Categorização Funcional de Edifícios', fontsize=16)
-            ax.legend(title='Categoria Funcional', loc='upper left', bbox_to_anchor=(1, 1))
-            plt.tight_layout()
+    # Filtrar apenas edifícios categorizados
+    categorized = gdf.dropna(subset=['categoria_funcional']).copy()
+
+    # Se tiver muitos edifícios, amostrar para melhor visualização
+    if len(categorized) > sample_size:
+        categorized = categorized.sample(sample_size)
+
+    # Preparar uma paleta de cores
+    n_categories = categorized['categoria_funcional'].nunique()
+    colors = plt.cm.tab20(np.linspace(0, 1, n_categories))
+
+    # Plotar por categoria
+    for i, (category, group) in enumerate(categorized.groupby('categoria_funcional')):
+        color = colors[i % len(colors)]
+        group.plot(ax=ax, color=color, label=category, alpha=0.7, markersize=20)
+
+    # Configurar gráfico
+    ax.set_title('Categorização Funcional de Edifícios', fontsize=16)
+    ax.legend(title='Categoria Funcional', loc='upper left', bbox_to_anchor=(1, 1))
+    plt.tight_layout()
         else:
             ax.text(0.5, 0.5, "Dados insuficientes para visualização", 
                    ha='center', va='center', fontsize=14)
-        
-        return fig, ax
+
+    return fig, ax
     except Exception as e:
         print(f"Erro ao criar mapa: {e}")
         # Criar uma figura vazia em caso de erro
         fig, ax = plt.subplots(figsize=(8, 6))
         ax.text(0.5, 0.5, f"Erro ao criar visualização: {str(e)}", 
                ha='center', va='center', fontsize=14)
-        return fig, ax
+    return fig, ax
 
 # Note: Map visualization disabled - only create maps when there's valid data
 # To visualize buildings on a map, use:
@@ -1509,17 +1509,17 @@ def finalize_categorization(gdf, existing_class_col=None):
 
     # Verificar se temos a coluna categoria_funcional
     if 'categoria_funcional' in final_gdf.columns:
-        # Prioridade: categorização nova > classificação existente
-        for idx, row in tqdm(final_gdf.iterrows(), total=len(final_gdf), desc="Finalizando categorização"):
-            # Se temos categoria funcional, usá-la
-            if pd.notna(row['categoria_funcional']):
-                # Se temos subcategoria, incluí-la na classificação
+    # Prioridade: categorização nova > classificação existente
+    for idx, row in tqdm(final_gdf.iterrows(), total=len(final_gdf), desc="Finalizando categorização"):
+        # Se temos categoria funcional, usá-la
+        if pd.notna(row['categoria_funcional']):
+            # Se temos subcategoria, incluí-la na classificação
                 if 'subcategoria_funcional' in final_gdf.columns and pd.notna(row['subcategoria_funcional']):
-                    classification = f"{row['categoria_funcional']}_{row['subcategoria_funcional']}"
-                else:
-                    classification = row['categoria_funcional']
+                classification = f"{row['categoria_funcional']}_{row['subcategoria_funcional']}"
+            else:
+                classification = row['categoria_funcional']
 
-                final_gdf.at[idx, 'building_class_enhanced'] = classification
+            final_gdf.at[idx, 'building_class_enhanced'] = classification
 
     # Para edifícios sem classificação final, tentar usar outros atributos
     unclassified = final_gdf['building_class_enhanced'].isna()
@@ -1548,16 +1548,16 @@ def finalize_categorization(gdf, existing_class_col=None):
         if unclassified_count > 0:
             unclassified_percent = unclassified_count / total_count * 100
             print(f"Edifícios ainda sem classificação após uso de 'building': {unclassified_count} ({unclassified_percent:.2f}%)")
-        
+
         # Para os restantes, usar 'other' como classificação
         final_gdf.loc[unclassified, 'building_class_enhanced'] = 'other'
 
     # Exibir estatísticas da classificação final
     if 'building_class_enhanced' in final_gdf.columns:
-        final_stats = final_gdf['building_class_enhanced'].value_counts().head(10)
-        print("\nTop 10 classificações finais:")
-        for class_name, count in final_stats.items():
-            print(f"- {class_name}: {count} ({count/len(final_gdf)*100:.2f}%)")
+    final_stats = final_gdf['building_class_enhanced'].value_counts().head(10)
+    print("\nTop 10 classificações finais:")
+    for class_name, count in final_stats.items():
+        print(f"- {class_name}: {count} ({count/len(final_gdf)*100:.2f}%)")
 
     return final_gdf
 
@@ -1572,7 +1572,7 @@ final_categorized_buildings = finalize_categorization(categorized_buildings, exi
 def validate_categorization(gdf, n_samples=5):
     """
     Valida a categorização exibindo amostras aleatórias de cada classe.
-    
+
     Args:
         gdf: GeoDataFrame com categorização
         n_samples: Número de amostras para exibir
@@ -1713,8 +1713,8 @@ total_buildings = len(final_categorized_buildings)
 
 # Verificar se as colunas necessárias existem antes de acessá-las
 if 'categoria_funcional' in final_categorized_buildings.columns:
-    categorized_count = final_categorized_buildings['categoria_funcional'].notna().sum()
-    categories_count = final_categorized_buildings['categoria_funcional'].nunique()
+categorized_count = final_categorized_buildings['categoria_funcional'].notna().sum()
+categories_count = final_categorized_buildings['categoria_funcional'].nunique()
 else:
     categorized_count = 0
     categories_count = 0
@@ -1722,7 +1722,7 @@ else:
     final_categorized_buildings['categoria_funcional'] = pd.NA
 
 if 'subcategoria_funcional' in final_categorized_buildings.columns:
-    subcategories_count = final_categorized_buildings['subcategoria_funcional'].nunique()
+subcategories_count = final_categorized_buildings['subcategoria_funcional'].nunique()
 else:
     subcategories_count = 0
     # Adicionar a coluna se não existir
@@ -1743,16 +1743,16 @@ if isinstance(final_categorized_buildings, gpd.GeoDataFrame) and not final_categ
     except Exception as e:
         print(f"Erro ao explorar dados de zoneamento: {e}")
         primary_landuse_col = None
-else:
+            else:
     primary_landuse_col = None
     print("Não há dados para explorar o zoneamento")
 
 # Prosseguir apenas se tivermos uma coluna de uso do solo válida
-if primary_landuse_col:
+    if primary_landuse_col:
     try:
-        # Definir regras de conformidade para avaliação
-        conformity_rules = define_conformity_rules()
-        
+# Definir regras de conformidade para avaliação
+conformity_rules = define_conformity_rules()
+
         # Analisar conformidade entre uso real e zoneamento
         try:
             conformity_result = analyze_conformity(final_categorized_buildings, primary_landuse_col, conformity_rules)
@@ -1764,7 +1764,7 @@ if primary_landuse_col:
                 conformity_gdf = conformity_result
                 conformity_stats = {}
                 level_stats = {}
-        except Exception as e:
+    except Exception as e:
             print(f"Erro ao analisar conformidade: {e}")
             conformity_gdf = gpd.GeoDataFrame()
             conformity_stats = {}
@@ -1777,12 +1777,12 @@ if primary_landuse_col:
                 map_conformity(conformity_gdf)
                 
                 # Análise de padrões de conformidade
-                analyze_conformity_patterns(conformity_gdf, primary_landuse_col)
-                
-                # Calcular índices de conformidade
-                conformity_indices = calculate_conformity_indices(conformity_gdf)
-                
-                # Identificar anomalias e padrões espaciais
+analyze_conformity_patterns(conformity_gdf, primary_landuse_col)
+
+# Calcular índices de conformidade
+conformity_indices = calculate_conformity_indices(conformity_gdf)
+
+# Identificar anomalias e padrões espaciais
                 identify_anomalies(conformity_gdf, primary_landuse_col)
                 
                 # Salvar resultados
@@ -1796,7 +1796,7 @@ if primary_landuse_col:
                     print(f"- Índices: {os.path.basename(indices_path)}")
             except Exception as e:
                 print(f"Erro durante a análise de conformidade: {e}")
-        else:
+                    else:
             print("A análise de conformidade não produziu resultados válidos")
     except NameError as e:
         print(f"Função não definida: {e}. Pulando análise de conformidade.")
@@ -1832,7 +1832,7 @@ if (not 'buildings_gdf' in locals() or
     if use_example:
         buildings_gdf = example_gdf
         print("Usando dados de exemplo para demonstração. Defina use_example = False para desativar.")
-    else:
+        else:
         print("Dados de exemplo disponíveis, mas não estão sendo usados. Defina use_example = True para ativar.")
     
     # Mostrar o GeoDataFrame de exemplo

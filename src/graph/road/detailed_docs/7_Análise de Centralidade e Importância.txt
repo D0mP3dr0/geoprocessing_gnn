@@ -1,0 +1,8 @@
+Estrutura Atual:
+* 03_fluxo_execucao_part1.txt (Inicialização, Carregamento, Pré-processamento)
+* 04_fluxo_execucao_part2.txt (Construção do Grafo, Preparação PyTorch Geometric, início do Treinamento)
+Proposta de Expansão (7 arquivos):
+1. 05_fluxo_execucao_part3.txt - Treinamento de Modelos GNN
+2. 06_fluxo_execucao_part4.txt - Avaliação e Métricas de Desempenho
+3. 07_fluxo_execucao_part5.txt - Análise de Centralidade e Importância
+6. 08_fluxo_execucao_part8.txt - Visualização Avançada e Mapas Interativos
