@@ -550,7 +550,7 @@ def create_hexagon_coverage_grid(gdf):
             boundary = h3.cell_to_boundary(hex_id)
             # Convert the boundary format to be compatible with Shapely
             polygon = Polygon([(lng, lat) for lat, lng in boundary])
-            hex_polygons.append(polygon)
+        hex_polygons.append(polygon)
     
     # Criar GeoDataFrame dos hexágonos
     hex_gdf = gpd.GeoDataFrame(geometry=hex_polygons, crs=result.crs)
@@ -594,31 +594,31 @@ def create_hexagon_coverage_grid(gdf):
             hex_geom = hex_gdf_proj.loc[idx].geometry
             
             # Conjunto de operadoras com cobertura neste hexágono
-            op_com_cobertura = set()
-            count_setores = 0
-            eirp_setores = []
-            
+        op_com_cobertura = set()
+        count_setores = 0
+        eirp_setores = []
+        
             # Usar índice espacial para encontrar possíveis interseções
             # Em vez de verificar todos os setores
             possible_matches_idx = list(setores_gdf_proj.sindex.intersection(hex_geom.bounds))
             candidate_setores = setores_gdf_proj.iloc[possible_matches_idx]
             
             # Verificar interseção com setores candidatos
-            for op in operadoras:
+        for op in operadoras:
                 # Filtrar setores desta operadora entre os candidatos
                 op_setores = candidate_setores[candidate_setores['NomeEntidade'] == op]
                 
                 if len(op_setores) == 0:
                     continue
-                
-                # Verificar se algum setor intersecta o hexágono
-                for _, setor_row in op_setores.iterrows():
-                    if hex_geom.intersects(setor_row.geometry):
-                        op_com_cobertura.add(op)
-                        count_setores += 1
-                        eirp_setores.append(setor_row['EIRP_dBm'])
-                        break  # Basta uma interseção por operadora
-                
+            
+            # Verificar se algum setor intersecta o hexágono
+            for _, setor_row in op_setores.iterrows():
+                if hex_geom.intersects(setor_row.geometry):
+                    op_com_cobertura.add(op)
+                    count_setores += 1
+                    eirp_setores.append(setor_row['EIRP_dBm'])
+                    break  # Basta uma interseção por operadora
+        
             # Armazenar resultados para este hexágono
             results.append({
                 'idx': idx,
@@ -906,8 +906,8 @@ def create_coverage_network(gdf, hex_gdf):
     # Filtrar apenas ERBs com setores válidos
     setores_gdf = result[result['setor_geometria'].notna()].copy()
     if len(setores_gdf) > 0:
-        setores_gdf['geometry'] = setores_gdf['setor_geometria']
-        
+    setores_gdf['geometry'] = setores_gdf['setor_geometria']
+    
         # Preparar índice espacial para hexágonos
         if not hasattr(hex_result, 'sindex') or hex_result.sindex is None:
             # Criar índice espacial se não existir
@@ -917,8 +917,8 @@ def create_coverage_network(gdf, hex_gdf):
         erb_hex_edges = []
         
         # Para cada setor, encontrar hexágonos que intersectam
-        for erb_idx, erb_row in tqdm(setores_gdf.iterrows(), total=len(setores_gdf), desc="Criando arestas ERB-hexágono"):
-            erb_setor = erb_row.geometry
+    for erb_idx, erb_row in tqdm(setores_gdf.iterrows(), total=len(setores_gdf), desc="Criando arestas ERB-hexágono"):
+        erb_setor = erb_row.geometry
             # Usar o índice espacial para encontrar candidatos
             potential_matches_idx = list(hex_result.sindex.intersection(erb_setor.bounds))
             # Filtrar candidatos reais
@@ -1006,7 +1006,7 @@ def create_coverage_network(gdf, hex_gdf):
     else:
         logger.info("Calculando métricas de centralidade exatas")
         betweenness = nx.betweenness_centrality(G)
-        closeness = nx.closeness_centrality(G)
+    closeness = nx.closeness_centrality(G)
     
     # Degree centrality é sempre rápido
     degree = nx.degree_centrality(G)
@@ -1258,13 +1258,13 @@ def generate_quality_report(original_gdf, enriched_gdf, hex_gdf, G=None):
     
     # Adicionar informações da grade hexagonal
     report["hexagons"] = {
-        "total": len(hex_gdf),
+            "total": len(hex_gdf),
         "coverage_statistics": {
             "covered": int((hex_gdf['num_operadoras'] > 0).sum()),
             "uncovered": int((hex_gdf['num_operadoras'] == 0).sum()),
             "coverage_percentage": float(((hex_gdf['num_operadoras'] > 0).sum() / len(hex_gdf)) * 100)
-        },
-        "vulnerabilidade": {
+                },
+                "vulnerabilidade": {
             "distribution": {
                 str(k): int(v) for k, v in hex_gdf['vulnerabilidade'].value_counts().to_dict().items()
             }
@@ -1433,9 +1433,9 @@ def generate_visualizations(gdf, hex_gdf=None, G=None):
     # 2. Mapa de setores de cobertura, se disponíveis
     if 'setor_geometria' in gdf.columns and gdf['setor_geometria'].notna().any():
         logger.info("Gerando mapa de setores de cobertura")
-        plt.figure(figsize=(15, 12))
-        ax = plt.subplot(111)
-        
+    plt.figure(figsize=(15, 12))
+    ax = plt.subplot(111)
+    
         # Criar GeoDataFrame temporário para os setores
         setores_gdf = gdf[gdf['setor_geometria'].notna()].copy()
         setores_gdf['geometry'] = setores_gdf['setor_geometria']
@@ -1446,30 +1446,30 @@ def generate_visualizations(gdf, hex_gdf=None, G=None):
             if len(subset) > 0:
                 color = colors_operadoras[op]
                 subset.plot(ax=ax, color=color, alpha=0.3, label=f"{op} (Cobertura)")
-        
-        # Adicionar pontos das ERBs
+    
+    # Adicionar pontos das ERBs
         gdf.plot(ax=ax, markersize=15, color='black', alpha=0.7)
-        
-        # Adicionar mapa base
+    
+    # Adicionar mapa base
         try:
             ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, crs=gdf.crs)
         except Exception as e:
             logger.warning(f"Não foi possível adicionar mapa base: {e}")
-        
-        # Adicionar título e legenda
+    
+    # Adicionar título e legenda
         plt.title('Setores de Cobertura das ERBs', fontsize=16)
         plt.legend(title='Operadora', loc='upper right')
-        
-        # Salvar figura
+    
+    # Salvar figura
         plt.savefig(os.path.join(VISUALIZATION_DIR, 'erb_setores_cobertura.png'), dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
     
     # 3. Mapa de clusters, se disponível
     if 'cluster_id' in gdf.columns:
         logger.info("Gerando mapa de clusters de ERBs")
-        plt.figure(figsize=(15, 12))
-        ax = plt.subplot(111)
-        
+    plt.figure(figsize=(15, 12))
+    ax = plt.subplot(111)
+    
         # Identificar clusters únicos (excluindo ruído)
         clusters = [c for c in gdf['cluster_id'].unique() if c != -1]
         
@@ -1487,20 +1487,20 @@ def generate_visualizations(gdf, hex_gdf=None, G=None):
             subset = gdf[gdf['cluster_id'] == cluster_id]
             color = color_dict[cluster_id]
             subset.plot(ax=ax, color=color, alpha=0.7, label=f'Cluster {cluster_id}', markersize=30)
-        
-        # Adicionar mapa base
+    
+    # Adicionar mapa base
         try:
             ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, crs=gdf.crs)
         except Exception as e:
             logger.warning(f"Não foi possível adicionar mapa base: {e}")
-        
-        # Adicionar título e legenda
+    
+    # Adicionar título e legenda
         plt.title('Clustering Espacial de ERBs', fontsize=16)
         plt.legend(title='Cluster', loc='upper right')
-        
-        # Salvar figura
+    
+    # Salvar figura
         plt.savefig(os.path.join(VISUALIZATION_DIR, 'erb_clusters.png'), dpi=300, bbox_inches='tight')
-        plt.close()
+    plt.close()
     
     # 4. Mapa de hexágonos de vulnerabilidade, se disponível
     if hex_gdf is not None:
@@ -1509,9 +1509,9 @@ def generate_visualizations(gdf, hex_gdf=None, G=None):
     # 5. Mapa de rede, se disponível
     if G is not None:
         logger.info("Gerando visualização da rede de cobertura")
-        plt.figure(figsize=(15, 12))
-        ax = plt.subplot(111)
-        
+    plt.figure(figsize=(15, 12))
+    ax = plt.subplot(111)
+    
         # Obter posições dos nós
         pos = nx.get_node_attributes(G, 'pos')
         
@@ -1791,7 +1791,7 @@ def plot_hex_vulnerability_map(hex_gdf):
         hex_gdf (geopandas.GeoDataFrame): Grade hexagonal com análise de vulnerabilidade
     """
     logger.info("Gerando mapa de vulnerabilidade em grade hexagonal")
-    plt.figure(figsize=(15, 12))
+        plt.figure(figsize=(15, 12))
     ax = plt.subplot(111)
     
     # Definir cores para categorias de vulnerabilidade
@@ -1924,12 +1924,12 @@ def create_interactive_full_map(gdf, voronoi_gdf, hex_gdf):
             'Baixa vulnerabilidade': '#e0f3f8'
         }
         
-        # Centro do mapa
-        center = [gdf.geometry.y.mean(), gdf.geometry.x.mean()]
-        
-        # Criar mapa
-        m = folium.Map(location=center, zoom_start=11, tiles='CartoDB positron')
-        
+    # Centro do mapa
+    center = [gdf.geometry.y.mean(), gdf.geometry.x.mean()]
+    
+    # Criar mapa
+    m = folium.Map(location=center, zoom_start=11, tiles='CartoDB positron')
+    
         # Adicionar hexágonos de vulnerabilidade
         fg_hex = folium.FeatureGroup(name="Análise de Vulnerabilidade", show=False)
         
@@ -1959,31 +1959,31 @@ def create_interactive_full_map(gdf, voronoi_gdf, hex_gdf):
         # Adicionar polígonos de Voronoi
         fg_voronoi = folium.FeatureGroup(name="Diagrama de Voronoi", show=False)
         
-        for op in operadoras:
+    for op in operadoras:
             subset = voronoi_gdf[voronoi_gdf['NomeEntidade'] == op]
             
-            color = '#{:02x}{:02x}{:02x}'.format(
-                int(colors_operadoras[op][0]*255),
-                int(colors_operadoras[op][1]*255),
-                int(colors_operadoras[op][2]*255)
-            )
-            
-            for idx, row in subset.iterrows():
-                popup_text = f"""
-                <b>Operadora:</b> {op}<br>
+        color = '#{:02x}{:02x}{:02x}'.format(
+            int(colors_operadoras[op][0]*255),
+            int(colors_operadoras[op][1]*255),
+            int(colors_operadoras[op][2]*255)
+        )
+        
+        for idx, row in subset.iterrows():
+            popup_text = f"""
+            <b>Operadora:</b> {op}<br>
                 <b>Área:</b> {row['area_voronoi_km2']:.2f} km²<br>
                 <b>Vizinhos:</b> {row['num_vizinhos']}
-                """
-                
-                folium.GeoJson(
+            """
+            
+            folium.GeoJson(
                     row.geometry,
-                    style_function=lambda x, color=color: {
-                        'fillColor': color,
-                        'color': color,
-                        'weight': 1,
+                style_function=lambda x, color=color: {
+                    'fillColor': color,
+                    'color': color,
+                    'weight': 1,
                         'fillOpacity': 0.4
-                    },
-                    popup=folium.Popup(popup_text)
+                },
+                popup=folium.Popup(popup_text)
                 ).add_to(fg_voronoi)
         
         fg_voronoi.add_to(m)
@@ -2005,29 +2005,29 @@ def create_interactive_full_map(gdf, voronoi_gdf, hex_gdf):
                 )
                 
                 fg_setores = folium.FeatureGroup(name=f"Cobertura - {op}")
-                
-                for idx, row in subset.iterrows():
-                    popup_text = f"""
+        
+        for idx, row in subset.iterrows():
+            popup_text = f"""
                     <b>Operadora:</b> {op}<br>
                     <b>EIRP:</b> {row['EIRP_dBm']:.2f} dBm<br>
                     <b>Raio:</b> {row['Raio_Cobertura_km']:.2f} km<br>
                     """
                     
                     if isinstance(row['setor_geometria'], Polygon):
-                        folium.GeoJson(
+            folium.GeoJson(
                             row['setor_geometria'],
-                            style_function=lambda x, color=color: {
-                                'fillColor': color,
-                                'color': color,
-                                'weight': 1,
+                style_function=lambda x, color=color: {
+                    'fillColor': color,
+                    'color': color,
+                    'weight': 1,
                                 'fillOpacity': 0.5
-                            },
-                            popup=folium.Popup(popup_text)
+                },
+                popup=folium.Popup(popup_text)
                         ).add_to(fg_setores)
-                
+    
                 fg_setores.add_to(m)
-        
-        # Adicionar ERBs
+    
+    # Adicionar ERBs
         for op in operadoras:
             subset = gdf[gdf['NomeEntidade'] == op]
             
@@ -2040,10 +2040,10 @@ def create_interactive_full_map(gdf, voronoi_gdf, hex_gdf):
             mc = MarkerCluster(name=f"ERBs - {op}")
             
             for idx, row in subset.iterrows():
-                popup_text = f"""
+        popup_text = f"""
                 <b>Operadora:</b> {op}<br>
-                <b>EIRP:</b> {row['EIRP_dBm']:.2f} dBm<br>
-                <b>Raio:</b> {row['Raio_Cobertura_km']:.2f} km<br>
+        <b>EIRP:</b> {row['EIRP_dBm']:.2f} dBm<br>
+        <b>Raio:</b> {row['Raio_Cobertura_km']:.2f} km<br>
                 """
                 
                 if 'voronoi_area_km2' in row and not pd.isna(row['voronoi_area_km2']):
@@ -2052,18 +2052,18 @@ def create_interactive_full_map(gdf, voronoi_gdf, hex_gdf):
                 if 'voronoi_vizinhos' in row and not pd.isna(row['voronoi_vizinhos']):
                     popup_text += f"<b>Vizinhos:</b> {int(row['voronoi_vizinhos'])}<br>"
                 
-                folium.Marker(
-                    location=[row.geometry.y, row.geometry.x],
-                    popup=folium.Popup(popup_text),
+        folium.Marker(
+            location=[row.geometry.y, row.geometry.x],
+            popup=folium.Popup(popup_text),
                     icon=folium.Icon(color='white', icon_color=color, icon='signal', prefix='fa')
                 ).add_to(mc)
-            
+    
             mc.add_to(m)
-        
-        # Adicionar controle de camadas
-        folium.LayerControl().add_to(m)
-        
-        # Salvar mapa
+    
+    # Adicionar controle de camadas
+    folium.LayerControl().add_to(m)
+    
+    # Salvar mapa
         m.save(os.path.join(VISUALIZATION_DIR, 'erb_mapa_interativo_completo.html'))
         logger.info(f"Mapa interativo completo salvo em {os.path.join(VISUALIZATION_DIR, 'erb_mapa_interativo_completo.html')}")
         
@@ -2394,8 +2394,8 @@ def main():
         
         # Salvar diagrama de Voronoi
         voronoi_gdf.to_file(output_file, driver="GPKG", layer="voronoi")
-        
-        # Salvar grade hexagonal
+    
+    # Salvar grade hexagonal
         hex_gdf.to_file(output_file, driver="GPKG", layer="hexagons")
         
         logger.info(f"Dados enriquecidos salvos em {output_file} em {time.time() - checkpoint_time:.2f} segundos")

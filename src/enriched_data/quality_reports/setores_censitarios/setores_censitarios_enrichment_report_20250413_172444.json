@@ -1,0 +1,121 @@
+{
+    "report_date": "2025-04-13 17:24:44",
+    "original_features": 1218,
+    "enriched_features": 1218,
+    "new_attributes": [
+        "top_prioridade",
+        "area_km2",
+        "indice_vulnerabilidade",
+        "elevation_max",
+        "pop_variacao_rel",
+        "compacidade",
+        "indice_prioridade_evacuacao",
+        "pop_atual_1500",
+        "pop_total_norm",
+        "indice_acessibilidade",
+        "indice_rugosidade",
+        "categoria_elevacao",
+        "densidade_pop",
+        "categoria_prioridade",
+        "perimetro_km",
+        "est_populacao",
+        "pop_variacao_max",
+        "elevation_range",
+        "tipo_area",
+        "elevation_min",
+        "elevation_std",
+        "elevation_mean",
+        "densidade_pop_norm",
+        "est_pop_pea",
+        "elevation_median",
+        "categoria_variacao_pop",
+        "categoria_tamanho",
+        "categoria_vulnerabilidade",
+        "centroid_x",
+        "centroid_y",
+        "pop_atual_0800",
+        "pop_atual_1900",
+        "pop_atual_1200",
+        "pop_atual_2300"
+    ],
+    "enriched_data_path": null,
+    "visualizations": {
+        "densidade_populacional": "f:\\TESE_MESTRADO\\geoprocessing\\outputs\\visualize_enriched_data\\setores_censitarios\\20250413_172434\\densidade_populacional.png",
+        "vulnerabilidade": "f:\\TESE_MESTRADO\\geoprocessing\\outputs\\visualize_enriched_data\\setores_censitarios\\20250413_172434\\vulnerabilidade.png",
+        "prioridade_evacuacao": "f:\\TESE_MESTRADO\\geoprocessing\\outputs\\visualize_enriched_data\\setores_censitarios\\20250413_172434\\prioridade_evacuacao.png",
+        "elevacao_media": "f:\\TESE_MESTRADO\\geoprocessing\\outputs\\visualize_enriched_data\\setores_censitarios\\20250413_172434\\elevacao_media.png",
+        "variacao_populacional": "f:\\TESE_MESTRADO\\geoprocessing\\outputs\\visualize_enriched_data\\setores_censitarios\\20250413_172434\\variacao_populacional.png",
+        "distribuicao_tipos_area": "f:\\TESE_MESTRADO\\geoprocessing\\outputs\\visualize_enriched_data\\setores_censitarios\\20250413_172434\\distribuicao_tipos_area.png"
+    },
+    "statistics": {
+        "area_km2": {
+            "mean": 0.3696283122076913,
+            "median": 0.08723480410157444,
+            "min": 0.0,
+            "max": 35.23281440288294,
+            "total": 450.207284268968
+        },
+        "est_populacao": {
+            "mean": 369.62831220769135,
+            "median": 87.23480410157444,
+            "min": 0.0,
+            "max": 35232.814402882934,
+            "total": 450207.2842689681
+        },
+        "densidade_pop": {
+            "mean": 1000.0,
+            "median": 1000.0,
+            "min": 999.9999999999999,
+            "max": 1000.0000000000001
+        },
+        "elevation_range": {
+            "mean": 8.978817778274514,
+            "median": 2.2737367544323206e-13,
+            "min": 0.0,
+            "max": 324.18023006708177
+        },
+        "indice_vulnerabilidade": {
+            "mean": 0.332230232776691,
+            "median": 0.33106748417285237,
+            "min": 0.1885973600225085,
+            "max": 0.6423192736241754
+        },
+        "categoria_vulnerabilidade": {
+            "distribution": {
+                "Baixa": 921,
+                "Média": 219,
+                "Muito baixa": 6,
+                "Alta": 1,
+                "Muito alta": 0
+            }
+        },
+        "indice_prioridade_evacuacao": {
+            "mean": 0.41890018644081845,
+            "median": 0.41671142436179537,
+            "min": 0.3450387440320103,
+            "max": 0.7263363596210495
+        },
+        "categoria_prioridade": {
+            "distribution": {
+                "Média": 744,
+                "Baixa": 399,
+                "Alta": 4,
+                "Muito baixa": 0,
+                "Muito alta": 0
+            }
+        },
+        "top_prioridade": {
+            "count": 121,
+            "percentage": 9.934318555008211
+        }
+    },
+    "tipo_area": {
+        "distribution": {
+            "Rural": 984,
+            "Suburbana": 164,
+            "Residencial": 0,
+            "Mista": 0,
+            "Comercial": 0
+        }
+    }
+}

@@ -28,6 +28,7 @@ import argparse
 import folium
 from folium.plugins import FloatImage, Fullscreen, MeasureControl, Search
 from branca.colormap import linear
+import fiona
 
 # Configuração de logging
 logging.basicConfig(
@@ -45,7 +46,7 @@ workspace_dir = os.path.dirname(src_dir)
 # Definir diretórios de entrada e saída
 INPUT_DIR = os.path.join(workspace_dir, 'data', 'processed')
 RAW_DIR = os.path.join(workspace_dir, 'data', 'raw')
-OUTPUT_DIR = os.path.join(workspace_dir, 'data', 'enriched', 'setores_censitarios')
+OUTPUT_DIR = "F:\\TESE_MESTRADO\\geoprocessing\\data\\enriched_data"
 REPORT_DIR = os.path.join(workspace_dir, 'src', 'enriched_data', 'quality_reports', 'setores_censitarios')
 VISUALIZATION_DIR = os.path.join(workspace_dir, 'outputs', 'visualize_enriched_data', 'setores_censitarios')
 
@@ -395,7 +396,8 @@ def generate_evacuation_priority(gdf):
 
 def save_enriched_data(enriched_gdf, output_file=None):
     """
-    Salva o GeoDataFrame enriquecido em um arquivo GPKG.
+    Salva o GeoDataFrame enriquecido em um arquivo GPKG com múltiplas camadas
+    para diferentes tipos de geometria se necessário.
     
     Args:
         enriched_gdf (geopandas.GeoDataFrame): Dados enriquecidos
@@ -405,31 +407,148 @@ def save_enriched_data(enriched_gdf, output_file=None):
         str: Caminho do arquivo salvo
     """
     try:
+        # Verificar se temos um GeoDataFrame válido
+        if enriched_gdf is None or len(enriched_gdf) == 0:
+            logger.error("GeoDataFrame vazio ou inválido. Nada para salvar.")
+            return None
+            
+        # Verificar se temos uma coluna de geometria
+        if 'geometry' not in enriched_gdf.columns:
+            logger.error("GeoDataFrame não contém coluna 'geometry'. Impossível salvar.")
+            return None
+        
+        # Preparar caminho de saída
         if output_file is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_file = os.path.join(OUTPUT_DIR, f"setores_censitarios_enriched_{timestamp}.gpkg")
         
+        # Garantir que o caminho é absoluto e normalizado
+        output_file = os.path.abspath(os.path.normpath(output_file))
+        logger.info(f"Caminho de saída normalizado: {output_file}")
+        
         # Garantir que o diretório de saída exista
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         
-        # Remover atributos não serializáveis antes de salvar
+        # Verificar permissões de escrita
+        if not os.access(os.path.dirname(output_file), os.W_OK):
+            logger.error(f"Sem permissão de escrita no diretório: {os.path.dirname(output_file)}")
+            return None
+        
+        # Criar cópia limpa do GeoDataFrame para salvar
         serializable_gdf = enriched_gdf.copy()
         
-        # Converter qualquer coluna não serializable para string
-        for col in serializable_gdf.columns:
-            if serializable_gdf[col].dtype.name == 'object' and col != 'geometry':
-                try:
-                    # Tentar converter para string
-                    serializable_gdf[col] = serializable_gdf[col].astype(str)
-                except Exception as e:
-                    logger.warning(f"Não foi possível converter coluna '{col}' para string: {str(e)}")
-                    # Se falhar, remover a coluna
-                    serializable_gdf = serializable_gdf.drop(columns=[col])
+        # Remover geometrias nulas
+        if serializable_gdf.geometry.isna().any():
+            invalid_count = serializable_gdf.geometry.isna().sum()
+            logger.warning(f"Removendo {invalid_count} geometrias nulas")
+            serializable_gdf = serializable_gdf.dropna(subset=['geometry'])
         
-        # Salvar o GeoDataFrame
-        serializable_gdf.to_file(output_file, driver='GPKG')
-        logger.info(f"Dados enriquecidos salvos em: {output_file}")
-        return output_file
+        if len(serializable_gdf) == 0:
+            logger.error("Após remover geometrias inválidas, não restaram feições para salvar.")
+            return None
+        
+        # Corrigir geometrias inválidas
+        invalid_geoms = ~serializable_gdf.geometry.is_valid
+        if invalid_geoms.any():
+            logger.warning(f"Corrigindo {invalid_geoms.sum()} geometrias inválidas")
+            serializable_gdf.geometry = serializable_gdf.geometry.buffer(0)
+        
+        # Garantir que o CRS está definido
+        if serializable_gdf.crs is None:
+            logger.warning("CRS não definido, definindo EPSG:4326")
+            serializable_gdf = serializable_gdf.set_crs(epsg=4326, allow_override=True)
+        
+        # Selecionar apenas colunas essenciais para minimizar problemas
+        essential_columns = ['geometry', 'CD_GEOCODI', 'area_km2', 'est_populacao', 'densidade_pop',
+                          'indice_vulnerabilidade', 'indice_prioridade_evacuacao', 'tipo_area']
+        
+        available_columns = [col for col in essential_columns if col in serializable_gdf.columns]
+        
+        # Criar GeoDataFrame simplificado
+        slim_gdf = serializable_gdf[available_columns]
+        
+        # Tratar valores NaN e Infinitos
+        for col in slim_gdf.columns:
+            if col != 'geometry':
+                if pd.api.types.is_numeric_dtype(slim_gdf[col]):
+                    # Substituir infinito e NaN
+                    slim_gdf[col] = slim_gdf[col].replace([np.inf, -np.inf], [1e38, -1e38])
+                    slim_gdf[col] = slim_gdf[col].fillna(0)
+                elif slim_gdf[col].dtype.name == 'object':
+                    slim_gdf[col] = slim_gdf[col].fillna('')
+        
+        # Verificar se precisamos dividir por tipo de geometria
+        geom_types = slim_gdf.geometry.geom_type.unique()
+        
+        logger.info(f"Tipos de geometria encontrados: {', '.join(geom_types)}")
+        
+        if len(geom_types) > 1:
+            logger.info(f"Detectados múltiplos tipos de geometria. Salvando em camadas separadas do mesmo arquivo GPKG.")
+            
+            # Dividir por tipo de geometria e salvar em camadas separadas
+            success = True
+            layers_saved = []
+            
+            for geom_type in geom_types:
+                layer_name = f"setores_{geom_type.lower()}"
+                type_gdf = slim_gdf[slim_gdf.geometry.geom_type == geom_type]
+                
+                if len(type_gdf) > 0:
+                    try:
+                        # Modo 'w' para primeira camada, 'a' para as demais
+                        mode = 'w' if geom_type == geom_types[0] else 'a'
+                        logger.info(f"Salvando camada '{layer_name}' com {len(type_gdf)} feições")
+                        type_gdf.to_file(output_file, layer=layer_name, driver='GPKG', mode=mode)
+                        layers_saved.append(layer_name)
+                    except Exception as e_layer:
+                        logger.error(f"Erro ao salvar camada {layer_name}: {str(e_layer)}")
+                        success = False
+            
+            if success and layers_saved:
+                logger.info(f"GPKG salvo com sucesso em: {output_file} com camadas: {', '.join(layers_saved)}")
+                return output_file
+            else:
+                logger.error("Falha ao salvar algumas camadas no GPKG")
+                # Se falhou nas camadas separadas, tentar salvar como GeoJSON como último recurso
+                try:
+                    geojson_file = output_file.replace('.gpkg', '.geojson')
+                    logger.info(f"Tentando salvar como GeoJSON: {geojson_file}")
+                    slim_gdf.to_file(geojson_file, driver='GeoJSON')
+                    logger.info(f"Backup em GeoJSON salvo com sucesso em: {geojson_file}")
+                    return geojson_file
+                except Exception as e_json:
+                    logger.error(f"Também falhou ao salvar como GeoJSON: {str(e_json)}")
+                    return None
+        else:
+            # Apenas um tipo de geometria, mas salvar em uma camada nomeada para consistência
+            layer_name = f"setores_{geom_types[0].lower()}"
+            
+            try:
+                logger.info(f"Salvando {len(slim_gdf)} feições na camada '{layer_name}'")
+                slim_gdf.to_file(output_file, layer=layer_name, driver='GPKG')
+                
+                # Verificar se o arquivo foi criado com sucesso
+                if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+                    logger.info(f"GPKG salvo com sucesso em: {output_file}")
+                    return output_file
+                else:
+                    logger.error(f"Arquivo GPKG foi criado mas parece estar vazio ou corrompido")
+                    return None
+            except Exception as e_gpkg:
+                logger.error(f"Erro ao salvar GPKG: {str(e_gpkg)}")
+                
+                # Tentar salvar como GeoJSON como último recurso
+                try:
+                    geojson_file = output_file.replace('.gpkg', '.geojson')
+                    logger.info(f"Tentando salvar como GeoJSON: {geojson_file}")
+                    slim_gdf.to_file(geojson_file, driver='GeoJSON')
+                    logger.info(f"Backup em GeoJSON salvo com sucesso em: {geojson_file}")
+                    return geojson_file
+                except Exception as e_json:
+                    logger.error(f"Também falhou ao salvar como GeoJSON: {str(e_json)}")
+                    return None
+        
+        return None
     except Exception as e:
         logger.error(f"Erro ao salvar dados enriquecidos: {str(e)}")
         logger.error(traceback.format_exc())
@@ -454,13 +573,24 @@ def generate_quality_report(original_gdf, enriched_gdf, output_file, visualizati
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     try:
+        # Verificar se o output_file existe
+        if output_file is None:
+            logger.warning("O caminho do arquivo de dados enriquecidos é None")
+            actual_path = None
+        else:
+            file_exists = os.path.exists(output_file)
+            actual_path = os.path.abspath(output_file) if file_exists else None
+            
+            if not file_exists:
+                logger.warning(f"Arquivo de dados enriquecidos não encontrado em: {output_file}")
+        
         # Criar relatório
         report = {
             "report_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "original_features": len(original_gdf),
             "enriched_features": len(enriched_gdf),
             "new_attributes": list(set(enriched_gdf.columns) - set(original_gdf.columns)),
-            "enriched_data_path": output_file,
+            "enriched_data_path": actual_path,
             "visualizations": visualization_paths or {},
             "statistics": {
                 "area_km2": {
@@ -1097,6 +1227,80 @@ def generate_visualizations(gdf, timestamp=None):
         logger.error(traceback.format_exc())
         return viz_paths  # Retorna o que conseguiu gerar até o momento do erro
 
+def explore_gpkg(gpkg_path):
+    """
+    Explora as camadas disponíveis em um arquivo GeoPackage.
+
+    Args:
+        gpkg_path: Caminho para o arquivo GPKG
+
+    Returns:
+        Um DataFrame com informações sobre as camadas
+    """
+    if not os.path.exists(gpkg_path):
+        logger.error(f"Arquivo não encontrado: {gpkg_path}")
+        return None
+    
+    try:
+        # Listar todas as camadas disponíveis no GPKG
+        layers = fiona.listlayers(gpkg_path)
+        logger.info(f"Encontradas {len(layers)} camadas no arquivo {os.path.basename(gpkg_path)}")
+        
+        # Informações a coletar sobre cada camada
+        layer_info = []
+        
+        for layer in layers:
+            try:
+                # Carregar a camada como GeoDataFrame
+                gdf = gpd.read_file(gpkg_path, layer=layer)
+                
+                # Extrair informações básicas
+                info = {
+                    "layer_name": layer,
+                    "feature_count": len(gdf),
+                    "geometry_types": ", ".join(gdf.geometry.geom_type.unique()),
+                    "columns": ", ".join([col for col in gdf.columns if col != 'geometry']),
+                    "crs": str(gdf.crs),
+                    "bounds": str(gdf.total_bounds),
+                    "memory_usage_MB": round(gdf.memory_usage(deep=True).sum() / (1024 * 1024), 2)
+                }
+                
+                # Adicionar estatísticas para algumas colunas numéricas (se disponíveis)
+                numeric_stats = {}
+                for col in gdf.select_dtypes(include=['number']).columns:
+                    if col != 'geometry':
+                        try:
+                            numeric_stats[f"{col}_min"] = gdf[col].min()
+                            numeric_stats[f"{col}_max"] = gdf[col].max()
+                            numeric_stats[f"{col}_mean"] = gdf[col].mean()
+                        except:
+                            pass
+                
+                # Combinar as informações
+                info.update(numeric_stats)
+                layer_info.append(info)
+                
+                logger.info(f"Camada {layer}: {len(gdf)} feições, tipos: {info['geometry_types']}")
+                
+            except Exception as e:
+                logger.warning(f"Erro ao processar camada {layer}: {str(e)}")
+                layer_info.append({
+                    "layer_name": layer,
+                    "error": str(e)
+                })
+        
+        # Criar DataFrame a partir das informações coletadas
+        if layer_info:
+            result_df = pd.DataFrame(layer_info)
+            return result_df
+        else:
+            logger.warning("Nenhuma informação de camada foi encontrada ou processada")
+            return pd.DataFrame()
+            
+    except Exception as e:
+        logger.error(f"Erro ao explorar o arquivo GPKG: {str(e)}")
+        return None
+
 def main():
     """
     Função principal que executa o fluxo de trabalho completo de enriquecimento de dados dos setores censitários.
@@ -1160,57 +1364,63 @@ def main():
         
         # 4. Salvar dados enriquecidos
         logger.info("Salvando dados enriquecidos...")
-        output_file = os.path.join(OUTPUT_DIR, f"setores_censitarios_enriched_{timestamp}.gpkg")
         
-        try:
-            output_file = save_enriched_data(enriched_gdf, output_file)
-            logger.info(f"Dados enriquecidos salvos em: {output_file}")
-        except Exception as e:
-            logger.error(f"Erro ao salvar dados enriquecidos: {str(e)}")
-            logger.error(traceback.format_exc())
+        # Criar caminho para o arquivo de saída
+        output_file = None  # Inicializar a variável
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        gpkg_path = os.path.join(OUTPUT_DIR, f"setores_censitarios_enriched_{timestamp}.gpkg")
         
-        # 5. Gerar visualizações
-        logger.info("Gerando visualizações...")
+        # Tentar salvar como GPKG
+        output_file = save_enriched_data(enriched_gdf, gpkg_path)
         
-        try:
-            viz_paths = generate_visualizations(enriched_gdf, timestamp)
+        if output_file:
+            logger.info(f"Dados enriquecidos salvos com sucesso em: {output_file}")
             
-            # Mostrar estatísticas sobre visualizações
-            successful_viz = sum(1 for path in viz_paths.values() if os.path.exists(path))
-            logger.info(f"Visualizações geradas: {successful_viz}/{len(viz_paths)} concluídas com sucesso")
-            logger.info(f"Diretório de visualizações: {VISUALIZATION_DIR}/{timestamp}")
-        except Exception as e:
-            logger.error(f"Erro ao gerar visualizações: {str(e)}")
-            logger.error(traceback.format_exc())
-        
-        # 6. Gerar relatório de qualidade
-        logger.info("Gerando relatório de qualidade...")
-        report_file = None
-        
-        try:
-            report_file = generate_quality_report(original_gdf, enriched_gdf, output_file, viz_paths)
+            # Gerar visualizações
+            logger.info("Gerando visualizações...")
+            
+            try:
+                viz_paths = generate_visualizations(enriched_gdf, timestamp)
+                
+                # Mostrar estatísticas sobre visualizações
+                successful_viz = sum(1 for path in viz_paths.values() if os.path.exists(path))
+                logger.info(f"Visualizações geradas: {successful_viz}/{len(viz_paths)} concluídas com sucesso")
+                logger.info(f"Diretório de visualizações: {VISUALIZATION_DIR}/{timestamp}")
+            except Exception as e:
+                logger.error(f"Erro ao gerar visualizações: {str(e)}")
+                logger.error(traceback.format_exc())
+            
+            # Gerar relatório de qualidade
+            logger.info("Gerando relatório de qualidade...")
+            report_file = None
+            
+            try:
+                report_file = generate_quality_report(original_gdf, enriched_gdf, output_file, viz_paths)
+                if report_file:
+                    logger.info(f"Relatório de qualidade gerado em: {report_file}")
+                else:
+                    logger.warning("Não foi possível gerar o relatório de qualidade")
+            except Exception as e:
+                logger.error(f"Erro ao gerar relatório: {str(e)}")
+                logger.error(traceback.format_exc())
+            
+            # Calcular tempo de execução
+            elapsed_time = time.time() - start_time
+            logger.info(f"=== Processamento concluído em {elapsed_time:.2f} segundos ===")
+            logger.info(f"Dados enriquecidos: {output_file}")
+            
             if report_file:
-                logger.info(f"Relatório de qualidade gerado em: {report_file}")
-            else:
-                logger.warning("Não foi possível gerar o relatório de qualidade")
-        except Exception as e:
-            logger.error(f"Erro ao gerar relatório: {str(e)}")
-            logger.error(traceback.format_exc())
-        
-        # 7. Calcular tempo de execução
-        elapsed_time = time.time() - start_time
-        logger.info(f"=== Processamento concluído em {elapsed_time:.2f} segundos ===")
-        logger.info(f"Dados enriquecidos: {output_file}")
-        if report_file:
-            logger.info(f"Relatório: {report_file}")
-        logger.info(f"Visualizações: {VISUALIZATION_DIR}/{timestamp}")
-        
-        return {
-            "enriched_data": enriched_gdf,
-            "output_file": output_file,
-            "report_file": report_file,
-            "visualization_paths": viz_paths
-        }
+                logger.info(f"Relatório: {report_file}")
+            logger.info(f"Visualizações: {VISUALIZATION_DIR}/{timestamp}")
+            
+            return {
+                "enriched_data": enriched_gdf,
+                "output_file": output_file,
+                "report_file": report_file,
+                "visualization_paths": viz_paths
+            }
+        else:
+            logger.error("Falha ao salvar os dados enriquecidos")
     except Exception as e:
         logger.error(f"Erro no processamento: {str(e)}")
         logger.error(traceback.format_exc())
