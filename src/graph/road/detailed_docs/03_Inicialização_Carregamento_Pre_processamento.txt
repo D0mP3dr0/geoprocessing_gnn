@@ -1,0 +1,639 @@
+# MANUAL DE IMPLEMENTAÇÃO PERSONALIZADO
+# ETAPAS INICIAIS DO PIPELINE DE ANÁLISE DE REDES VIÁRIAS COM GNN
+
+## CONTEXTUALIZAÇÃO DO PROJETO
+
+Este manual foi desenvolvido especificamente para seu projeto de análise de redes viárias utilizando Graph Neural Networks (GNN), considerando os dados geoespaciais enriquecidos disponíveis em seu ambiente Google Colab. O projeto trabalha com múltiplas camadas de informação incluindo:
+
+- Setores censitários (1.218 features com atributos de densidade populacional e vulnerabilidade)
+- Hidrografia (componentes de drenagem, cursos d'água e áreas de drenagem)
+- Edificações (35.812 construções com classificação e atributos morfológicos)
+- Uso do solo (2.550 polígonos categorizados em 8 classes)
+- Redes viárias (13.328 segmentos classificados em 6 tipos)
+- Ferrovias (84 segmentos com classificação e atributos)
+
+Sua tese de mestrado utiliza estes dados para análises integradas da rede viária, e o pipeline GNN permitirá derivar insights avançados sobre a estrutura urbana.
+
+## 1. INICIALIZAÇÃO E CONFIGURAÇÃO DO AMBIENTE
+
+### 1.1 Instalação de Dependências Específicas
+
+Considerando os requisitos específicos do seu projeto e os conflitos observados no ambiente Colab, execute nesta ordem:
+
+```python
+# Instale primeiro as dependências PyTorch com suporte CUDA
+!pip install torch==2.0.1 --extra-index-url https://download.pytorch.org/whl/cu118
+!pip install torch-geometric==2.3.1
+!pip install torch-scatter torch-sparse torch-cluster torch-spline-conv -f https://data.pyg.org/whl/torch-2.0.1+cu118.html
+
+# Instale as dependências geoespaciais com versões compatíveis
+!pip install geopandas==0.13.2 networkx==3.1 matplotlib==3.7.2 seaborn==0.12.2
+!pip install contextily==1.3.0 folium==0.14.0 rtree==1.0.1
+!pip install tqdm==4.66.1 plotly==5.15.0 scikit-learn==1.3.0 jsonschema==4.17.3
+!pip install osmnx==1.5.1 momepy==0.6.0
+
+# IMPORTANTE: Corrija o problema específico do NumPy e Fiona
+!pip uninstall -y fiona
+!pip install fiona==1.9.5
+!pip install numpy==1.24.3 --force-reinstall
+```
+
+**ATENÇÃO**: Reinicie o runtime do Colab após estas instalações para evitar conflitos.
+
+### 1.2 Estrutura de Diretórios do Seu Projeto
+
+Seu projeto segue uma organização específica que deve ser mantida:
+
+```
+/content/drive/MyDrive/TESE_MESTRADO/
+├── geoprocessing/
+│   ├── data/
+│   │   ├── enriched_data/        # Contém seus dados enriquecidos
+│   │   ├── processed/            # Contém roads_processed.gpkg
+│   │   └── raw/                  # Dados originais
+│   ├── outputs/
+│   │   ├── visualize_enriched_data/
+│   │   └── quality_reports/      # Relatórios de qualidade
+│   └── src/
+│       ├── enriched_data/        # Scripts de enriquecimento
+│       │   └── quality_reports_completo/  # Onde estão seus relatórios JSON
+│       └── graph/                # Código para análise de grafos
+│           └── road/             # Pipeline específico para redes viárias
+```
+
+Mantenha esta estrutura para garantir compatibilidade com todos os componentes.
+
+### 1.3 Configuração do Ambiente e Google Drive
+
+No início do seu script principal, configure:
+
+```python
+# Detectar ambiente e montar Google Drive
+try:
+    import google.colab
+    from google.colab import drive
+    drive.mount('/content/drive')
+    print("Ambiente Google Colab detectado e Drive montado")
+except ImportError:
+    print("Ambiente local detectado")
+
+# Configurar caminhos específicos para seu projeto
+BASE_DIR = '/content/drive/MyDrive/TESE_MESTRADO'
+GEOPROCESSING_DIR = os.path.join(BASE_DIR, 'geoprocessing')
+DATA_DIR = os.path.join(GEOPROCESSING_DIR, 'data')
+ENRICHED_DATA_DIR = os.path.join(DATA_DIR, 'enriched_data')
+PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed')
+OUTPUT_DIR = os.path.join(GEOPROCESSING_DIR, 'outputs')
+QUALITY_REPORT_DIR = os.path.join(OUTPUT_DIR, 'quality_reports')
+
+# Caminhos específicos para seus arquivos
+ROADS_PROCESSED_PATH = os.path.join(PROCESSED_DATA_DIR, 'roads_processed.gpkg')
+ROADS_ENRICHED_PATH = os.path.join(ENRICHED_DATA_DIR, 'roads_enriched_20250412_230707.gpkg')
+```
+
+**NOTA IMPORTANTE**: A data "20250412_230707" no nome do arquivo é específica do seu conjunto de dados e deve ser preservada exatamente.
+
+### 1.4 Configuração do Sistema de Logging com Seus Parâmetros
+
+Implemente um sistema de logging personalizado para seu projeto:
+
+```python
+# Timestamp específico para arquivos de saída
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+# Configurar logging para seu projeto de tese
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(os.path.join(OUTPUT_DIR, f"pipeline_gnn_road_{timestamp}.log")),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger("TESE_MESTRADO.road_network_gnn")
+logger.info("Inicializando pipeline GNN para análise de redes viárias")
+```
+
+### 1.5 Reprodutibilidade com Seus Parâmetros de Treinamento
+
+Baseado nos parâmetros identificados no arquivo `src/graph/road/data/training_results_20250414_021132.json`, configure:
+
+```python
+# Configurar sementes para reprodutibilidade com seus parâmetros
+seed = 42
+np.random.seed(seed)
+torch.manual_seed(seed)
+random.seed(seed)
+
+# Parâmetros específicos do seu modelo GNN
+model_params = {
+    'input_dim': 2,               # Dimensão de entrada do seu modelo
+    'hidden_dim': 64,             # Dimensão oculta usada nos seus experimentos
+    'output_dim': 6,              # Suas 6 classes de vias: residential, secondary, tertiary, primary, trunk, motorway
+    'dropout': 0.3,               # Taxa de dropout específica do seu modelo
+    'learning_rate': 0.01,        # Taxa de aprendizado que você utilizou
+    'weight_decay': 0.0005,       # Regularização L2
+    'early_stopping_patience': 20 # Parâmetro usado nos seus experimentos
+}
+```
+
+## 2. CARREGAMENTO DE DADOS ESPECÍFICOS DO PROJETO
+
+### 2.1 Carregamento do Arquivo de Estradas Principal
+
+Seu arquivo principal de estradas contém características específicas que devem ser tratadas:
+
+```python
+def load_road_data(file_path=ROADS_ENRICHED_PATH, crs="EPSG:31983"):
+    """
+    Carrega seu arquivo de rede viária enriquecido.
+    
+    Args:
+        file_path: Caminho para seu arquivo de estradas enriquecido
+        crs: Sistema de coordenadas (EPSG:31983 - UTM Zone 23S, seu CRS padrão)
+    """
+    logger.info(f"Carregando dados de estradas de: {file_path}")
+    
+    if not os.path.exists(file_path):
+        # Verificar se há dados alternativos disponíveis
+        alt_files = [f for f in os.listdir(ENRICHED_DATA_DIR) if f.endswith('.gpkg') and 'road' in f.lower()]
+        if alt_files:
+            alt_path = os.path.join(ENRICHED_DATA_DIR, alt_files[0])
+            logger.warning(f"Arquivo principal não encontrado. Usando alternativo: {alt_path}")
+            file_path = alt_path
+        else:
+            raise FileNotFoundError(f"Não foi possível encontrar dados de estradas em: {file_path}")
+    
+    # Seu arquivo GPKG tem uma camada específica com dados de estradas
+    try:
+        # Listar camadas disponíveis
+        layers = gpd.io.fiona.listlayers(file_path)
+        logger.info(f"Camadas encontradas no arquivo: {layers}")
+        
+        # Baseado na análise do seu arquivo, a camada principal deve ser carregada
+        layer_name = next((l for l in layers if 'road' in l.lower()), layers[0])
+        gdf = gpd.read_file(file_path, layer=layer_name)
+        
+    except Exception as e:
+        logger.error(f"Erro ao carregar arquivo: {str(e)}")
+        raise
+    
+    # Verificar sistema de coordenadas (seu projeto usa EPSG:31983)
+    if gdf.crs is None:
+        logger.warning("CRS não definido no arquivo. Definindo como EPSG:31983 (UTM Zone 23S)")
+        gdf.crs = "EPSG:31983"
+    elif gdf.crs.to_string() != "EPSG:31983":
+        logger.info(f"Reprojetando de {gdf.crs} para EPSG:31983")
+        gdf = gdf.to_crs("EPSG:31983")
+    
+    # Verificar colunas essenciais para seu projeto
+    essential_cols = ['geometry', 'highway']
+    missing_cols = [col for col in essential_cols if col not in gdf.columns]
+    if missing_cols:
+        logger.warning(f"Colunas essenciais ausentes: {missing_cols}")
+    
+    # Analisar tipos de estradas no seu dataset
+    if 'highway' in gdf.columns:
+        highway_counts = gdf['highway'].value_counts()
+        logger.info(f"Distribuição de tipos de vias:\n{highway_counts}")
+    
+    # Criar índice espacial para acesso eficiente (importante para seus dados)
+    if not gdf.sindex:
+        logger.info("Criando índice espacial...")
+        gdf = gdf.copy()  # Força criação de índice espacial
+    
+    logger.info(f"Dados carregados: {len(gdf)} segmentos de estrada")
+    logger.info(f"Extensão total: {gdf.geometry.length.sum()/1000:.2f} km")
+    
+    return gdf
+```
+
+### 2.2 Carregamento de Dados Contextuais Específicos
+
+Conforme identificado nos seus arquivos, você possui dados contextuais importantes:
+
+```python
+def load_contextual_data():
+    """Carrega os dados contextuais específicos do seu projeto."""
+    
+    context_data = {}
+    
+    # Carregar setores censitários (identificado no seu relatório de qualidade)
+    setores_path = os.path.join(ENRICHED_DATA_DIR, "setores_censitarios_enriched.gpkg")
+    if os.path.exists(setores_path):
+        logger.info("Carregando dados de setores censitários...")
+        context_data['setores'] = gpd.read_file(setores_path)
+        logger.info(f"Carregados {len(context_data['setores'])} setores censitários")
+    
+    # Carregar dados de uso do solo (importante para seu contexto urbano)
+    landuse_path = os.path.join(ENRICHED_DATA_DIR, "landuse_enriched.gpkg")
+    if os.path.exists(landuse_path):
+        logger.info("Carregando dados de uso do solo...")
+        context_data['landuse'] = gpd.read_file(landuse_path)
+        # Seus dados têm 8 categorias de uso do solo
+        if 'land_category' in context_data['landuse'].columns:
+            landuse_cats = context_data['landuse']['land_category'].value_counts()
+            logger.info(f"Categorias de uso do solo:\n{landuse_cats}")
+    
+    # Carregar dados de edificações (35.812 edificações no seu dataset)
+    buildings_path = os.path.join(ENRICHED_DATA_DIR, "buildings_enriched.gpkg")
+    if os.path.exists(buildings_path):
+        logger.info("Carregando dados de edificações...")
+        context_data['buildings'] = gpd.read_file(buildings_path)
+        logger.info(f"Carregadas {len(context_data['buildings'])} edificações")
+    
+    return context_data
+```
+
+## 3. PRÉ-PROCESSAMENTO CUSTOMIZADO PARA SEUS DADOS
+
+### 3.1 Explosão de MultiLineStrings nos Seus Dados
+
+Com base na análise do seu arquivo "sorocaba_roads.gpkg", é necessário tratar MultiLineStrings:
+
+```python
+def explode_multilines(gdf):
+    """
+    Processa MultiLineStrings nos seus dados de rede viária.
+    Baseado na análise do seu arquivo sorocaba_roads.gpkg que contém geometrias mistas.
+    """
+    # Verificar tipos de geometria
+    geometry_types = gdf.geometry.type.unique()
+    logger.info(f"Tipos de geometria encontrados: {geometry_types}")
+    
+    # Verificar se há MultiLineStrings
+    if 'MultiLineString' not in geometry_types:
+        logger.info("Não foram encontradas MultiLineStrings. Nenhuma explosão necessária.")
+        return gdf
+    
+    # Filtrar geometrias
+    multi_mask = gdf.geometry.type == "MultiLineString"
+    multilines = gdf[multi_mask].copy()
+    singlelines = gdf[~multi_mask].copy()
+    
+    logger.info(f"Encontradas {len(multilines)} MultiLineStrings para processamento")
+    
+    # Explodir MultiLineStrings
+    exploded_rows = []
+    for idx, row in multilines.iterrows():
+        geom = row.geometry
+        for part in geom.geoms:
+            new_row = row.copy()
+            new_row.geometry = part
+            exploded_rows.append(new_row)
+    
+    # Criar novo GeoDataFrame com linhas explodidas
+    if exploded_rows:
+        exploded_gdf = gpd.GeoDataFrame(exploded_rows, crs=gdf.crs)
+        result = pd.concat([singlelines, exploded_gdf], ignore_index=True)
+        logger.info(f"Após explosão: {len(result)} LineStrings individuais")
+        return result
+    else:
+        return gdf
+```
+
+### 3.2 Limpeza e Validação para Seus Dados Específicos
+
+Baseado nas características dos seus dados e nos relatórios de qualidade:
+
+```python
+def clean_road_data(gdf):
+    """
+    Limpa e valida os dados de estradas específicos do seu projeto.
+    """
+    # Registrar estatísticas iniciais
+    initial_count = len(gdf)
+    logger.info(f"Iniciando limpeza com {initial_count} features")
+    
+    # 1. Remover geometrias nulas
+    null_geoms = gdf.geometry.isna()
+    if null_geoms.any():
+        logger.warning(f"Removendo {null_geoms.sum()} geometrias nulas")
+        gdf = gdf[~null_geoms].copy()
+    
+    # 2. Corrigir geometrias inválidas (problema comum no seu dataset)
+    invalid_geoms = ~gdf.geometry.is_valid
+    if invalid_geoms.any():
+        logger.warning(f"Corrigindo {invalid_geoms.sum()} geometrias inválidas")
+        gdf.loc[invalid_geoms, 'geometry'] = gdf.loc[invalid_geoms, 'geometry'].buffer(0)
+        
+        # Verificar novamente após correção
+        still_invalid = ~gdf.geometry.is_valid
+        if still_invalid.any():
+            logger.warning(f"Removendo {still_invalid.sum()} geometrias ainda inválidas após correção")
+            gdf = gdf[~still_invalid].copy()
+    
+    # 3. Remover duplicatas (conforme identificado nos seus dados)
+    logger.info("Verificando duplicatas geométricas")
+    before_dedup = len(gdf)
+    gdf = gdf.drop_duplicates(subset=['geometry']).copy()
+    after_dedup = len(gdf)
+    if before_dedup > after_dedup:
+        logger.info(f"Removidas {before_dedup - after_dedup} geometrias duplicadas")
+    
+    # 4. Padronizar valores de highway (específico para seus dados)
+    # Seu arquivo contém 6 categorias principais: residential, secondary, tertiary, primary, trunk, motorway
+    if 'highway' in gdf.columns:
+        logger.info("Padronizando valores do campo 'highway'")
+        
+        # Converter para string, minúsculas e remover espaços
+        gdf['highway'] = gdf['highway'].astype(str).str.lower().str.strip()
+        
+        # Tratar valores nulos ou inválidos
+        null_highways = (gdf['highway'].isna()) | (gdf['highway'] == 'nan') | (gdf['highway'] == 'none')
+        if null_highways.any():
+            logger.warning(f"Substituindo {null_highways.sum()} valores nulos de 'highway' por 'unclassified'")
+            gdf.loc[null_highways, 'highway'] = 'unclassified'
+        
+        # Adicionar mapeamento para categorias específicas baseado nos seus dados
+        # Isso mantém as 6 categorias principais identificadas no seu dataset
+        highway_mapping = {
+            'motorway': 'motorway',
+            'trunk': 'trunk',
+            'primary': 'primary',
+            'secondary': 'secondary',
+            'tertiary': 'tertiary',
+            'residential': 'residential',
+            'unclassified': 'residential',  # Mapeamento específico para seus dados
+            'service': 'residential',        # Mapeamento específico para seus dados
+            'road': 'residential'            # Mapeamento específico para seus dados
+        }
+        
+        # Aplicar mapeamento preservando valores originais
+        gdf['road_category'] = gdf['highway'].map(lambda x: highway_mapping.get(x, 'residential'))
+        
+        # Verificar distribuição após padronização
+        logger.info(f"Distribuição após padronização:\n{gdf['road_category'].value_counts()}")
+    
+    # 5. Calcular atributos geométricos específicos para seu projeto
+    logger.info("Calculando atributos geométricos")
+    
+    # Comprimento (essencial para seu projeto)
+    gdf['length_m'] = gdf.geometry.length
+    
+    # Sinuosidade (importante para sua análise)
+    gdf['sinuosity'] = calculate_sinuosity(gdf)
+    
+    # Garantir ID único (necessário para referência no grafo)
+    if 'id' not in gdf.columns:
+        gdf['id'] = range(len(gdf))
+    
+    # Registrar estatísticas finais
+    final_count = len(gdf)
+    logger.info(f"Limpeza concluída. Features finais: {final_count} ({final_count/initial_count:.1%} do original)")
+    
+    return gdf
+```
+
+### 3.3 Funções Auxiliares Específicas para Seus Dados
+
+Implementações personalizadas para recursos específicos do seu projeto:
+
+```python
+def calculate_sinuosity(gdf):
+    """
+    Calcula sinuosidade para cada segmento viário.
+    Este cálculo é importante para seu projeto conforme visto no relatório de hidrografia.
+    """
+    sinuosity = []
+    
+    for _, row in gdf.iterrows():
+        geom = row.geometry
+        if geom.geom_type != 'LineString':
+            # Para casos excepcionais que ainda não foram tratados
+            sinuosity.append(1.0)
+            continue
+            
+        # Comprimento real da linha
+        line_length = geom.length
+        
+        # Distância euclidiana entre extremidades
+        start_point = geom.coords[0]
+        end_point = geom.coords[-1]
+        from_point = Point(start_point)
+        to_point = Point(end_point)
+        straight_distance = from_point.distance(to_point)
+        
+        # Evitar divisão por zero
+        if straight_distance < 0.001:  # Limiar para pontos muito próximos
+            sin_value = 1.0
+        else:
+            sin_value = line_length / straight_distance
+            
+        sinuosity.append(sin_value)
+    
+    return sinuosity
+
+def check_connectivity(gdf):
+    """
+    Verifica a conectividade da rede viária usando funções específicas para seus dados.
+    Baseado na análise de componentes conectados do seu grafo (4.669 componentes)
+    """
+    logger.info("Analisando conectividade da rede viária")
+    
+    # Extrair endpoints de cada segmento
+    endpoints = []
+    for idx, row in gdf.iterrows():
+        geom = row.geometry
+        if geom.geom_type != 'LineString':
+            continue
+            
+        # Obter coordenadas de extremidades
+        start_point = geom.coords[0]
+        end_point = geom.coords[-1]
+        
+        endpoints.append({
+            'segment_id': idx,
+            'start': start_point,
+            'end': end_point
+        })
+    
+    # Construir grafo básico para análise de conectividade
+    G = nx.Graph()
+    
+    # Adicionar todos os segmentos como arestas
+    for ep in endpoints:
+        G.add_edge(ep['start'], ep['end'], segment_id=ep['segment_id'])
+    
+    # Contar componentes conectados
+    num_components = nx.number_connected_components(G)
+    largest_cc = max(nx.connected_components(G), key=len)
+    
+    logger.info(f"Análise de conectividade: {num_components} componentes distintos")
+    logger.info(f"Maior componente conectado: {len(largest_cc)} nós " + 
+                f"({len(largest_cc)/G.number_of_nodes():.1%} do total)")
+    
+    connected = (num_components == 1)
+    
+    return {
+        'is_connected': connected,
+        'num_components': num_components,
+        'largest_component_size': len(largest_cc),
+        'largest_component_percentage': len(largest_cc)/G.number_of_nodes()
+    }
+```
+
+### 3.4 Processo de Pré-processamento Completo
+
+Integrando todas as etapas específicas para seu projeto:
+
+```python
+def preprocess_road_data(input_path=ROADS_ENRICHED_PATH, output_path=None):
+    """
+    Executa o pipeline completo de pré-processamento para seus dados específicos.
+    """
+    # 1. Carregar dados
+    logger.info(f"Iniciando pré-processamento dos dados de {input_path}")
+    gdf = load_road_data(input_path)
+    
+    # 2. Explodir MultiLineStrings
+    logger.info("Processando geometrias MultiLineString")
+    gdf = explode_multilines(gdf)
+    
+    # 3. Limpar e validar dados
+    logger.info("Executando limpeza e validação de dados")
+    gdf = clean_road_data(gdf)
+    
+    # 4. Verificar conectividade
+    connectivity = check_connectivity(gdf)
+    if not connectivity['is_connected']:
+        logger.warning(f"Rede viária não é totalmente conectada: {connectivity['num_components']} componentes")
+        logger.info(f"Maior componente: {connectivity['largest_component_percentage']:.1%} da rede")
+    
+    # 5. Salvar resultado (se caminho especificado)
+    if output_path:
+        # Garantir que o diretório existe
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        
+        # Salvar no formato GPKG (padrão do seu projeto)
+        logger.info(f"Salvando dados pré-processados em {output_path}")
+        gdf.to_file(output_path, driver="GPKG")
+    
+    # 6. Gerar relatório de qualidade básico
+    quality_report = {
+        "report_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "original_file": input_path,
+        "processed_file": output_path,
+        "features": {
+            "initial": len(load_road_data(input_path)),
+            "final": len(gdf)
+        },
+        "attributes": {
+            "original": list(load_road_data(input_path).columns),
+            "added": [col for col in gdf.columns if col not in load_road_data(input_path).columns]
+        },
+        "road_types": {
+            "distribution": gdf['highway'].value_counts().to_dict() if 'highway' in gdf.columns else {}
+        },
+        "geometry": {
+            "types": gdf.geometry.type.value_counts().to_dict(),
+            "length_stats": {
+                "total_km": gdf.geometry.length.sum() / 1000,
+                "min_m": gdf.geometry.length.min(),
+                "max_m": gdf.geometry.length.max(),
+                "mean_m": gdf.geometry.length.mean(),
+                "median_m": gdf.geometry.length.median()
+            }
+        },
+        "connectivity": connectivity
+    }
+    
+    # Salvar relatório de qualidade
+    if output_path:
+        quality_path = os.path.join(QUALITY_REPORT_DIR, 
+                                    f"road_preprocessing_quality_{timestamp}.json")
+        with open(quality_path, 'w') as f:
+            json.dump(quality_report, f, indent=2)
+        logger.info(f"Relatório de qualidade salvo em {quality_path}")
+    
+    logger.info("Pré-processamento concluído com sucesso")
+    return gdf, quality_report
+```
+
+## 4. EXECUÇÃO INTEGRADA E VERIFICAÇÃO
+
+Para executar todas as etapas e verificar resultados:
+
+```python
+def run_preprocessing_pipeline():
+    """
+    Executa pipeline completo de inicialização, carregamento e pré-processamento.
+    """
+    # Registrar tempo inicial
+    start_time = time.time()
+    
+    try:
+        # 1. Verificar e criar estrutura de diretórios
+        logger.info("Verificando estrutura de diretórios")
+        for directory in [DATA_DIR, ENRICHED_DATA_DIR, PROCESSED_DATA_DIR, 
+                         OUTPUT_DIR, QUALITY_REPORT_DIR]:
+            os.makedirs(directory, exist_ok=True)
+        
+        # 2. Definir caminho para arquivo de saída
+        output_path = os.path.join(PROCESSED_DATA_DIR, f"roads_processed_{timestamp}.gpkg")
+        
+        # 3. Executar pré-processamento completo
+        gdf, quality_report = preprocess_road_data(ROADS_ENRICHED_PATH, output_path)
+        
+        # 4. Gerar visualização básica da rede
+        logger.info("Gerando visualização da rede viária processada")
+        visualization_path = os.path.join(OUTPUT_DIR, f"road_network_{timestamp}.png")
+        
+        # Código para gerar visualização básica incluiria:
+        # - Plotagem da rede completa colorida por categoria de via
+        # - Destaque para componentes conectados
+        # - Inclusão de escala e norte
+        
+        # 5. Mostrar resumo dos resultados
+        processing_time = time.time() - start_time
+        logger.info(f"Pipeline de pré-processamento concluído em {processing_time:.2f} segundos")
+        logger.info(f"Arquivo de saída: {output_path}")
+        logger.info(f"Features: {quality_report['features']['initial']} → {quality_report['features']['final']}")
+        logger.info(f"Extensão total: {quality_report['geometry']['length_stats']['total_km']:.2f} km")
+        logger.info(f"Componentes conectados: {quality_report['connectivity']['num_components']}")
+        
+        return {
+            'gdf': gdf,
+            'quality_report': quality_report,
+            'output_path': output_path,
+            'processing_time': processing_time
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro durante execução do pipeline: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise
+```
+
+## 5. PRÓXIMOS PASSOS E CONSIDERAÇÕES ESPECÍFICAS
+
+### 5.1 Integração com a Etapa de Construção de Grafo
+
+Depois de concluir estas etapas, seus dados estarão prontos para:
+- Construção do grafo usando `pipeline/graph_construction.py`
+- Extração de features usando dados de atributos como os 6 tipos de via identificados
+- Preparação para PyTorch Geometric para alimentar o modelo GNN
+
+### 5.2 Considerações Específicas para Seus Dados
+
+- **Componentes Conectados**: Seus dados têm 4.669 componentes conectados, com o maior cobrindo apenas cerca de 29% da rede. Isso pode impactar análises globais.
+- **Tipos de Vias**: A classe predominante é 'residential' (76,56%), o que cria um desbalanceamento de classes para treinamento.
+- **Sinuosidade**: Seus dados têm sinuosidade média de 1.04, com máximo de 1.70, indicando uma rede predominantemente linear.
+- **Extensão da Rede**: Total de 2.608,98 km de vias, um conjunto de dados substancial com bom potencial para análises detalhadas.
+
+## 6. CHECKLIST DE VERIFICAÇÃO FINAL
+
+Antes de prosseguir para as próximas etapas, confirme que:
+
+✓ Todos os caminhos estão configurados corretamente para seu ambiente Google Colab  
+✓ A estrutura de diretórios foi verificada e criada se necessário  
+✓ Os dados de estradas foram carregados corretamente  
+✓ MultiLineStrings foram processadas adequadamente  
+✓ Limpeza e validação foram executadas com sucesso  
+✓ Atributos derivados foram calculados (comprimento, sinuosidade)  
+✓ Conectividade foi analisada e documentada  
+✓ Dados pré-processados foram salvos no formato correto (GPKG)  
+✓ Relatório de qualidade foi gerado com estatísticas detalhadas  
+✓ Log completo foi mantido para referência  
+
